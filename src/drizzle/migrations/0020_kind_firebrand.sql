@@ -1,0 +1,1 @@
+ALTER TABLE "substantial_use" ADD CONSTRAINT "substantial_use_application_id_ip_application_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE set null ON UPDATE no action;

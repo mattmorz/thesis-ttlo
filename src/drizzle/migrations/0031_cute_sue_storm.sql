@@ -1,0 +1,1 @@
+ALTER TABLE "ip_application_enrollment" ADD COLUMN "role" varchar(50) DEFAULT 'manager' NOT NULL;

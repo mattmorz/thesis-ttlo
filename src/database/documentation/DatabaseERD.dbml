@@ -1,0 +1,708 @@
+// Database Schema for IP Management System
+
+// Enums
+enum UserRole {
+  admin
+  ttlo_staff
+  client
+}
+
+enum ApplicationType {
+  patent
+  copyright
+  trademark
+  utility_model
+}
+
+enum ApplicationStatus {
+  draft
+  pending
+  in_progress
+  approved
+  rejected
+  completed
+  archived
+}
+
+enum ActivityType {
+  update
+  comment
+  status_change
+}
+
+// Additional Enums
+enum DocumentStatus {
+  pending
+  verified
+  rejected
+}
+
+enum ValidationStatus {
+  pending
+  approved
+  rejected
+  needs_revision
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+// Authentication & User Management
+Table user_account {
+  id uuid [pk]
+  email varchar [unique, not null]
+  name varchar
+  role UserRole [default: 'client']
+  is_active boolean [default: true]
+  email_verified_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table auth_session {
+  id uuid [pk]
+  user_id uuid [ref: > user_account.id, not null]
+  token text [not null]
+  expires_at timestamp [not null]
+  created_at timestamp [default: `now()`]
+}
+
+// IP Application Management
+Table ip_application {
+  id uuid [pk]
+  user_id uuid [ref: > user_account.id, not null]
+  title varchar [not null]
+  description text
+  ip_type ApplicationType [not null]
+  status ApplicationStatus [default: 'draft']
+  progress integer [default: 0]
+  inventors text[]
+  technical_field text[]
+  keywords text[]
+  research_field varchar
+  department varchar
+  faculty varchar
+  funding_source varchar
+  funding_type varchar
+  grant_number varchar
+  commercialization_status varchar [default: 'not_licensed']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  archived_at timestamp
+  archived_reason text
+
+  indexes {
+    user_id
+    status
+    ip_type
+  }
+}
+
+// Application Phases
+Table application_phase {
+  phase_id uuid [pk]
+  application_id uuid [ref: > ip_application.id, not null]
+  title varchar [not null]
+  description text
+  status varchar [default: 'pending']
+  start_date date [not null]
+  end_date date [not null]
+  progress integer [default: 0]
+  order_index integer [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    application_id
+    status
+  }
+}
+
+// Phase Tasks
+Table phase_task {
+  task_id uuid [pk]
+  phase_id uuid [ref: > application_phase.phase_id, not null]
+  title varchar [not null]
+  description text
+  priority varchar [not null]
+  weight integer [not null]
+  due_date date
+  completed boolean [default: false]
+  assignee_id uuid [ref: > user_account.id]
+  start_date date
+  status varchar [default: 'pending']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    phase_id
+    assignee_id
+    due_date
+  }
+}
+
+// Document Management System - Normalized Structure
+
+// Document Categories Enum
+enum DocumentCategory {
+  forms
+  attachments
+  requirements
+  drawings
+  publications
+  certificates
+  correspondence
+}
+
+// Document Types Enum
+enum DocumentType {
+  application_form
+  supporting_document
+  technical_drawing
+  proof_of_payment
+  certificate
+  correspondence
+  other
+}
+
+// Base Document Table
+Table document {
+  document_id uuid [pk]
+  title varchar [not null]
+  description text
+  document_type DocumentType [not null]
+  category DocumentCategory [not null]
+  status DocumentStatus [default: 'pending']
+  version integer [default: 1]
+  is_latest boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Document Files - Physical file information
+Table document_file {
+  file_id uuid [pk]
+  document_id uuid [ref: > document.document_id]
+  file_name varchar [not null]
+  file_path text [not null]
+  file_size integer [not null]
+  mime_type varchar [not null]
+  checksum varchar
+  storage_provider varchar [default: 'local']
+  uploaded_by uuid [ref: > user_account.id]
+  uploaded_at timestamp [default: `now()`]
+  
+  indexes {
+    document_id
+    uploaded_by
+    mime_type
+  }
+}
+
+// Document Metadata - Additional information
+Table document_metadata {
+  metadata_id uuid [pk]
+  document_id uuid [ref: > document.document_id]
+  key varchar [not null]
+  value text
+  created_at timestamp [default: `now()`]
+  
+  indexes {
+    document_id
+    key
+  }
+}
+
+// Document Entity Relations - Links documents to various entities
+Table document_entity {
+  relation_id uuid [pk]
+  document_id uuid [ref: > document.document_id]
+  entity_type varchar [not null] // 'application', 'phase', 'task', etc.
+  entity_id uuid [not null]
+  created_at timestamp [default: `now()`]
+  
+  indexes {
+    (document_id, entity_type, entity_id) [unique]
+    entity_id
+  }
+}
+
+// Document Validation
+Table document_validation {
+  validation_id uuid [pk]
+  document_id uuid [ref: > document.document_id]
+  validator_id uuid [ref: > user_account.id]
+  validation_status ValidationStatus [default: 'pending']
+  validation_date timestamp
+  remarks text
+  created_at timestamp [default: `now()`]
+  
+  indexes {
+    document_id
+    validator_id
+    validation_status
+  }
+}
+
+// Document Version History
+Table document_version {
+  version_id uuid [pk]
+  document_id uuid [ref: > document.document_id]
+  version_number integer [not null]
+  change_summary text
+  created_by uuid [ref: > user_account.id]
+  created_at timestamp [default: `now()`]
+  
+  indexes {
+    (document_id, version_number) [unique]
+  }
+}
+
+// Document Access Control
+Table document_access {
+  access_id uuid [pk]
+  document_id uuid [ref: > document.document_id]
+  user_id uuid [ref: > user_account.id]
+  access_level varchar [not null] // 'read', 'write', 'admin'
+  granted_by uuid [ref: > user_account.id]
+  granted_at timestamp [default: `now()`]
+  expires_at timestamp
+  
+  indexes {
+    (document_id, user_id) [unique]
+  }
+}
+
+// Activity Logging
+Table activity_log {
+  log_id uuid [pk]
+  application_id uuid [ref: > ip_application.id, not null]
+  phase_id uuid [ref: > application_phase.phase_id]
+  user_id uuid [ref: > user_account.id, not null]
+  activity_type ActivityType [not null]
+  title varchar [not null]
+  description text
+  created_at timestamp [default: `now()`]
+
+  indexes {
+    application_id
+    phase_id
+    user_id
+  }
+}
+
+// Phase Reviews
+Table phase_review {
+  review_id uuid [pk]
+  phase_id uuid [ref: > application_phase.phase_id, not null]
+  reviewer_id uuid [ref: > user_account.id, not null]
+  comment text [not null]
+  status varchar [not null]
+  rating integer
+  review_date timestamp [default: `now()`]
+  attachments text[]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    phase_id
+    reviewer_id
+    status
+  }
+}
+
+// Calendar Events
+Table calendar_event {
+  event_id uuid [pk]
+  title varchar [not null]
+  description text
+  start_date timestamp [not null]
+  end_date timestamp [not null]
+  event_type varchar [not null]
+  status varchar [default: 'scheduled']
+  priority varchar
+  created_by uuid [ref: > user_account.id]
+  application_id uuid [ref: > ip_application.id]
+  phase_id uuid [ref: > application_phase.phase_id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    application_id
+    phase_id
+    start_date
+  }
+}
+
+// Notifications
+Table notification {
+  notification_id uuid [pk]
+  user_id uuid [ref: > user_account.id, not null]
+  title varchar [not null]
+  message text [not null]
+  type varchar [not null]
+  status varchar [default: 'unread']
+  link text
+  created_at timestamp [default: `now()`]
+  read_at timestamp
+
+  indexes {
+    user_id
+    status
+  }
+}
+
+// Authentication Extensions
+Table account {
+  userId uuid [ref: > user_account.id]
+  type text [not null]
+  provider text [not null]
+  providerAccountId text [not null]
+  refresh_token text
+  access_token text
+  expires_at integer
+  token_type text
+  scope text
+  id_token text
+  session_state text
+}
+
+Table authenticator {
+  credentialID text [pk]
+  userId uuid [ref: > user_account.id, not null]
+  providerAccountId text [not null]
+  credentialPublicKey text [not null]
+  counter integer [not null]
+  credentialDeviceType text [not null]
+  credentialBackedUp boolean [not null]
+  transports text
+}
+
+// IP Management Extensions
+Table ip_disclosure {
+  disclosure_id uuid [pk]
+  title varchar [not null]
+  description text
+  status varchar
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table patent_basic_application {
+  patent_id uuid [pk]
+  disclosure_id uuid [ref: > ip_disclosure.disclosure_id]
+  technology_type jsonb [not null]
+  technology_field jsonb [not null]
+  invention_title varchar [not null]
+  technical_problem text [not null]
+  technical_solution text [not null]
+  technical_field text [not null]
+  background_art text [not null]
+  invention_summary text [not null]
+  advantages text [not null]
+  industrial_applicability text [not null]
+  drawing_description text
+  best_mode text
+  own_publications text
+  patent_type varchar
+  status varchar [default: 'draft']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table patent_matrix {
+  matrix_id uuid [pk]
+  patent_id uuid [ref: > patent_basic_application.patent_id]
+  title varchar [not null]
+  description text [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table matrix_feature {
+  feature_id uuid [pk]
+  matrix_id uuid [ref: > patent_matrix.matrix_id]
+  feature_description text [not null]
+  analysis_data jsonb
+}
+
+Table matrix_prior_art {
+  prior_art_id uuid [pk]
+  matrix_id uuid [ref: > patent_matrix.matrix_id]
+  title varchar [not null]
+  reference_number varchar
+  publication_date date
+  relevance_description text
+}
+
+// Copyright Management
+Table copyright_transaction_part1 {
+  transaction_id uuid [pk]
+  application_id uuid [ref: > ip_application.id]
+  title varchar [not null]
+  nature_of_work varchar [not null]
+  status varchar [default: 'draft']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table copyright_transaction_part2 {
+  transaction_detail_id uuid [pk]
+  transaction_id uuid [ref: > copyright_transaction_part1.transaction_id]
+  date_of_creation date
+  date_of_publication date
+  country_of_publication varchar
+  has_previous_registration boolean [default: false]
+  previous_registration_number varchar
+  previous_registration_date date
+  modifications_from_previous text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table copyright_applicant {
+  applicant_id uuid [pk]
+  transaction_id uuid [ref: > copyright_transaction_part1.transaction_id]
+  applicant_type varchar [not null]
+  organization_name varchar
+  first_name varchar
+  middle_name varchar
+  last_name varchar
+  citizenship varchar
+  address text [not null]
+  contact_number varchar
+  email varchar
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+
+  indexes {
+    transaction_id
+    applicant_type
+  }
+}
+
+Table copyright_author_creator {
+  author_id uuid [pk]
+  transaction_detail_id uuid [ref: > copyright_transaction_part2.transaction_detail_id]
+  is_same_as_applicant boolean [default: false]
+  applicant_id uuid [ref: > copyright_applicant.applicant_id]
+  first_name varchar
+  middle_name varchar
+  last_name varchar
+  pseudonym varchar
+  citizenship varchar
+  address text
+  contact_number varchar
+  email varchar
+  contribution_type varchar
+  is_deceased boolean [default: false]
+  date_of_death date
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Task Management Extensions
+Table task_assignment {
+  assignment_id uuid [pk]
+  task_id uuid [ref: > phase_task.task_id]
+  staff_id uuid [ref: > user_account.id]
+  assigned_at timestamp [default: `now()`]
+  status varchar [default: 'pending']
+}
+
+Table task_comment {
+  comment_id uuid [pk]
+  task_id uuid [ref: > phase_task.task_id]
+  user_id uuid [ref: > user_account.id]
+  content text [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  attachments text[]
+}
+
+// Phase Management Extensions
+Table phase_reminder {
+  reminder_id uuid [pk]
+  phase_id uuid [ref: > application_phase.phase_id]
+  frequency varchar
+  custom_days integer
+  reminder_time time
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table phase_review_attachment {
+  attachment_id uuid [pk]
+  review_id uuid [ref: > phase_review.review_id]
+  file_path text [not null]
+  file_name varchar [not null]
+  file_type varchar [not null]
+  file_size integer [not null]
+  uploaded_at timestamp [default: `now()`]
+}
+
+// Validation Management
+Table internal_validation {
+  validation_id uuid [pk]
+  phase_id uuid [ref: > application_phase.phase_id]
+  document_id uuid [ref: > document.document_id]
+  validator_role varchar
+  assigned_to uuid [ref: > user_account.id]
+  status varchar [default: 'pending']
+  due_date date [not null]
+  remarks text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+Table external_collaboration {
+  collaboration_id uuid [pk]
+  phase_id uuid [ref: > application_phase.phase_id]
+  office varchar [not null]
+  contact_person varchar [not null]
+  task text [not null]
+  status varchar [default: 'pending']
+  due_date date [not null]
+  response_required boolean [default: false]
+  remarks text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Digital Signature System
+Table digital_signature {
+  signature_id uuid [pk]
+  entity_id uuid [not null]
+  entity_type varchar [not null]
+  signer_id uuid [ref: > user_account.id]
+  signer_type varchar [not null]
+  signature_image text [not null]
+  signature_date timestamp [default: `now()`]
+  ip_address varchar
+  is_valid boolean [default: true]
+  verification_token varchar
+  metadata jsonb
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Support System
+Table contact_message {
+  message_id uuid [pk]
+  name varchar [not null]
+  email varchar [not null]
+  subject varchar [not null]
+  message text [not null]
+  status varchar [default: 'pending']
+  assigned_to uuid [ref: > user_account.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Comments System
+Table comment {
+  comment_id uuid [pk]
+  entity_type varchar [not null]
+  entity_id uuid [not null]
+  user_id uuid [ref: > user_account.id]
+  content text [not null]
+  parent_id uuid [ref: > comment.comment_id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Add enum for copyright work types
+enum CopyrightWorkType {
+  literary
+  musical
+  dramatic
+  artistic
+  cinematographic
+  sound_recording
+  computer_program
+}
+
+// Add enum for applicant types
+enum ApplicantType {
+  individual
+  organization
+  government
+}
+
+// Client Profile Management
+Table client_profile {
+  client_id uuid [pk]
+  user_id uuid [ref: > user_account.id]
+  organization_name varchar
+  organization_type varchar
+  registration_number varchar
+  tax_id varchar
+  address text
+  contact_number varchar
+  website varchar
+  industry_sector varchar
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Verification Token Management
+Table verification_token {
+  identifier text [not null]
+  token text [not null]
+  expires timestamp [not null]
+}
+
+// Session Management
+Table session {
+  sessionToken text [pk]
+  userId uuid [ref: > user_account.id]
+  expires timestamp [not null]
+}
+
+// IP Portfolio Management
+Table ip_portfolio {
+  portfolio_id uuid [pk]
+  client_id uuid [ref: > client_profile.client_id]
+  title varchar [not null]
+  description text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Trademark Management
+Table trademark_application {
+  trademark_id uuid [pk]
+  application_id uuid [ref: > ip_application.id]
+  mark_type varchar [not null]
+  mark_text varchar
+  mark_image text
+  nice_classifications jsonb
+  goods_services text
+  claim_color boolean [default: false]
+  color_description text
+  translation text
+  transliteration text
+  disclaimer text
+  priority_claim boolean [default: false]
+  priority_date date
+  priority_country varchar
+  priority_number varchar
+  status varchar [default: 'draft']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+}
+
+// Would you like me to continue adding the remaining missing tables? These include:
+// 1. trademark_class
+// 2. trademark_owner
+// 3. trademark_representative
+// 4. utility_model_application
+// 5. design_application
+// 6. design_figure
+// 7. design_priority
+// 8. design_owner
+// And more... 

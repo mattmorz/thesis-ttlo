@@ -1,0 +1,9 @@
+// Export all client profile components
+export { ClientProfileInventory } from "./client-profile";
+export { AddProfileForm } from "./add-profile-form";
+export { ClientProfileFilter } from "./client-profile-filter";
+export { ProfileCard } from "./profile-card";
+export { ProfileView } from "./profile-view";
+export { ProfileStats } from "./profile-stats";
+export { RecentProfiles } from "./recent-profiles";
+export { ViewToggle } from "./client-profile-view-toggle";

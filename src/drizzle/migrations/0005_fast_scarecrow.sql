@@ -1,0 +1,2 @@
+ALTER TABLE "copyright_transaction_part2" DROP CONSTRAINT "check_transaction_type";--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part2" ADD CONSTRAINT "check_transaction_type" CHECK ((transaction_data->'transactionType')::jsonb ?| array['anonymousWork', 'correctionEntry', 'resaleRights', 'certifiedCopy', 'recordation', 'reconstitution', 'copyrightRegistration']);

@@ -1,0 +1,186 @@
+import { publicProcedure, router } from "@/trpc/init";
+import { z } from "zod";
+import { and, desc, eq, sql } from "drizzle-orm";
+import { db } from "@/drizzle/db";
+import {
+  activityLog,
+  applicationPhase,
+  ipApplication,
+  phaseTask,
+  userAccount,
+  ipApplicationEnrollment,
+} from "@/drizzle/migrations/schema";
+
+export const applicationRouter = router({
+  // Get application details
+  getApplicationDetails: publicProcedure
+    .input(
+      z.object({
+        applicationId: z.string().uuid(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { applicationId } = input;
+
+      const application = await db.query.ipApplication.findFirst({
+        where: eq(ipApplication.id, applicationId),
+      });
+
+      return application;
+    }),
+
+  // Get application phases
+  getApplicationPhases: publicProcedure
+    .input(
+      z.object({
+        applicationId: z.string().uuid(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { applicationId } = input;
+
+      const phases = await db.query.applicationPhase.findMany({
+        where: eq(applicationPhase.applicationId, applicationId),
+        with: {
+          phaseTasks: true,
+        },
+        orderBy: applicationPhase.startDate,
+      });
+
+      return phases;
+    }),
+
+  // Get activity logs
+  getActivityLogs: publicProcedure
+    .input(
+      z.object({
+        applicationId: z.string().uuid(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { applicationId } = input;
+
+      const logs = await db.query.activityLog.findMany({
+        where: eq(activityLog.applicationId, applicationId),
+        with: {
+          userAccount: {
+            columns: {
+              name: true,
+            },
+          },
+        },
+        orderBy: [desc(activityLog.createdAt)],
+        limit: 10,
+      });
+
+      return logs;
+    }),
+
+  // Get phase tasks
+  getPhaseTasks: publicProcedure
+    .input(
+      z.object({
+        phaseId: z.string().uuid(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { phaseId } = input;
+
+      const tasks = await db.query.phaseTask.findMany({
+        where: eq(phaseTask.phaseId, phaseId),
+        orderBy: [
+          // Order by status (completed last), then by priority (high first), then by due date
+          desc(eq(phaseTask.status, "completed")),
+          desc(eq(phaseTask.priority, "high")),
+          phaseTask.dueDate,
+        ],
+      });
+
+      return tasks;
+    }),
+
+  // Get all applications for dashboard stats
+  getAllApplications: publicProcedure.query(async () => {
+    return db.query.ipApplication.findMany({
+      orderBy: desc(ipApplication.createdAt),
+    });
+  }),
+
+  // Get unassigned applications
+  getUnassignedApplications: publicProcedure.query(async () => {
+    // Get all application IDs that have enrollments
+    const enrolledApplications = await db
+      .select({ id: ipApplicationEnrollment.applicationId })
+      .from(ipApplicationEnrollment);
+
+    // Extract the IDs into an array
+    const enrolledIds = enrolledApplications.map((app) => app.id);
+
+    // Find applications that don't have enrollments
+    if (enrolledIds.length === 0) {
+      // If no enrollments exist, return all applications
+      return db.query.ipApplication.findMany({
+        orderBy: desc(ipApplication.createdAt),
+      });
+    } else {
+      // Otherwise, use the SQL not-in query to filter
+      // Use a raw SQL query for the not-in operation
+      const unassignedApps = await db.query.ipApplication.findMany({
+        where: (app, { notInArray }) => notInArray(app.id, enrolledIds),
+      });
+      return unassignedApps;
+    }
+  }),
+
+  // Get application status statistics
+  getApplicationStatusStats: publicProcedure.query(async () => {
+    // Use proper count queries for each status
+    const [pending, inProgress, approved, completed] = await Promise.all([
+      db.query.ipApplication.findMany({
+        where: eq(ipApplication.status, "pending"),
+      }),
+      db.query.ipApplication.findMany({
+        where: eq(ipApplication.status, "in_progress"),
+      }),
+      db.query.ipApplication.findMany({
+        where: eq(ipApplication.status, "approved"),
+      }),
+      db.query.ipApplication.findMany({
+        where: eq(ipApplication.status, "completed"),
+      }),
+    ]);
+
+    return {
+      pending: pending.length,
+      inProgress: inProgress.length,
+      approved: approved.length,
+      completed: completed.length,
+    };
+  }),
+
+  // Get application type statistics
+  getApplicationTypeStats: publicProcedure.query(async () => {
+    // Use proper count queries for each type
+    const [patent, copyright, trademark, utilityModel] = await Promise.all([
+      db.query.ipApplication.findMany({
+        where: eq(ipApplication.ipType, "patent"),
+      }),
+      db.query.ipApplication.findMany({
+        where: eq(ipApplication.ipType, "copyright"),
+      }),
+      db.query.ipApplication.findMany({
+        where: eq(ipApplication.ipType, "trademark"),
+      }),
+      db.query.ipApplication.findMany({
+        where: eq(ipApplication.ipType, "utility_model"),
+      }),
+    ]);
+
+    return {
+      patent: patent.length,
+      copyright: copyright.length,
+      trademark: trademark.length,
+      utilityModel: utilityModel.length,
+    };
+  }),
+});

@@ -1,0 +1,1 @@
+ALTER TABLE "patent_utility_model_application" RENAME COLUMN "references" TO "literature_references";

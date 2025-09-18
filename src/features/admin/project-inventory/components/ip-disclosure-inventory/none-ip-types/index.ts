@@ -1,0 +1,1 @@
+export { NoneIpTypesInventory } from "./NoneIpTypesInventory";

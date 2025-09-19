@@ -28,7 +28,7 @@ const ALLOWED_DOMAINS = [
 ];
 
 // Admin email patterns - users with these email patterns will be assigned admin role
-const ADMIN_EMAILS = ["admin@example.com", "super@example.com"];
+const ADMIN_EMAILS = ["admin@example.com", "super@example.com","eomorales@carsu.edu.ph"];
 
 // TTLO staff email patterns - users with these email patterns will be assigned ttlo_staff role
 const TTLO_STAFF_EMAILS = ["staff@example.com", "ttlo@example.com"];
@@ -40,10 +40,11 @@ export const {
   signOut,
   unstable_update: update,
 } = NextAuth({
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
   ],
   pages: {

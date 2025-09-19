@@ -49,7 +49,7 @@ const shouldSkipTokenValidation = (path: string) => {
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
-  // Skip token validation for certain paths to improve performance
+  // Skip token validation for certain paths
   if (shouldSkipTokenValidation(pathname)) {
     return NextResponse.next();
   }
@@ -59,7 +59,6 @@ export async function middleware(request: NextRequest) {
     const tab = searchParams.get("tab") || "client-profile";
     const cleanUrl = new URL(`/forms?tab=${tab}`, request.url);
 
-    // Copy any other search params
     searchParams.forEach((value, key) => {
       if (key !== "tab") {
         cleanUrl.searchParams.set(key, value);
@@ -69,48 +68,56 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(cleanUrl);
   }
 
-  // For API routes, apply lighter middleware logic
+  // API routes: apply lighter middleware logic
   const isApiPath = pathname.startsWith("/api");
   if (isApiPath && !pathname.startsWith("/api/trpc")) {
     return NextResponse.next();
   }
 
-  // Get the token
+//console.log("🍪 Middleware cookies:", request.cookies.getAll());
+
+  // ✅ FIX: Always use NEXTAUTH_SECRET here
   const token = await getToken({
     req: request,
-    secret: process.env.AUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET,
+ cookieName: "__Secure-authjs.session-token",
   });
 
-  // Check if the user is authenticated
+  console.log(
+    "🔑 Middleware token:",
+    token ? "FOUND" : "NOT FOUND",
+    pathname
+  );
+
   const isAuthenticated = !!token;
   const isPublic = isPublicPath(pathname);
   const isAuthOnly = isAuthOnlyPath(pathname);
+  const isAdmin = token?.role === "admin" || token?.role === "ttlo_staff";
+  const AdminPath = pathname.startsWith("/admin");
 
-  // Save the original URL for redirects after auth
   const callbackUrl = searchParams.get("callbackUrl") || pathname;
 
-  // 1. Redirect authenticated users away from auth-only pages (like sign-in)
+  // Redirect authenticated users away from auth-only pages
   if (isAuthenticated && isAuthOnly) {
-    // If there's a callback URL, respect it; otherwise go to home page
     const redirectUrl =
       callbackUrl && callbackUrl !== "/auth/signin" ? callbackUrl : "/";
-
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
-  // 2. Redirect unauthenticated users to sign-in page if trying to access protected routes
+  // Redirect unauthenticated users to sign-in
   if (!isAuthenticated && !isPublic && !isApiPath) {
-    // Only redirect non-API and non-public routes
     const encodedCallbackUrl = encodeURIComponent(pathname);
     return NextResponse.redirect(
       new URL(`/auth/signin?callbackUrl=${encodedCallbackUrl}`, request.url)
     );
   }
 
-  // 3. Allow all other requests to proceed with additional cache headers
-  const response = NextResponse.next();
+  if (isAuthenticated && !isAdmin && AdminPath) {
+    return NextResponse.redirect(new URL("/auth/error", request.url));
+  }
 
-  // Add a marker to reduce duplicate session checking
+  // Allow other requests
+  const response = NextResponse.next();
   if (isAuthenticated) {
     response.headers.set("x-middleware-cache", "private, max-age=5");
   }
@@ -119,13 +126,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

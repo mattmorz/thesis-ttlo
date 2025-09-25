@@ -9,6 +9,7 @@ const publicPaths = [
   "/auth/unauthorized",
   "/api/auth",
   "/test-signin", // Our test page
+  "/guidelines",
 ];
 
 // Routes that authenticated users should be redirected from
@@ -24,7 +25,6 @@ const skipTokenValidationPaths = [
   "/public/",
 ];
 
-// Check if the current path is public
 const isPublicPath = (path: string) => {
   return publicPaths.some((publicPath) => {
     if (publicPath.endsWith("*")) {
@@ -34,14 +34,12 @@ const isPublicPath = (path: string) => {
   });
 };
 
-// Check if the path is an auth-only path (should redirect authenticated users)
 const isAuthOnlyPath = (path: string) => {
   return authOnlyPaths.some(
     (authPath) => path === authPath || path.startsWith(`${authPath}/`)
   );
 };
 
-// Check if we should skip token validation entirely (for performance)
 const shouldSkipTokenValidation = (path: string) => {
   return skipTokenValidationPaths.some((prefix) => path.startsWith(prefix));
 };
@@ -49,12 +47,10 @@ const shouldSkipTokenValidation = (path: string) => {
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
-  // Skip token validation for certain paths
   if (shouldSkipTokenValidation(pathname)) {
     return NextResponse.next();
   }
 
-  // Handle form URLs to use clean format
   if (pathname.match(/^\/forms\/[^\/]+$/)) {
     const tab = searchParams.get("tab") || "client-profile";
     const cleanUrl = new URL(`/forms?tab=${tab}`, request.url);
@@ -68,26 +64,36 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(cleanUrl);
   }
 
-  // API routes: apply lighter middleware logic
   const isApiPath = pathname.startsWith("/api");
   if (isApiPath && !pathname.startsWith("/api/trpc")) {
     return NextResponse.next();
   }
 
-//console.log("🍪 Middleware cookies:", request.cookies.getAll());
+  console.log("🍪 Middleware cookies:", request.cookies.getAll());
 
-  // ✅ FIX: Always use NEXTAUTH_SECRET here
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
- cookieName: "__Secure-authjs.session-token",
-  });
+  // ✅ Try multiple cookie names (v4 + v5)
+  const possibleCookieNames = [
+    "authjs.session-token",           // v5
+    "__Secure-authjs.session-token",  // v5 secure
+    "next-auth.session-token",        // v4
+    "__Secure-next-auth.session-token" // v4 secure
+  ];
 
-  console.log(
-    "🔑 Middleware token:",
-    token ? "FOUND" : "NOT FOUND",
-    pathname
-  );
+  let token = null;
+
+  for (const cookieName of possibleCookieNames) {
+    token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+      cookieName,
+    });
+    if (token) {
+      console.log(`✅ Found token in cookie: ${cookieName}`);
+      break;
+    }
+  }
+
+  console.log("🔑 Middleware token:", token ? "FOUND" : "NOT FOUND", pathname);
 
   const isAuthenticated = !!token;
   const isPublic = isPublicPath(pathname);
@@ -97,14 +103,12 @@ export async function middleware(request: NextRequest) {
 
   const callbackUrl = searchParams.get("callbackUrl") || pathname;
 
-  // Redirect authenticated users away from auth-only pages
   if (isAuthenticated && isAuthOnly) {
     const redirectUrl =
       callbackUrl && callbackUrl !== "/auth/signin" ? callbackUrl : "/";
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
-  // Redirect unauthenticated users to sign-in
   if (!isAuthenticated && !isPublic && !isApiPath) {
     const encodedCallbackUrl = encodeURIComponent(pathname);
     return NextResponse.redirect(
@@ -116,7 +120,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/error", request.url));
   }
 
-  // Allow other requests
   const response = NextResponse.next();
   if (isAuthenticated) {
     response.headers.set("x-middleware-cache", "private, max-age=5");

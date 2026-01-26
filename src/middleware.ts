@@ -84,11 +84,14 @@ export async function middleware(request: NextRequest) {
   for (const cookieName of possibleCookieNames) {
     token = await getToken({
       req: request,
-      secret: process.env.NEXTAUTH_SECRET,
+      // secret: process.env.NEXTAUTH_SECRET,
+      secret: process.env.AUTH_SECRET,
+
       cookieName,
     });
     if (token) {
       console.log(`✅ Found token in cookie: ${cookieName}`);
+      console.log("Token details:", token);
       break;
     }
   }

@@ -554,7 +554,7 @@ export function DeedAssignmentForm() {
             data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[#1B5E20]
             hover:text-[#1B5E20]/80 transition-colors"
           >
-            Deed Details
+            Personal Information
           </TabsTrigger>
           <TabsTrigger
             value="royalty"
@@ -565,7 +565,7 @@ export function DeedAssignmentForm() {
             data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[#1B5E20]
             hover:text-[#1B5E20]/80 transition-colors"
           >
-            Royalty Agreement
+            Deed Details
           </TabsTrigger>
           <TabsTrigger
             value="signatory"

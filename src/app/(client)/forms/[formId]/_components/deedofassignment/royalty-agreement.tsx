@@ -37,7 +37,7 @@ export function RoyaltyAgreement({
       <Card className="shadow-sm">
         <CardHeader className="bg-slate-50 rounded-t-lg">
           <CardTitle className="text-xl text-[#1B5E20]">
-            Royalty Agreement
+            Deed Details
           </CardTitle>
           <CardDescription>
             Review the royalty agreement terms for your intellectual property

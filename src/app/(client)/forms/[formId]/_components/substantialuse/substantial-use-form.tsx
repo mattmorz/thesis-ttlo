@@ -1553,15 +1553,15 @@ export function SubstantialUseForm() {
         <Card>
           <div className="flex flex-col space-y-1.5 p-6 bg-slate-50 rounded-t-lg">
             <h3 className="font-semibold tracking-tight text-xl text-[#1B5E20]">
-              Applicant Information and Signature
+              Researcher Information and Signature
             </h3>
             <p className="text-sm text-muted-foreground">
-              Applicant details and signature date
+              Researcher details and signature date
             </p>
           </div>
           <CardContent className="pt-6 space-y-6">
             <div className="flex justify-between items-center">
-              <FormLabel className="text-base">Applicant Details</FormLabel>
+              <FormLabel className="text-base">Researcher Details</FormLabel>
               {!isFormDisabled && (
                 <Button
                   type="button"
@@ -1577,7 +1577,7 @@ export function SubstantialUseForm() {
                   }
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Applicant
+                  Add Researcher
                 </Button>
               )}
             </div>
@@ -1586,7 +1586,7 @@ export function SubstantialUseForm() {
               <div key={field.id} className="relative">
                 <div className="border rounded-lg p-6">
                   <div className="absolute -top-3 left-4 bg-background px-2 text-sm font-medium text-muted-foreground">
-                    Applicant {index + 1}
+                    Researcher {index + 1}
                   </div>
 
                   <div className="space-y-4">

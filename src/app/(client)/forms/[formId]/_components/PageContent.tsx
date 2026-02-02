@@ -405,6 +405,7 @@ export function PageContent() {
   const [mounted, setMounted] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
   const [showNewAppDialog, setShowNewAppDialog] = useState(false);
+  // !! check above
   const [lastCheckTime, setLastCheckTime] = useState(0);
   const [isApplicationsExpanded, setIsApplicationsExpanded] = useState(false);
   const [clientSideAllFormsCompleted, setClientSideAllFormsCompleted] =
@@ -786,6 +787,25 @@ export function PageContent() {
     "ip-disclosure": "ipDisclosure",
     "substantial-use": "substantialUse",
     "deed-assignment": "deedAssignment",
+  };
+
+  // check what tab is active
+  const isTabEnabled = (tabId: string) => {
+    if (!activeApplicationId) return false; // no application selected
+
+    // Get index of this tab
+    const tabIndex = sidebarItems.findIndex((item) => item.id === tabId);
+
+    // First tab is always enabled
+    if (tabIndex === 0) return true;
+
+    // Previous tab
+    const prevTabId = sidebarItems[tabIndex - 1].id;
+
+    // Check if previous tab is completed
+    return knownApplicationStatus[activeApplicationId]?.status?.[
+      formTypeMapping[prevTabId]
+    ];
   };
 
   // Simplify application switching - delegate to the robust implementation
@@ -1641,6 +1661,7 @@ export function PageContent() {
               {/* Forms Navigation */}
               <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
                 <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
+                  {/* !! add below button being inactive as the progress needs to be completed in order */}
                   <h2 className="font-medium text-sm text-gray-700">
                     Form Sections
                   </h2>
@@ -1677,14 +1698,16 @@ export function PageContent() {
                           activeForm === item.id
                             ? "bg-[#1B5E20]/10 text-[#1B5E20] font-medium"
                             : "text-gray-600 hover:text-gray-900",
+                          !isTabEnabled(item.id) &&
                           !activeApplicationId &&
                             "opacity-50 cursor-not-allowed hover:bg-transparent"
                         )}
                         onClick={() =>
+                          isTabEnabled(item.id) &&
                           activeApplicationId &&
                           handleTabChange(item.id as string)
                         }
-                        disabled={!activeApplicationId}
+                        disabled={!isTabEnabled(item.id) || !activeApplicationId}
                       >
                         <div className="flex items-center gap-2">
                           <div

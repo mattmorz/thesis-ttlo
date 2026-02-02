@@ -241,6 +241,7 @@ const GettingStartedGuide = ({
                 <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
                   Step 2
                 </div>
+                {/* Make below disabled as they need to complete their client profile or personal information  */}
                 <div className="mb-3">
                   <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
                     <FileText className="h-4 w-4" />
@@ -1554,7 +1555,8 @@ export function PageContent() {
                   </SelectContent>
                 </Select>
               )}
-              <Button
+              {/* commented as this was not right, user should always first fill out the personal information  */}
+              {/* <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowNewAppDialog(true)}
@@ -1562,7 +1564,7 @@ export function PageContent() {
               >
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span>New Application</span>
-              </Button>
+              </Button> */}
             </div>
           </div>
 

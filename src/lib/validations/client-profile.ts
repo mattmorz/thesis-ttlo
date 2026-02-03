@@ -11,6 +11,8 @@ export const personalInfoSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   middleName: z.string().optional(),
+  
+  
   gender: z.enum(["male", "female", "prefer_not_to_say"]).nullable(),
   age: z.number().min(1, "Age is required"),
   citizenship: z.string().min(1, "Citizenship is required"),

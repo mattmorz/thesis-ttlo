@@ -18,6 +18,7 @@ export function FormProgressTracker({
     ipDisclosure: false,
     substantialUse: false,
     deedAssignment: false,
+    applicationTitle: false,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +77,7 @@ export function FormProgressTracker({
         ipDisclosure: Boolean(result.data.ipDisclosure),
         substantialUse: Boolean(result.data.substantialUse),
         deedAssignment: Boolean(result.data.deedAssignment),
+        applicationTitle: Boolean(result.data.applicationTitle),
       });
 
       // Update DOM directly for immediate feedback
@@ -173,6 +175,46 @@ export function FormProgressTracker({
     };
   }, [applicationId]);
 
+  // Listen for form completion events for real-time updates
+  useEffect(() => {
+    const handleFormUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        formType: string;
+        completed: boolean;
+        applicationId?: string;
+      }>;
+      
+      // Ensure the event is for the current application
+      if (customEvent.detail.applicationId && customEvent.detail.applicationId !== applicationId) {
+        return;
+      }
+
+      const { formType, completed } = customEvent.detail;
+
+      if (formType in formStatus) {
+        setFormStatus((prevStatus) => {
+          if (prevStatus[formType] !== completed) {
+            console.log(`Real-time update for ${formType}: ${completed}`);
+            return { ...prevStatus, [formType]: completed };
+          }
+          return prevStatus;
+        });
+        
+        // Also update the DOM immediately
+        updateDOMFormProgress({ ...formStatus, [formType]: completed });
+      }
+    };
+
+    window.addEventListener("form_completed", handleFormUpdate);
+    window.addEventListener("clientProfileFormCompleted", handleFormUpdate);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("form_completed", handleFormUpdate);
+      window.removeEventListener("clientProfileFormCompleted", handleFormUpdate);
+    };
+  }, [applicationId, formStatus]);
+
   // Calculate completed forms count
   const completedCount = Object.values(formStatus).filter(Boolean).length;
 
@@ -193,6 +235,12 @@ export function FormProgressTracker({
             label: "Client Profile",
             required: true,
             completed: formStatus.clientProfile,
+          },
+          {
+            id: "application-title",
+            label: "Application Title",
+            required: true,
+            completed: formStatus.applicationTitle,
           },
           {
             id: "ip-disclosure",

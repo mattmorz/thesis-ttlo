@@ -86,6 +86,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Link from "next/link";
+import { trpc } from "@/app/_trpc/client";
 
 // Import form components
 import { ClientProfileForm } from "./clientProfile/client-profile-form";
@@ -101,6 +102,11 @@ const sidebarItems = formNavigationConfig.map((item) => {
     case FormTabs.CLIENT_PROFILE:
       icon = <User className="h-4 w-4" />;
       break;
+
+    case FormTabs.Application_Title:
+      icon = <FolderOpen className="h-4 w-4" />;
+      break;
+      
     case FormTabs.IP_DISCLOSURE:
       icon = <FileText className="h-4 w-4" />;
       break;
@@ -424,6 +430,21 @@ export function PageContent() {
     refetchApplications,
     isLoading: isApplicationsLoading,
   } = useActiveApplication();
+
+  const createApplicationMutation = trpc.formIntegration.createApplication.useMutation({
+    onSuccess: (newApplication) => {
+      if (newApplication?.id) {
+        toast.dismiss("creating-app-toast");
+        toast.success("New application created successfully.");
+        setActiveApplicationId(newApplication.id);
+      }
+    },
+    onError: (error) => {
+      toast.dismiss("creating-app-toast");
+      toast.error("Failed to create application.");
+      console.error("Error creating application:", error);
+    }
+  });
 
   // Form status state
   const [knownApplicationStatus, setKnownApplicationStatus] = useState<
@@ -1489,6 +1510,21 @@ export function PageContent() {
     }
   };
 
+  const handleCreateFirstApplication = () => {
+    if (!session?.user?.id) {
+      toast.error("You must be logged in to create an application.");
+      return;
+    }
+
+    toast.loading("Creating new application...", { id: "creating-app-toast" });
+
+    createApplicationMutation.mutate({
+      userId: session.user.id,
+      title: "Untitled Application", // Default title as requested
+      ipType: "not_sure", // Safe default
+    });
+  };
+
   /* Add the Getting Started Guide here - with error handling */
   const renderGettingStartedGuide = () => {
     try {
@@ -1788,12 +1824,15 @@ export function PageContent() {
                       To begin your intellectual property application, please
                       create or select an application.
                     </p>
-                    <Button
-                      onClick={() => setShowNewAppDialog(true)}
+                                        <Button
+                      onClick={handleCreateFirstApplication}
+                      disabled={createApplicationMutation.isLoading}
                       className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
                     >
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      Create Your First Application
+                      {createApplicationMutation.isLoading
+                        ? "Creating..."
+                        : "Create Your First Application"}
                     </Button>
                   </div>
                 </div>

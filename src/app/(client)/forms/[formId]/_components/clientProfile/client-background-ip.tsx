@@ -300,6 +300,7 @@ export function ClientBackgroundIP({
     // Skip during server-side rendering
     if (typeof window === "undefined") return;
 
+
     // Add event listener for tab changes
     const handleTabChange = () => {
       if (isFormLoaded) {
@@ -508,6 +509,29 @@ export function ClientBackgroundIP({
 
   // Watch fields for conditional rendering
   const hasIPExperience = form.watch("ipExperience.hasExperience");
+
+  // Watch fields for disabling the "Submit Form" button
+  const publishedResearch = form.watch("publishedResearch.value");
+  const developedMaterials = form.watch("developedMaterials.value");
+  const familiarWithIPRights = form.watch("familiarWithIPRights.value");
+  const ipExperienceTypes = form.watch("ipExperience.types");
+  const otherSpecify = form.watch("ipExperience.otherSpecify");
+
+  let isSubmitDisabled =
+    !publishedResearch ||
+    !developedMaterials ||
+    !familiarWithIPRights ||
+    !hasIPExperience;
+
+  if (hasIPExperience === "yes") {
+    const hasOneType = Object.values(ipExperienceTypes).some((v) => v);
+    if (!hasOneType) {
+      isSubmitDisabled = true;
+    }
+    if (ipExperienceTypes.other && !otherSpecify?.trim()) {
+      isSubmitDisabled = true;
+    }
+  }
 
   // Handle form submission
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -1342,7 +1366,7 @@ export function ClientBackgroundIP({
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">
-                      Have you published any research output?
+                      Have you published any research output? <span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex items-center space-x-2">
@@ -1400,7 +1424,7 @@ export function ClientBackgroundIP({
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">
                       Have you developed instructional materials (IMs) (e.g.
-                      Books, Manuals, Journals, etc.)?
+                      Books, Manuals, Journals, etc.)? <span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex items-center space-x-2">
@@ -1458,7 +1482,7 @@ export function ClientBackgroundIP({
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">
                       Are you familiar with the Intellectual Property Rights (RA
-                      8293)?
+                      8293)? <span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="flex items-center space-x-2">
@@ -1501,7 +1525,7 @@ export function ClientBackgroundIP({
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">
-                      Do you have any experience in applying for IP protection?
+                      Do you have any experience in applying for IP protection? <span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="flex items-center space-x-2">
@@ -1725,7 +1749,7 @@ export function ClientBackgroundIP({
               type="button"
               onClick={handleCompleteForm}
               className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isSubmitDisabled}
             >
               {isSubmitting ? (
                 <>

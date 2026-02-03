@@ -116,6 +116,60 @@ export function ClientProfileForm() {
     background: null,
   });
 
+  const [isEducationTabDisabled, setIsEducationTabDisabled] = useState(true);
+  const [isBackgroundTabDisabled, setIsBackgroundTabDisabled] = useState(true);
+
+  // Add a useEffect to check form completion and disable tabs accordingly
+  useEffect(() => {
+    const checkPersonalFormCompletion = () => {
+      if (typeof window === "undefined") return false;
+      const key = activeApplicationId
+        ? `clientInformationData-${activeApplicationId}`
+        : "clientInformationData";
+      const data =
+        localStorage.getItem(key) ||
+        localStorage.getItem("clientInformationData");
+      if (!data) return false;
+      try {
+        const parsed = JSON.parse(data);
+        return !!(
+          parsed.firstName?.trim() &&
+          parsed.lastName?.trim() &&
+          parsed.mailingAddress?.trim() &&
+          parsed.contactNumber?.trim()
+        );
+      } catch {
+        return false;
+      }
+    };
+
+    const checkEducationFormCompletion = () => {
+      if (typeof window === "undefined") return false;
+      const data = localStorage.getItem("educationalBackgroundData");
+      if (!data) return false;
+      try {
+        const parsed = JSON.parse(data);
+        const isOtherComplete =
+          parsed.highestDegree?.value !== "other" ||
+          (parsed.highestDegree?.value === "other" &&
+            parsed.highestDegree?.otherValue?.trim());
+        return !!(
+          parsed.degree?.trim() &&
+          parsed.profession?.trim() &&
+          isOtherComplete
+        );
+      } catch {
+        return false;
+      }
+    };
+
+    const personalComplete = checkPersonalFormCompletion();
+    const educationComplete = checkEducationFormCompletion();
+
+    setIsEducationTabDisabled(!personalComplete);
+    setIsBackgroundTabDisabled(!personalComplete || !educationComplete);
+  }, [activeTab, formState, activeApplicationId]);
+
   // Flag to prevent showing the localStorage prompt multiple times
   const [hasShownStoragePrompt, setHasShownStoragePrompt] = useState(false);
   // Ref to track if form data has been initialized
@@ -949,8 +1003,7 @@ export function ClientProfileForm() {
           Client Profile Form
         </h2>
         <p className="text-sm text-muted-foreground">
-          Fill out your personal details below. You can navigate between
-          sections using the tabs.
+          Fill out your personal details below.
         </p>
       </div>
 
@@ -974,23 +1027,25 @@ export function ClientProfileForm() {
           </TabsTrigger>
           <TabsTrigger
             value="education"
+            disabled={isEducationTabDisabled}
             className="relative px-3 py-2 text-sm font-medium text-muted-foreground
             data-[state=active]:text-[#1B5E20] data-[state=active]:bg-transparent
             data-[state=active]:after:absolute data-[state=active]:after:bottom-0 
             data-[state=active]:after:left-0 data-[state=active]:after:right-0
             data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[#1B5E20]
-            hover:text-[#1B5E20]/80 transition-colors"
+            hover:text-[#1B5E20]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Educational Background
           </TabsTrigger>
           <TabsTrigger
             value="background"
+            disabled={isBackgroundTabDisabled}
             className="relative px-3 py-2 text-sm font-medium text-muted-foreground
             data-[state=active]:text-[#1B5E20] data-[state=active]:bg-transparent
             data-[state=active]:after:absolute data-[state=active]:after:bottom-0 
             data-[state=active]:after:left-0 data-[state=active]:after:right-0
             data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[#1B5E20]
-            hover:text-[#1B5E20]/80 transition-colors"
+            hover:text-[#1B5E20]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Background IP
           </TabsTrigger>

@@ -89,7 +89,7 @@ declare global {
     updateIPFormStatus?: (
       formType: string,
       completed: boolean,
-      applicationId: string
+      applicationId: string,
     ) => void;
     _apiRequestsInProgress?: Record<string, boolean>;
   }
@@ -121,7 +121,7 @@ export function ClientInformation({
   const currentTab = searchParams.get("tab") || "personal";
   const { data: session } = useSession();
   const [formData, setFormData] = useState<z.infer<typeof formSchema> | null>(
-    null
+    null,
   );
   const [error, setError] = useState<Error | null>(null);
   const [isFormLoaded, setIsFormLoaded] = useState(false);
@@ -129,7 +129,7 @@ export function ClientInformation({
   const [isUpdating, setIsUpdating] = useState(false);
   const [clickedButton, setClickedButton] = useState<string | null>(null);
   const [selectedCitizenship, setSelectedCitizenship] = useState<string | null>(
-    null
+    null,
   );
 
   // Get active application for registry integration
@@ -172,7 +172,7 @@ export function ClientInformation({
   useEffect(() => {
     if (hasCompany === false) {
       console.log(
-        "[ClientInformation] Toggle is now off (academic institution)"
+        "[ClientInformation] Toggle is now off (academic institution)",
       );
     } else {
       console.log("[ClientInformation] Toggle is now on (company/institution)");
@@ -186,7 +186,7 @@ export function ClientInformation({
       console.log("[ClientInformation] InitialData from server:", initialData);
       console.log(
         "[ClientInformation] Current applicationId:",
-        activeApplicationId
+        activeApplicationId,
       );
 
       // Use applicationId as key in localStorage to prevent cross-application data leakage
@@ -201,7 +201,7 @@ export function ClientInformation({
         const legacyData = localStorage.getItem("clientInformationData");
         if (legacyData) {
           console.log(
-            "[ClientInformation] Found data in legacy localStorage key, migrating..."
+            "[ClientInformation] Found data in legacy localStorage key, migrating...",
           );
           // Migrate to new application-specific key
           localStorage.setItem(storageKey, legacyData);
@@ -237,7 +237,7 @@ export function ClientInformation({
       } else {
         // No initial data, start with empty form
         console.log(
-          "[ClientInformation] No initial data provided, using empty form"
+          "[ClientInformation] No initial data provided, using empty form",
         );
         formattedData = {
           firstName: "",
@@ -267,7 +267,7 @@ export function ClientInformation({
         const parsedData = JSON.parse(savedData);
         console.log(
           "[ClientInformation] Found saved data in localStorage:",
-          parsedData
+          parsedData,
         );
 
         // Override initialData with localStorage data
@@ -295,7 +295,7 @@ export function ClientInformation({
 
         console.log(
           "[ClientInformation] Final merged data (localStorage prioritized):",
-          formattedData
+          formattedData,
         );
       }
 
@@ -309,7 +309,7 @@ export function ClientInformation({
         formattedData.gender.value = "male";
       } else if (
         !["male", "female", "prefer_not_to_say"].includes(
-          formattedData.gender.value
+          formattedData.gender.value,
         )
       ) {
         formattedData.gender.value = "male";
@@ -370,18 +370,18 @@ export function ClientInformation({
           if (hasCollegeData) {
             formattedData.hasCompany = false;
             console.log(
-              "[ClientInformation] Detected college data, setting hasCompany to false"
+              "[ClientInformation] Detected college data, setting hasCompany to false",
             );
           } else if (hasCompanyData) {
             formattedData.hasCompany = true;
             console.log(
-              "[ClientInformation] Detected company data, setting hasCompany to true"
+              "[ClientInformation] Detected company data, setting hasCompany to true",
             );
           } else {
             // Default to company if no data is present
             formattedData.hasCompany = true;
             console.log(
-              "[ClientInformation] No affiliation data detected, defaulting to company"
+              "[ClientInformation] No affiliation data detected, defaulting to company",
             );
           }
         }
@@ -393,7 +393,7 @@ export function ClientInformation({
       if (formattedData) {
         console.log(
           "[ClientInformation] Setting form with data:",
-          formattedData
+          formattedData,
         );
 
         // Ensure the form is reset with the correct data
@@ -406,7 +406,7 @@ export function ClientInformation({
             setSelectedCitizenship(formattedData.citizenship.value);
             console.log(
               "[ClientInformation] Updated citizenship selection:",
-              formattedData.citizenship
+              formattedData.citizenship,
             );
           }
         }, 0);
@@ -446,7 +446,7 @@ export function ClientInformation({
 
         console.log(
           "[ClientInformation] Tab change detected, saving form state:",
-          formattedValues
+          formattedValues,
         );
         localStorage.setItem(storageKey, JSON.stringify(formattedValues));
       }
@@ -471,7 +471,7 @@ export function ClientInformation({
           : "clientInformationData";
 
         console.log(
-          "[ClientInformation] Page unload detected, saving form state"
+          "[ClientInformation] Page unload detected, saving form state",
         );
         localStorage.setItem(storageKey, JSON.stringify(formattedValues));
       }
@@ -497,11 +497,11 @@ export function ClientInformation({
         };
 
         console.log(
-          "[ClientInformation] Component unmounting, saving form state"
+          "[ClientInformation] Component unmounting, saving form state",
         );
         localStorage.setItem(
           "clientInformationData",
-          JSON.stringify(formattedValues)
+          JSON.stringify(formattedValues),
         );
       }
 
@@ -544,12 +544,12 @@ export function ClientInformation({
           localStorage.setItem(storageKey, JSON.stringify(formattedValues));
           console.log(
             "[ClientInformation] Saved personal information data on tab change:",
-            formattedValues
+            formattedValues,
           );
         } catch (error) {
           console.error(
             "[ClientInformation] Error saving personal data:",
-            error
+            error,
           );
         }
       }
@@ -609,9 +609,9 @@ export function ClientInformation({
           values.hasCompany !== undefined
             ? values.hasCompany
             : (values.collegeName && values.collegeName.trim() !== "") ||
-              (values.departmentName && values.departmentName.trim() !== "")
-            ? false
-            : true,
+                (values.departmentName && values.departmentName.trim() !== "")
+              ? false
+              : true,
         // Explicitly ensure no fields are accidentally cleared
         companyName: values.companyName || undefined,
         companyEmail: values.companyEmail || undefined,
@@ -634,7 +634,7 @@ export function ClientInformation({
           value:
             !values.gender?.value ||
             !["male", "female", "prefer_not_to_say"].includes(
-              values.gender.value
+              values.gender.value,
             )
               ? "male"
               : values.gender.value,
@@ -736,7 +736,7 @@ export function ClientInformation({
 
       console.log(
         "[ClientInformation] Submitting API data with hasCompany=",
-        formattedValues.hasCompany
+        formattedValues.hasCompany,
       );
       console.log("[ClientInformation] College data:", {
         collegeName: apiData.personalInfo.collegeName,
@@ -760,7 +760,7 @@ export function ClientInformation({
       // Log the stringified version for reference
       console.log(
         "[ClientInformation] API DATA RAW:",
-        JSON.stringify(apiData.personalInfo, null, 2)
+        JSON.stringify(apiData.personalInfo, null, 2),
       );
 
       // Log the boolean value explicitly for clarity
@@ -768,7 +768,7 @@ export function ClientInformation({
         "[ClientInformation] hasCompany raw value:",
         personalInfoData.hasCompany,
         "type:",
-        typeof personalInfoData.hasCompany
+        typeof personalInfoData.hasCompany,
       );
 
       // Create a cache key for this request to prevent duplicates
@@ -780,7 +780,7 @@ export function ClientInformation({
         window._apiRequestsInProgress[cacheKey]
       ) {
         console.log(
-          `Request already in progress for ${applicationId}, waiting...`
+          `Request already in progress for ${applicationId}, waiting...`,
         );
         // Wait for the existing request to complete
         await new Promise((resolve) => {
@@ -807,18 +807,18 @@ export function ClientInformation({
       try {
         // First, check if a profile already exists for this application
         console.log(
-          `Checking if profile exists for application: ${applicationId}`
+          `Checking if profile exists for application: ${applicationId}`,
         );
         const checkResponse = await safeFetch(
           `/api/client-profile/exists/${applicationId}`,
           {},
-          `client-info-exists-${applicationId}` // Unique cache key
+          `client-info-exists-${applicationId}`, // Unique cache key
         );
 
         // Handle 404 or other error status codes gracefully
         if (checkResponse.status === 404) {
           console.log(
-            `Profile not found for application: ${applicationId}, will create new profile`
+            `Profile not found for application: ${applicationId}, will create new profile`,
           );
           // Use POST method if the application doesn't exist
           const method = "POST";
@@ -830,7 +830,7 @@ export function ClientInformation({
 
         if (!checkResponse.ok) {
           throw new Error(
-            `Failed to check profile existence: ${checkResponse.statusText}`
+            `Failed to check profile existence: ${checkResponse.statusText}`,
           );
         }
 
@@ -854,7 +854,7 @@ export function ClientInformation({
         const method = exists ? "PUT" : "POST";
 
         console.log(
-          `Using ${method} method for client profile. Profile exists: ${exists}`
+          `Using ${method} method for client profile. Profile exists: ${exists}`,
         );
 
         await submitProfileData(apiData, method, toastId, applicationId);
@@ -878,7 +878,7 @@ export function ClientInformation({
       toast.error(
         error instanceof Error
           ? error.message
-          : "An error occurred while saving your data"
+          : "An error occurred while saving your data",
       );
     }
   }
@@ -886,7 +886,7 @@ export function ClientInformation({
   // Helper function to dispatch form submission events
   async function dispatchFormEvents(
     clientProfileId: string,
-    registryId?: string | null
+    registryId?: string | null,
   ) {
     if (typeof window === "undefined" || !activeApplicationId) return;
 
@@ -896,7 +896,7 @@ export function ClientInformation({
         clientProfileId,
         registryId,
         applicationId: activeApplicationId,
-      }
+      },
     );
 
     // If no registryId provided, try to register directly
@@ -910,13 +910,13 @@ export function ClientInformation({
         const registryResult = await registerInFormRegistry(
           clientProfileId,
           activeApplicationId,
-          formattedPersonalInfo
+          formattedPersonalInfo,
         );
 
         if (registryResult?.registryId) {
           console.log(
             "[ClientInformation] Successfully registered form in registry:",
-            registryResult
+            registryResult,
           );
           // Update registryId with the one we just created
           registryId = registryResult.registryId;
@@ -961,14 +961,14 @@ export function ClientInformation({
     apiData: any,
     method: string,
     toastId: string | number,
-    applicationId: string
+    applicationId: string,
   ) {
     try {
       // Ensure the registerForm flag is set to true to explicitly request form registration
       apiData.registerForm = true;
 
       console.log(
-        `📝 Submitting client profile with registerForm=${apiData.registerForm} for application ${applicationId} using ${method}`
+        `📝 Submitting client profile with registerForm=${apiData.registerForm} for application ${applicationId} using ${method}`,
       );
 
       // Submit to API
@@ -981,7 +981,7 @@ export function ClientInformation({
           },
           body: JSON.stringify(apiData),
         },
-        `client-info-submit-${applicationId}-${method}` // Unique cache key
+        `client-info-submit-${applicationId}-${method}`, // Unique cache key
       );
 
       // Clone the response to prevent body stream already read errors
@@ -1025,7 +1025,7 @@ export function ClientInformation({
 
           // Use the current value of hasCompany from the form
           const expectedHasCompany = ensureBool(
-            apiData.personalInfo.hasCompany
+            apiData.personalInfo.hasCompany,
           );
           const actualHasCompany = responseData.hasCompany;
 
@@ -1036,7 +1036,7 @@ export function ClientInformation({
               {
                 expected: expectedHasCompany,
                 actual: actualHasCompany,
-              }
+              },
             );
 
             // If we're sending academic institution data (hasCompany=false) but it's not saved
@@ -1055,7 +1055,7 @@ export function ClientInformation({
                     collegeName: responseData.collegeName,
                     departmentName: responseData.departmentName,
                   },
-                }
+                },
               );
 
               // Show error about college data not saving
@@ -1094,7 +1094,7 @@ export function ClientInformation({
                     name: `${apiData.personalInfo.firstName} ${apiData.personalInfo.lastName}`,
                     email: apiData.personalInfo.email,
                   },
-                }
+                },
               );
 
               // Try up to 3 times with exponential backoff
@@ -1106,11 +1106,11 @@ export function ClientInformation({
 
                 if (attemptCount > 1) {
                   console.log(
-                    `[ClientInformation] Registry API retry attempt ${attemptCount}`
+                    `[ClientInformation] Registry API retry attempt ${attemptCount}`,
                   );
                   // Wait with exponential backoff: 1s, 2s, 4s
                   await new Promise((resolve) =>
-                    setTimeout(resolve, Math.pow(2, attemptCount - 1) * 500)
+                    setTimeout(resolve, Math.pow(2, attemptCount - 1) * 500),
                   );
                 }
 
@@ -1136,7 +1136,7 @@ export function ClientInformation({
                         },
                       ],
                     }),
-                  }
+                  },
                 );
 
                 if (directRegistryResponse.ok) {
@@ -1145,19 +1145,19 @@ export function ClientInformation({
                   if (directRegistryResult?.data?.registryId) {
                     console.log(
                       "[ClientInformation] Direct registry API call successful:",
-                      directRegistryResult
+                      directRegistryResult,
                     );
 
                     // Dispatch form events with the new registry ID
                     dispatchFormEvents(
                       clientProfileId,
-                      directRegistryResult.data.registryId
+                      directRegistryResult.data.registryId,
                     );
                     registrySuccess = true;
                     break;
                   } else {
                     console.warn(
-                      "[ClientInformation] Registry API returned success but no registry ID"
+                      "[ClientInformation] Registry API returned success but no registry ID",
                     );
                   }
                 } else {
@@ -1166,7 +1166,7 @@ export function ClientInformation({
                     {
                       status: directRegistryResponse.status,
                       statusText: directRegistryResponse.statusText,
-                    }
+                    },
                   );
 
                   // Try to get error details
@@ -1174,7 +1174,7 @@ export function ClientInformation({
                     const errorData = await directRegistryResponse.json();
                     console.error(
                       "[ClientInformation] Registry error details:",
-                      errorData
+                      errorData,
                     );
                   } catch (parseError) {
                     // Ignore parse errors
@@ -1185,7 +1185,7 @@ export function ClientInformation({
               // If all retries failed, still continue with form submission
               if (!registrySuccess) {
                 console.error(
-                  "[ClientInformation] All registry API attempts failed"
+                  "[ClientInformation] All registry API attempts failed",
                 );
                 // Still dispatch events but without registry ID
                 dispatchFormEvents(clientProfileId, null);
@@ -1193,7 +1193,7 @@ export function ClientInformation({
             } catch (regError) {
               console.error(
                 "[ClientInformation] Error in direct registry API call:",
-                regError
+                regError,
               );
               // Still dispatch events without registry ID
               dispatchFormEvents(clientProfileId, null);
@@ -1279,9 +1279,9 @@ export function ClientInformation({
           values.hasCompany !== undefined
             ? values.hasCompany
             : (values.collegeName && values.collegeName.trim() !== "") ||
-              (values.departmentName && values.departmentName.trim() !== "")
-            ? false
-            : true,
+                (values.departmentName && values.departmentName.trim() !== "")
+              ? false
+              : true,
         // Explicitly ensure no fields are accidentally cleared
         companyName: values.companyName || undefined,
         companyEmail: values.companyEmail || undefined,
@@ -1304,7 +1304,7 @@ export function ClientInformation({
           value:
             !values.gender?.value ||
             !["male", "female", "prefer_not_to_say"].includes(
-              values.gender.value
+              values.gender.value,
             )
               ? "male"
               : values.gender.value,
@@ -1331,7 +1331,7 @@ export function ClientInformation({
             educationalBackground = JSON.parse(educationData);
             console.log(
               "Loaded educational background data for update:",
-              educationalBackground
+              educationalBackground,
             );
           } catch (parseError) {
             console.error("Failed to parse education data:", parseError);
@@ -1359,18 +1359,18 @@ export function ClientInformation({
 
       // First, check if a profile already exists for this application
       console.log(
-        `Checking if profile exists for application: ${applicationId}`
+        `Checking if profile exists for application: ${applicationId}`,
       );
       const checkResponse = await safeFetch(
         `/api/client-profile/exists/${applicationId}`,
         {},
-        `client-info-exists-${applicationId}` // Unique cache key
+        `client-info-exists-${applicationId}`, // Unique cache key
       );
 
       // Handle 404 or other error status codes gracefully
       if (checkResponse.status === 404) {
         console.log(
-          `Profile not found for application: ${applicationId}, will create new profile`
+          `Profile not found for application: ${applicationId}, will create new profile`,
         );
         // Use POST method if the application doesn't exist
         const method = "POST";
@@ -1381,14 +1381,14 @@ export function ClientInformation({
           method,
           applicationId,
           educationalBackground,
-          backgroundIP
+          backgroundIP,
         );
         return;
       }
 
       if (!checkResponse.ok) {
         throw new Error(
-          `Failed to check profile existence: ${checkResponse.statusText}`
+          `Failed to check profile existence: ${checkResponse.statusText}`,
         );
       }
 
@@ -1412,7 +1412,7 @@ export function ClientInformation({
       const method = exists ? "PUT" : "POST";
 
       console.log(
-        `Using ${method} method for complete profile update. Profile exists: ${exists}`
+        `Using ${method} method for complete profile update. Profile exists: ${exists}`,
       );
 
       await updateProfileData(
@@ -1420,7 +1420,7 @@ export function ClientInformation({
         method,
         applicationId,
         educationalBackground,
-        backgroundIP
+        backgroundIP,
       );
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
@@ -1445,7 +1445,7 @@ export function ClientInformation({
     method: string,
     applicationId: string,
     educationalBackground: any = {},
-    backgroundIP: any = {}
+    backgroundIP: any = {},
   ) {
     try {
       // Ensure hasCompany is always treated as a boolean
@@ -1529,7 +1529,7 @@ export function ClientInformation({
 
       console.log(
         "[ClientInformation] Updating API data with hasCompany=",
-        personalInfo.hasCompany
+        personalInfo.hasCompany,
       );
       console.log("[ClientInformation] College data:", {
         collegeName: apiData.personalInfo.collegeName,
@@ -1553,7 +1553,7 @@ export function ClientInformation({
       // Log the stringified version for reference
       console.log(
         "[ClientInformation] API DATA RAW:",
-        JSON.stringify(apiData.personalInfo, null, 2)
+        JSON.stringify(apiData.personalInfo, null, 2),
       );
 
       // Log the boolean value explicitly for clarity
@@ -1561,7 +1561,7 @@ export function ClientInformation({
         "[ClientInformation] hasCompany raw value:",
         personalInfoData.hasCompany,
         "type:",
-        typeof personalInfoData.hasCompany
+        typeof personalInfoData.hasCompany,
       );
 
       // Submit to API for update
@@ -1574,7 +1574,7 @@ export function ClientInformation({
           },
           body: JSON.stringify(apiData),
         },
-        `client-info-submit-${applicationId}-${method}` // Unique cache key
+        `client-info-submit-${applicationId}-${method}`, // Unique cache key
       );
 
       // Clone the response to prevent body stream already read errors
@@ -1632,7 +1632,7 @@ export function ClientInformation({
             {
               expected: expectedHasCompany,
               actual: actualHasCompany,
-            }
+            },
           );
 
           // If we're sending academic institution data (hasCompany=false) but it's not saved
@@ -1651,7 +1651,7 @@ export function ClientInformation({
                   collegeName: responseData.collegeName,
                   departmentName: responseData.departmentName,
                 },
-              }
+              },
             );
 
             // Show error about college data not saving
@@ -1719,9 +1719,9 @@ export function ClientInformation({
           values.hasCompany !== undefined
             ? values.hasCompany
             : (values.collegeName && values.collegeName.trim() !== "") ||
-              (values.departmentName && values.departmentName.trim() !== "")
-            ? false
-            : true,
+                (values.departmentName && values.departmentName.trim() !== "")
+              ? false
+              : true,
         // Explicitly ensure no fields are accidentally cleared
         companyName: values.companyName || undefined,
         companyEmail: values.companyEmail || undefined,
@@ -1744,7 +1744,7 @@ export function ClientInformation({
           value:
             !values.gender?.value ||
             !["male", "female", "prefer_not_to_say"].includes(
-              values.gender.value
+              values.gender.value,
             )
               ? "male"
               : values.gender.value,
@@ -1774,13 +1774,13 @@ export function ClientInformation({
       localStorage.setItem(storageKey, JSON.stringify(enhancedValues));
       console.log(
         "[ClientInformation] Personal information saved to localStorage:",
-        enhancedValues
+        enhancedValues,
       );
 
       // If we have an active application, update the form status silently
       if (activeApplicationId && window.updateIPFormStatus) {
         console.log(
-          "[ClientInformation] Updating form status visually only (no registry)"
+          "[ClientInformation] Updating form status visually only (no registry)",
         );
 
         // Instead of calling updateIPFormStatus directly, dispatch a visual-only event
@@ -1800,7 +1800,7 @@ export function ClientInformation({
     } catch (error) {
       console.error(
         "[ClientInformation] Error saving form data or navigating:",
-        error
+        error,
       );
     }
   };
@@ -1826,7 +1826,7 @@ export function ClientInformation({
       // Ensure gender.value is one of the allowed values
       if (
         !["male", "female", "prefer_not_to_say"].includes(
-          formattedData.gender.value
+          formattedData.gender.value,
         )
       ) {
         formattedData.gender.value = "male";
@@ -1866,7 +1866,7 @@ export function ClientInformation({
   const registerInFormRegistry = async (
     clientProfileId: string,
     applicationId: string,
-    personalInfo: any
+    personalInfo: any,
   ) => {
     try {
       console.log("[ClientInformation] Registering in form registry:", {
@@ -1895,7 +1895,7 @@ export function ClientInformation({
     } catch (error) {
       console.error(
         "[ClientInformation] Error registering in form registry:",
-        error
+        error,
       );
       return null;
     }
@@ -2014,7 +2014,7 @@ export function ClientInformation({
                           onChange={(e) => {
                             const value = e.target.value;
                             field.onChange(
-                              value === "" ? undefined : parseInt(value, 10)
+                              value === "" ? undefined : parseInt(value, 10),
                             );
                           }}
                         />
@@ -2181,22 +2181,87 @@ export function ClientInformation({
               />
 
               <FormField
-                control={form.control}
-                name="occupation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Occupation</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter occupation" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+  control={form.control}
+  name="occupation"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Occupation</FormLabel>
+
+      <FormControl>
+        <select
+          {...field}
+          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">-- Select one --</option>
+
+          <optgroup label="Healthcare Practitioners and Technical Occupations">
+            <option value="Chiropractor">Chiropractor</option>
+            <option value="Dentist">Dentist</option>
+            <option value="Dietitian or Nutritionist">Dietitian or Nutritionist</option>
+            <option value="Optometrist">Optometrist</option>
+            <option value="Pharmacist">Pharmacist</option>
+            <option value="Physician">Physician</option>
+            <option value="Physician Assistant">Physician Assistant</option>
+            <option value="Podiatrist">Podiatrist</option>
+            <option value="Registered Nurse">Registered Nurse</option>
+            <option value="Therapist">Therapist</option>
+            <option value="Veterinarian">Veterinarian</option>
+            <option value="Health Technologist or Technician">
+              Health Technologist or Technician
+            </option>
+            <option value="Other Healthcare Practitioner">
+              Other Healthcare Practitioner
+            </option>
+          </optgroup>
+
+          <optgroup label="Healthcare Support Occupations">
+            <option value="Nursing Aide">Nursing / Home Health Aide</option>
+            <option value="Therapy Assistant">Occupational / Physical Therapy Assistant</option>
+            <option value="Other Healthcare Support">
+              Other Healthcare Support Occupation
+            </option>
+          </optgroup>
+
+          <optgroup label="Business and Management Occupations">
+            <option value="Chief Executive">Chief Executive</option>
+            <option value="Operations Manager">General / Operations Manager</option>
+            <option value="Marketing Manager">Marketing / Sales Manager</option>
+            <option value="IT Manager">IT / HR Manager</option>
+            <option value="Accountant">Accountant / Auditor</option>
+            <option value="Business Owner">Business Owner</option>
+            <option value="Other Business Occupation">
+              Other Business Occupation
+            </option>
+          </optgroup>
+
+          <optgroup label="Education Occupations">
+            <option value="College Professor">College Professor</option>
+            <option value="School Teacher">Primary / Secondary Teacher</option>
+            <option value="Other Teacher">Other Teacher</option>
+          </optgroup>
+
+          <optgroup label="Other Occupations">
+            <option value="Military">Military</option>
+            <option value="Homemaker">Homemaker</option>
+            <option value="Student">Student</option>
+            <option value="Dont Know">Don't Know</option>
+            <option value="Not Applicable">Not Applicable</option>
+          </optgroup>
+        </select>
+      </FormControl>
+
+      <FormDescription>
+        Select your occupation. Scroll to see more options.
+      </FormDescription>
+
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
             </CardContent>
           </Card>
 
-          {/* Company Information Section */}
           <Card className="shadow-sm">
             <CardHeader className="bg-slate-50 rounded-t-lg">
               <CardTitle className="text-xl text-[#1B5E20]">
@@ -2207,96 +2272,89 @@ export function ClientInformation({
                 affiliation
               </CardDescription>
             </CardHeader>
+
             <CardContent className="pt-6 space-y-6">
+              {/* AFFILIATION TYPE DROPDOWN */}
               <FormField
                 control={form.control}
-                name="hasCompany"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        type="button"
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#1B5E20] focus:ring-offset-2 ${
-                          field.value ? "bg-[#1B5E20]" : "bg-gray-200"
-                        }`}
-                        onClick={() => {
-                          // Get current values
-                          const currentValues = form.getValues();
+                name="affiliationType"
+                render={({ field }) => {
+                  const affiliationValue = field.value as
+                    | "company"
+                    | "academic"
+                    | "none";
 
-                          // Update the hasCompany value
-                          const newHasCompanyValue = !field.value;
+                  return (
+                    <FormItem className="rounded-md border p-4 shadow-sm space-y-2">
+                      <FormLabel>Affiliation Type</FormLabel>
 
-                          // Create a completed updated form state
-                          const updatedValues = {
-                            ...currentValues,
-                            hasCompany: newHasCompanyValue,
-                          };
+                      <Select
+                        value={affiliationValue}
+                        onValueChange={(
+                          value: "company" | "academic" | "none",
+                        ) => {
+                          field.onChange(value);
 
-                          console.log(
-                            "[ClientInformation] Toggle switch changed:",
-                            {
-                              from: field.value,
-                              to: newHasCompanyValue,
-                              collegeFields: {
-                                collegeName: currentValues.collegeName,
-                                departmentName: currentValues.departmentName,
-                              },
-                            }
-                          );
-
-                          // Actually update the form field
-                          field.onChange(newHasCompanyValue);
-
-                          // Force update the form to reflect the new state
-                          form.setValue("hasCompany", newHasCompanyValue);
-
-                          // Auto-detect if we should save the local state
                           if (activeApplicationId) {
-                            // Save the complete state to localStorage
+                            const currentValues = form.getValues();
                             const storageKey = `clientInformationData-${activeApplicationId}`;
                             localStorage.setItem(
                               storageKey,
-                              JSON.stringify(updatedValues)
+                              JSON.stringify({
+                                ...currentValues,
+                                affiliationType: value,
+                              }),
                             );
                           }
                         }}
                       >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            field.value ? "translate-x-5" : "translate-x-0"
-                          }`}
-                        />
-                      </button>
-                    </div>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="cursor-pointer">
-                        {field.value
-                          ? "I am affiliated with a company/institution"
-                          : "I am affiliated with an academic institution"}
-                      </FormLabel>
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select affiliation" />
+                          </SelectTrigger>
+                        </FormControl>
+
+                        <SelectContent>
+                          <SelectItem value="company">
+                            Company / Institution
+                          </SelectItem>
+                          <SelectItem value="academic">
+                            Academic Institution
+                          </SelectItem>
+                          <SelectItem value="none">No Application</SelectItem>
+                        </SelectContent>
+                      </Select>
+
                       <FormDescription>
-                        {field.value
-                          ? "Provide information about your company or institution"
-                          : "Provide information about your college and department"}
+                        {affiliationValue === "company" &&
+                          "Provide information about your company or institution"}
+
+                        {affiliationValue === "academic" &&
+                          "Provide information about your college and department"}
+
+                        {affiliationValue === "none" &&
+                          "No affiliation details are required"}
                       </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
+
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
-              {form.watch("hasCompany") ? (
-                // Company/Institution Fields
+              {/* COMPANY / INSTITUTION FIELDS */}
+              {form.watch("affiliationType") === "company" && (
                 <>
                   <FormField
                     control={form.control}
                     name="companyName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Company/Institution Name</FormLabel>
+                        <FormLabel>Company / Institution Name</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter company or institution name"
                             {...field}
+                            placeholder="Enter company or institution name"
                           />
                         </FormControl>
                         <FormMessage />
@@ -2313,9 +2371,9 @@ export function ClientInformation({
                           <FormLabel>Street</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Enter street address"
                               {...field}
                               className="min-h-[80px]"
+                              placeholder="Enter street address"
                             />
                           </FormControl>
                           <FormMessage />
@@ -2331,9 +2389,9 @@ export function ClientInformation({
                           <FormLabel>Barangay</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Enter barangay"
                               {...field}
                               className="min-h-[80px]"
+                              placeholder="Enter barangay"
                             />
                           </FormControl>
                           <FormMessage />
@@ -2348,12 +2406,12 @@ export function ClientInformation({
                       name="companyCityMunicipality"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>City/Municipality</FormLabel>
+                          <FormLabel>City / Municipality</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Enter city or municipality"
                               {...field}
                               className="min-h-[80px]"
+                              placeholder="Enter city or municipality"
                             />
                           </FormControl>
                           <FormMessage />
@@ -2369,9 +2427,9 @@ export function ClientInformation({
                           <FormLabel>Province</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Enter province"
                               {...field}
                               className="min-h-[80px]"
+                              placeholder="Enter province"
                             />
                           </FormControl>
                           <FormMessage />
@@ -2387,15 +2445,17 @@ export function ClientInformation({
                       <FormItem>
                         <FormLabel>Company Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter company email" {...field} />
+                          <Input {...field} placeholder="Enter company email" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </>
-              ) : (
-                // College/Department Fields
+              )}
+
+              {/* ACADEMIC FIELDS */}
+              {form.watch("affiliationType") === "academic" && (
                 <div className="space-y-6">
                   <FormField
                     control={form.control}
@@ -2405,8 +2465,8 @@ export function ClientInformation({
                         <FormLabel>College Name</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter your college name"
                             {...field}
+                            placeholder="Enter your college name"
                           />
                         </FormControl>
                         <FormMessage />
@@ -2422,8 +2482,8 @@ export function ClientInformation({
                         <FormLabel>Department</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter your department"
                             {...field}
+                            placeholder="Enter your department"
                           />
                         </FormControl>
                         <FormMessage />

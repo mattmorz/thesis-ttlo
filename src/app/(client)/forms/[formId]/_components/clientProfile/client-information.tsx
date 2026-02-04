@@ -55,7 +55,7 @@ const formSchema = z.object({
   gender: z.object({
     value: z.enum(["male", "female", "prefer_not_to_say"]),
   }),
-  age: z.number().min(1, "Age is required").optional(),
+  age: z.number().min(1, "Age is required").max(100, "Age must be 100 or less").optional(),
   citizenship: z.object({
     value: z.enum(["filipino", "other"]),
     otherValue: z.string().optional().nullable(),
@@ -2050,15 +2050,23 @@ export function ClientInformation({
                       <FormLabel>Age <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
-                          placeholder="Enter age"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          placeholder="Enter age (ex. 25)"
                           {...field}
-                          value={field.value === undefined ? "" : field.value}
+                          value={
+                            field.value === undefined ? "" : String(field.value)
+                          }
                           onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(
-                              value === "" ? undefined : parseInt(value, 10),
-                            );
+                            const next = e.target.value.replace(/[^0-9]/g, "");
+                            if (next === "") {
+                              field.onChange(undefined);
+                              return;
+                            }
+                            const parsed = parseInt(next, 10);
+                            const clamped = Math.min(parsed, 100);
+                            field.onChange(clamped);
                           }}
                         />
                       </FormControl>

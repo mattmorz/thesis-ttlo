@@ -164,6 +164,16 @@ export function EducationalBackground({
   // Watch highest degree field for conditional rendering
   const selectedDegree = form.watch("highestDegree.value");
 
+  // Watch fields for disabling the "Next" button
+  const degree = form.watch("degree");
+  const profession = form.watch("profession");
+  const highestDegree = form.watch("highestDegree");
+
+  const isNextDisabled =
+    !degree?.trim() ||
+    !profession?.trim() ||
+    (highestDegree?.value === "other" && !highestDegree?.otherValue?.trim());
+
   // Make sure the otherValue field is displayed when selectedDegree is "other"
   useEffect(() => {
     if (selectedDegree === "other" && formData?.highestDegree?.otherValue) {
@@ -701,7 +711,7 @@ export function EducationalBackground({
                   name="highestDegree.value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Highest Degree Earned</FormLabel>
+                      <FormLabel>Highest Degree Earned <span className="text-red-500">*</span></FormLabel>
                       <Select
                         onValueChange={(value) => {
                           field.onChange(value);
@@ -786,7 +796,7 @@ export function EducationalBackground({
                   name="degree"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Degree Program</FormLabel>
+                      <FormLabel>Degree Program <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
                         <Input
                           placeholder="e.g. Bachelor of Science in Information Technology"
@@ -803,7 +813,7 @@ export function EducationalBackground({
                   name="profession"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Current Profession</FormLabel>
+                      <FormLabel>Current Profession <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
                         <Input
                           placeholder="e.g. Software Engineer, Student"
@@ -844,6 +854,7 @@ export function EducationalBackground({
             <Button
               type="button"
               onClick={handleNextClick}
+              disabled={isNextDisabled}
               className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
             >
               Next

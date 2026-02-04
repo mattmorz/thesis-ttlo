@@ -86,6 +86,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Link from "next/link";
+import { trpc } from "@/app/_trpc/client";
 
 // Import form components
 import { ClientProfileForm } from "./clientProfile/client-profile-form";
@@ -101,6 +102,11 @@ const sidebarItems = formNavigationConfig.map((item) => {
     case FormTabs.CLIENT_PROFILE:
       icon = <User className="h-4 w-4" />;
       break;
+
+    case FormTabs.Application_Title:
+      icon = <FolderOpen className="h-4 w-4" />;
+      break;
+      
     case FormTabs.IP_DISCLOSURE:
       icon = <FileText className="h-4 w-4" />;
       break;
@@ -241,6 +247,7 @@ const GettingStartedGuide = ({
                 <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
                   Step 2
                 </div>
+                {/* Make below disabled as they need to complete their client profile or personal information  */}
                 <div className="mb-3">
                   <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
                     <FileText className="h-4 w-4" />
@@ -404,6 +411,7 @@ export function PageContent() {
   const [mounted, setMounted] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
   const [showNewAppDialog, setShowNewAppDialog] = useState(false);
+  // !! check above
   const [lastCheckTime, setLastCheckTime] = useState(0);
   const [isApplicationsExpanded, setIsApplicationsExpanded] = useState(false);
   const [clientSideAllFormsCompleted, setClientSideAllFormsCompleted] =
@@ -422,6 +430,21 @@ export function PageContent() {
     refetchApplications,
     isLoading: isApplicationsLoading,
   } = useActiveApplication();
+
+  const createApplicationMutation = trpc.formIntegration.createApplication.useMutation({
+    onSuccess: (newApplication) => {
+      if (newApplication?.id) {
+        toast.dismiss("creating-app-toast");
+        toast.success("New application created successfully.");
+        setActiveApplicationId(newApplication.id);
+      }
+    },
+    onError: (error) => {
+      toast.dismiss("creating-app-toast");
+      toast.error("Failed to create application.");
+      console.error("Error creating application:", error);
+    }
+  });
 
   // Form status state
   const [knownApplicationStatus, setKnownApplicationStatus] = useState<
@@ -785,6 +808,25 @@ export function PageContent() {
     "ip-disclosure": "ipDisclosure",
     "substantial-use": "substantialUse",
     "deed-assignment": "deedAssignment",
+  };
+
+  // check what tab is active
+  const isTabEnabled = (tabId: string) => {
+    if (!activeApplicationId) return false; // no application selected
+
+    // Get index of this tab
+    const tabIndex = sidebarItems.findIndex((item) => item.id === tabId);
+
+    // First tab is always enabled
+    if (tabIndex === 0) return true;
+
+    // Previous tab
+    const prevTabId = sidebarItems[tabIndex - 1].id;
+
+    // Check if previous tab is completed
+    return knownApplicationStatus[activeApplicationId]?.status?.[
+      formTypeMapping[prevTabId]
+    ];
   };
 
   // Simplify application switching - delegate to the robust implementation
@@ -1468,6 +1510,21 @@ export function PageContent() {
     }
   };
 
+  const handleCreateFirstApplication = () => {
+    if (!session?.user?.id) {
+      toast.error("You must be logged in to create an application.");
+      return;
+    }
+
+    toast.loading("Creating new application...", { id: "creating-app-toast" });
+
+    createApplicationMutation.mutate({
+      userId: session.user.id,
+      title: "Untitled Application", // Default title as requested
+      ipType: "not_sure", // Safe default
+    });
+  };
+
   /* Add the Getting Started Guide here - with error handling */
   const renderGettingStartedGuide = () => {
     try {
@@ -1554,7 +1611,8 @@ export function PageContent() {
                   </SelectContent>
                 </Select>
               )}
-              <Button
+              {/* commented as this was not right, user should always first fill out the personal information  */}
+              {/* <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowNewAppDialog(true)}
@@ -1562,7 +1620,7 @@ export function PageContent() {
               >
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span>New Application</span>
-              </Button>
+              </Button> */}
             </div>
           </div>
 
@@ -1639,6 +1697,7 @@ export function PageContent() {
               {/* Forms Navigation */}
               <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
                 <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
+                  {/* !! add below button being inactive as the progress needs to be completed in order */}
                   <h2 className="font-medium text-sm text-gray-700">
                     Form Sections
                   </h2>
@@ -1675,14 +1734,16 @@ export function PageContent() {
                           activeForm === item.id
                             ? "bg-[#1B5E20]/10 text-[#1B5E20] font-medium"
                             : "text-gray-600 hover:text-gray-900",
+                          !isTabEnabled(item.id) &&
                           !activeApplicationId &&
                             "opacity-50 cursor-not-allowed hover:bg-transparent"
                         )}
                         onClick={() =>
+                          isTabEnabled(item.id) &&
                           activeApplicationId &&
                           handleTabChange(item.id as string)
                         }
-                        disabled={!activeApplicationId}
+                        disabled={!isTabEnabled(item.id) || !activeApplicationId}
                       >
                         <div className="flex items-center gap-2">
                           <div
@@ -1763,12 +1824,15 @@ export function PageContent() {
                       To begin your intellectual property application, please
                       create or select an application.
                     </p>
-                    <Button
-                      onClick={() => setShowNewAppDialog(true)}
+                                        <Button
+                      onClick={handleCreateFirstApplication}
+                      disabled={createApplicationMutation.isLoading}
                       className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
                     >
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      Create Your First Application
+                      {createApplicationMutation.isLoading
+                        ? "Creating..."
+                        : "Create Your First Application"}
                     </Button>
                   </div>
                 </div>

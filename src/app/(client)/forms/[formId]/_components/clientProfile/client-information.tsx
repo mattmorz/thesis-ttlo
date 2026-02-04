@@ -168,6 +168,18 @@ export function ClientInformation({
   // Watch the hasCompany field to respond to changes
   const hasCompany = form.watch("hasCompany");
 
+  // Watch required fields to disable the "Next" button
+  const firstName = form.watch("firstName");
+  const lastName = form.watch("lastName");
+  const mailingAddress = form.watch("mailingAddress");
+  const contactNumber = form.watch("contactNumber");
+
+  const isNextDisabled =
+    !firstName?.trim() ||
+    !lastName?.trim() ||
+    !mailingAddress?.trim() ||
+    !contactNumber?.trim();
+
   // Add effect to respond to hasCompany changes
   useEffect(() => {
     if (hasCompany === false) {
@@ -1925,19 +1937,22 @@ export function ClientInformation({
             <CardContent className="pt-6 space-y-6">
               {/* First row: First Name, Middle Name, Last Name */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter first name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+               <FormField
+  control={form.control}
+  name="firstName"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>
+        First Name <span className="text-red-500">*</span>
+      </FormLabel>
+      <FormControl>
+        <Input placeholder="Enter first name" {...field} />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
 
                 <FormField
                   control={form.control}
@@ -1958,7 +1973,7 @@ export function ClientInformation({
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>Last Name <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
                         <Input placeholder="Enter last name" {...field} />
                       </FormControl>
@@ -1975,7 +1990,7 @@ export function ClientInformation({
                   name="gender.value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Gender</FormLabel>
+                      <FormLabel>Gender <span className="text-red-500">*</span></FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -2004,7 +2019,7 @@ export function ClientInformation({
                   name="age"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Age</FormLabel>
+                      <FormLabel>Age <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -2037,7 +2052,7 @@ export function ClientInformation({
                     name="citizenship.value"
                     render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <FormLabel>Citizenship</FormLabel>
+                        <FormLabel>Citizenship <span className="text-red-500">*</span></FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
@@ -2125,7 +2140,7 @@ export function ClientInformation({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
                         <Input placeholder="Enter email address" {...field} />
                       </FormControl>
@@ -2139,7 +2154,7 @@ export function ClientInformation({
                   name="contactNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Contact Number</FormLabel>
+                      <FormLabel>Contact Number <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
                         <Input placeholder="Enter contact number" {...field} />
                       </FormControl>
@@ -2155,7 +2170,7 @@ export function ClientInformation({
           <Card className="shadow-sm">
             <CardHeader className="bg-slate-50 rounded-t-lg">
               <CardTitle className="text-xl text-[#1B5E20]">
-                Mailing Address
+                Mailing Address 
               </CardTitle>
               <CardDescription>
                 Please provide your current mailing address
@@ -2167,7 +2182,7 @@ export function ClientInformation({
                 name="mailingAddress"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mailing Address</FormLabel>
+                    <FormLabel>Mailing Address <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Enter complete mailing address"
@@ -2185,7 +2200,7 @@ export function ClientInformation({
                 name="occupation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Occupation</FormLabel>
+                    <FormLabel>Occupation <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="Enter occupation" {...field} />
                     </FormControl>
@@ -2452,6 +2467,7 @@ export function ClientInformation({
             <Button
               type="button"
               onClick={handleNextClick}
+              disabled={isNextDisabled}
               className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
             >
               Next

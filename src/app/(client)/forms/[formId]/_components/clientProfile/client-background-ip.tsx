@@ -57,16 +57,16 @@ declare global {
  */
 const formSchema = z.object({
   publishedResearch: z.object({
-    value: z.enum(["yes", "no", "submitted"]),
+    value: z.enum(["yes", "no", "submitted"]).nullable(),
   }),
   developedMaterials: z.object({
-    value: z.enum(["yes", "no", "ongoing"]),
+    value: z.enum(["yes", "no", "ongoing"]).nullable(),
   }),
   familiarWithIPRights: z.object({
-    value: z.enum(["yes", "no"]),
+    value: z.enum(["yes", "no"]).nullable(),
   }),
   ipExperience: z.object({
-    hasExperience: z.enum(["yes", "no"]),
+    hasExperience: z.enum(["yes", "no"]).nullable(),
     types: z
       .object({
         patent: z.boolean().default(false),
@@ -171,11 +171,11 @@ export function ClientBackgroundIP({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      publishedResearch: { value: "no" },
-      developedMaterials: { value: "no" },
-      familiarWithIPRights: { value: "no" },
+      publishedResearch: { value: null },
+      developedMaterials: { value: null },
+      familiarWithIPRights: { value: null },
       ipExperience: {
-        hasExperience: "no",
+        hasExperience: null,
         types: {
           patent: false,
           copyright: false,
@@ -213,20 +213,44 @@ export function ClientBackgroundIP({
 
         // Ensure the ipExperience structure is valid
         if (!formattedData.ipExperience) {
-          formattedData.ipExperience = { hasExperience: false, types: [] };
+          formattedData.ipExperience = {
+            hasExperience: null,
+            types: {
+              patent: false,
+              copyright: false,
+              trademark: false,
+              industrialDesign: false,
+              utilityModel: false,
+              other: false,
+            },
+          };
         } else if (
           formattedData.ipExperience.hasExperience &&
           !formattedData.ipExperience.types
         ) {
-          formattedData.ipExperience.types = [];
+          formattedData.ipExperience.types = {
+            patent: false,
+            copyright: false,
+            trademark: false,
+            industrialDesign: false,
+            utilityModel: false,
+            other: false,
+          };
         }
 
         // If user has no IP experience, ensure types array is empty
         if (
           formattedData.ipExperience &&
-          formattedData.ipExperience.hasExperience === false
+          formattedData.ipExperience.hasExperience === "no"
         ) {
-          formattedData.ipExperience.types = [];
+          formattedData.ipExperience.types = {
+            patent: false,
+            copyright: false,
+            trademark: false,
+            industrialDesign: false,
+            utilityModel: false,
+            other: false,
+          };
         }
 
         console.log("Using localStorage data as priority:", formattedData);
@@ -243,20 +267,44 @@ export function ClientBackgroundIP({
 
         // Ensure the ipExperience structure is valid
         if (!formattedData.ipExperience) {
-          formattedData.ipExperience = { hasExperience: false, types: [] };
+          formattedData.ipExperience = {
+            hasExperience: null,
+            types: {
+              patent: false,
+              copyright: false,
+              trademark: false,
+              industrialDesign: false,
+              utilityModel: false,
+              other: false,
+            },
+          };
         } else if (
           formattedData.ipExperience.hasExperience &&
           !formattedData.ipExperience.types
         ) {
-          formattedData.ipExperience.types = [];
+          formattedData.ipExperience.types = {
+            patent: false,
+            copyright: false,
+            trademark: false,
+            industrialDesign: false,
+            utilityModel: false,
+            other: false,
+          };
         }
 
         // If user has no IP experience, ensure types array is empty
         if (
           formattedData.ipExperience &&
-          formattedData.ipExperience.hasExperience === false
+          formattedData.ipExperience.hasExperience === "no"
         ) {
-          formattedData.ipExperience.types = [];
+          formattedData.ipExperience.types = {
+            patent: false,
+            copyright: false,
+            trademark: false,
+            industrialDesign: false,
+            utilityModel: false,
+            other: false,
+          };
         }
 
         // Also save initialData to localStorage for consistency
@@ -273,12 +321,25 @@ export function ClientBackgroundIP({
         // Ensure the form is reset with the correct data
         setTimeout(() => {
           form.reset({
-            publishedResearch: formattedData.publishedResearch || false,
-            developedMaterials: formattedData.developedMaterials || false,
-            familiarWithIPRights: formattedData.familiarWithIPRights || false,
+            publishedResearch: formattedData.publishedResearch || { value: null },
+            developedMaterials: formattedData.developedMaterials || {
+              value: null,
+            },
+            familiarWithIPRights: formattedData.familiarWithIPRights || {
+              value: null,
+            },
             ipExperience: {
-              hasExperience: formattedData.ipExperience?.hasExperience || false,
-              types: formattedData.ipExperience?.types || [],
+              hasExperience:
+                formattedData.ipExperience?.hasExperience ?? null,
+              types: formattedData.ipExperience?.types || {
+                patent: false,
+                copyright: false,
+                trademark: false,
+                industrialDesign: false,
+                utilityModel: false,
+                other: false,
+              },
+              otherSpecify: formattedData.ipExperience?.otherSpecify || "",
             },
           });
 
@@ -367,7 +428,7 @@ export function ClientBackgroundIP({
             formattedData.publishedResearch
           )
             ? formattedData.publishedResearch
-            : "no",
+            : null,
         };
       } else if (typeof formattedData.publishedResearch === "object") {
         if (
@@ -375,11 +436,11 @@ export function ClientBackgroundIP({
             formattedData.publishedResearch.value
           )
         ) {
-          formattedData.publishedResearch.value = "no";
+          formattedData.publishedResearch.value = null;
         }
       }
     } else {
-      formattedData.publishedResearch = { value: "no" };
+      formattedData.publishedResearch = { value: null };
     }
 
     // Ensure developedMaterials has correct structure and value
@@ -390,7 +451,7 @@ export function ClientBackgroundIP({
             formattedData.developedMaterials
           )
             ? formattedData.developedMaterials
-            : "no",
+            : null,
         };
       } else if (typeof formattedData.developedMaterials === "object") {
         if (
@@ -398,11 +459,11 @@ export function ClientBackgroundIP({
             formattedData.developedMaterials.value
           )
         ) {
-          formattedData.developedMaterials.value = "no";
+          formattedData.developedMaterials.value = null;
         }
       }
     } else {
-      formattedData.developedMaterials = { value: "no" };
+      formattedData.developedMaterials = { value: null };
     }
 
     // Ensure familiarWithIPRights has correct structure and value
@@ -411,15 +472,15 @@ export function ClientBackgroundIP({
         formattedData.familiarWithIPRights = {
           value: ["yes", "no"].includes(formattedData.familiarWithIPRights)
             ? formattedData.familiarWithIPRights
-            : "no",
+            : null,
         };
       } else if (typeof formattedData.familiarWithIPRights === "object") {
         if (!["yes", "no"].includes(formattedData.familiarWithIPRights.value)) {
-          formattedData.familiarWithIPRights.value = "no";
+          formattedData.familiarWithIPRights.value = null;
         }
       }
     } else {
-      formattedData.familiarWithIPRights = { value: "no" };
+      formattedData.familiarWithIPRights = { value: null };
     }
 
     // Ensure ipExperience has correct structure
@@ -428,7 +489,7 @@ export function ClientBackgroundIP({
       typeof formattedData.ipExperience !== "object"
     ) {
       formattedData.ipExperience = {
-        hasExperience: "no",
+        hasExperience: null,
         types: {
           patent: false,
           copyright: false,
@@ -440,9 +501,12 @@ export function ClientBackgroundIP({
         otherSpecify: "",
       };
     } else if (formattedData.ipExperience) {
-      // Ensure hasExperience is "yes" or "no"
-      if (!["yes", "no"].includes(formattedData.ipExperience.hasExperience)) {
-        formattedData.ipExperience.hasExperience = "no";
+      // Ensure hasExperience is "yes" or "no" or null
+      if (
+        !["yes", "no"].includes(formattedData.ipExperience.hasExperience) &&
+        formattedData.ipExperience.hasExperience !== null
+      ) {
+        formattedData.ipExperience.hasExperience = null;
       }
 
       // Initialize types if missing
@@ -460,7 +524,7 @@ export function ClientBackgroundIP({
       // If user has no IP experience, ensure types array is empty
       if (
         formattedData.ipExperience &&
-        formattedData.ipExperience.hasExperience === false
+        formattedData.ipExperience.hasExperience === "no"
       ) {
         setIpTypeCheckboxes({
           patent: false,

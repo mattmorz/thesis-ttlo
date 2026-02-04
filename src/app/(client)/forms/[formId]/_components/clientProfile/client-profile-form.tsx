@@ -545,24 +545,27 @@ export function ClientProfileForm() {
             publishedResearch:
               typeof responseData.data.publishedResearch === "object"
                 ? responseData.data.publishedResearch
-                : { value: responseData.data.publishedResearch || "no" },
+                : { value: responseData.data.publishedResearch || null },
             developedMaterials:
               typeof responseData.data.developedMaterials === "object"
                 ? responseData.data.developedMaterials
-                : { value: responseData.data.developedMaterials || "no" },
+                : { value: responseData.data.developedMaterials || null },
             familiarWithIPRights:
               typeof responseData.data.familiarWithIpRights === "object"
                 ? responseData.data.familiarWithIpRights
                 : {
-                    value: responseData.data.familiarWithIpRights
-                      ? "yes"
-                      : "no",
+                    value:
+                      responseData.data.familiarWithIpRights === true
+                        ? "yes"
+                        : responseData.data.familiarWithIpRights === false
+                        ? "no"
+                        : null,
                   },
             ipExperience:
               typeof responseData.data.ipExperience === "object"
                 ? responseData.data.ipExperience
                 : {
-                    hasExperience: "no",
+                    hasExperience: null,
                     types: {
                       patent: false,
                       copyright: false,
@@ -810,11 +813,11 @@ export function ClientProfileForm() {
   // Helper function to initialize empty background data
   const initializeEmptyBackgroundData = () => {
     return {
-      publishedResearch: { value: "no" },
-      developedMaterials: { value: "no" },
-      familiarWithIPRights: { value: "no" },
+      publishedResearch: { value: null },
+      developedMaterials: { value: null },
+      familiarWithIPRights: { value: null },
       ipExperience: {
-        hasExperience: "no",
+        hasExperience: null,
         types: {
           patent: false,
           copyright: false,

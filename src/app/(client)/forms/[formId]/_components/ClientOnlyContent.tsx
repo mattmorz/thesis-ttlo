@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { FormTabs } from "./form-navigation";
 import { ClientProfileForm } from "./clientProfile/client-profile-form";
+import { ApplicationTitleForm } from "./applicationTitle/application-title-form";
 import { IPDisclosureForm } from "./ipdisclosure/ip-disclosure-form";
 import { SubstantialUseForm } from "./substantialuse/substantial-use-form";
 import { DeedAssignmentForm } from "./deedofassignment/deed-assignment-form";
@@ -62,6 +63,12 @@ export function ClientOnlyContent({
   switch (activeForm) {
     case FormTabs.CLIENT_PROFILE:
       return <ClientProfileForm />;
+    case FormTabs.Application_Title:
+      return (
+        <TRPCProvider>
+          <ApplicationTitleForm />
+        </TRPCProvider>
+      );
     case FormTabs.IP_DISCLOSURE:
       return (
         <TRPCProvider>

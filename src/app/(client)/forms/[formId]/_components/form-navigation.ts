@@ -1,5 +1,7 @@
 // Utility functions for form navigation
 
+import App from "next/app";
+
 /**
  * Generate a URL to navigate to a specific form tab
  * @param formId - DEPRECATED: No longer used as we always use clean URLs now
@@ -23,6 +25,7 @@ export const getFormUrl = (
  */
 export const FormTabs = {
   CLIENT_PROFILE: "client-profile",
+  Application_Title: "application-title",
   IP_DISCLOSURE: "ip-disclosure",
   SUBSTANTIAL_USE: "substantial-use",
   DEED_ASSIGNMENT: "deed-assignment",
@@ -41,6 +44,11 @@ export const formNavigationConfig = [
     id: FormTabs.CLIENT_PROFILE,
     label: "Client Profile",
     description: "Personal information and qualifications",
+  },
+  {
+    id: FormTabs.Application_Title,
+    label: "Application Title",
+    description: "Title and summary of your application",
   },
   {
     id: FormTabs.IP_DISCLOSURE,

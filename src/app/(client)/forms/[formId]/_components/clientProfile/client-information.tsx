@@ -4,9 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { safeFetch } from "@/lib/utils";
@@ -74,13 +73,13 @@ const formSchema = z.object({
   collegeName: z.string().optional(),
   departmentName: z.string().optional(),
   occupation: z.string().optional(),
+  affiliationType: z.enum(["company", "academic", "none"]).default("company"),
 });
 
 // Add these props to the component
 interface ClientInformationProps {
   initialData?: any;
   isDisabled?: boolean;
-  formStatus?: string;
 }
 
 // Add TypeScript declaration for window global methods
@@ -114,12 +113,9 @@ declare global {
 export function ClientInformation({
   initialData,
   isDisabled = false,
-  formStatus = "draft",
 }: ClientInformationProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "personal";
-  const { data: session } = useSession();
   const [formData, setFormData] = useState<z.infer<typeof formSchema> | null>(
     null,
   );
@@ -162,6 +158,7 @@ export function ClientInformation({
       collegeName: "",
       departmentName: "",
       occupation: "",
+      affiliationType: "company",
     },
   });
 
@@ -173,12 +170,42 @@ export function ClientInformation({
   const lastName = form.watch("lastName");
   const mailingAddress = form.watch("mailingAddress");
   const contactNumber = form.watch("contactNumber");
+  const email = form.watch("email");
+  const occupation = form.watch("occupation");
+  const affiliationType = form.watch("affiliationType");
+  const companyName = form.watch("companyName");
+  const companyStreet = form.watch("companyStreet");
+  const companyBarangay = form.watch("companyBarangay");
+  const companyCityMunicipality = form.watch("companyCityMunicipality");
+  const companyProvince = form.watch("companyProvince");
+  const companyEmail = form.watch("companyEmail");
+  const collegeName = form.watch("collegeName");
+  const departmentName = form.watch("departmentName");
 
-  const isNextDisabled =
+  let isNextDisabled =
     !firstName?.trim() ||
     !lastName?.trim() ||
     !mailingAddress?.trim() ||
-    !contactNumber?.trim();
+    !contactNumber?.trim() ||
+    !email?.trim() ||
+    !occupation?.trim() ||
+    !affiliationType;
+
+  if (affiliationType === "company") {
+    isNextDisabled =
+      isNextDisabled ||
+      !companyName?.trim() ||
+      !companyStreet?.trim() ||
+      !companyBarangay?.trim() ||
+      !companyCityMunicipality?.trim() ||
+      !companyProvince?.trim() ||
+      !companyEmail?.trim();
+  }
+
+  if (affiliationType === "academic") {
+    isNextDisabled =
+      isNextDisabled || !collegeName?.trim() || !departmentName?.trim();
+  }
 
   // Add effect to respond to hasCompany changes
   useEffect(() => {
@@ -271,6 +298,7 @@ export function ClientInformation({
           collegeName: "",
           departmentName: "",
           occupation: "",
+          affiliationType: "company",
         };
       }
 
@@ -2201,7 +2229,7 @@ export function ClientInformation({
   name="occupation"
   render={({ field }) => (
     <FormItem>
-      <FormLabel>Occupation</FormLabel>
+      <FormLabel>Occupation <span className="text-red-500">*</span></FormLabel>
 
       <FormControl>
         <select
@@ -2295,69 +2323,62 @@ export function ClientInformation({
               <FormField
                 control={form.control}
                 name="affiliationType"
-                render={({ field }) => {
-                  const affiliationValue = field.value as
-                    | "company"
-                    | "academic"
-                    | "none";
+                render={({ field }) => (
+                  <FormItem className="rounded-md border p-4 shadow-sm space-y-2">
+                    <FormLabel>Affiliation Type <span className="text-red-500">*</span></FormLabel>
 
-                  return (
-                    <FormItem className="rounded-md border p-4 shadow-sm space-y-2">
-                      <FormLabel>Affiliation Type</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={(
+                        value: "company" | "academic" | "none",
+                      ) => {
+                        field.onChange(value);
 
-                      <Select
-                        value={affiliationValue}
-                        onValueChange={(
-                          value: "company" | "academic" | "none",
-                        ) => {
-                          field.onChange(value);
+                        if (activeApplicationId) {
+                          const currentValues = form.getValues();
+                          const storageKey = `clientInformationData-${activeApplicationId}`;
+                          localStorage.setItem(
+                            storageKey,
+                            JSON.stringify({
+                              ...currentValues,
+                              affiliationType: value,
+                            }),
+                          );
+                        }
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select affiliation" />
+                        </SelectTrigger>
+                      </FormControl>
 
-                          if (activeApplicationId) {
-                            const currentValues = form.getValues();
-                            const storageKey = `clientInformationData-${activeApplicationId}`;
-                            localStorage.setItem(
-                              storageKey,
-                              JSON.stringify({
-                                ...currentValues,
-                                affiliationType: value,
-                              }),
-                            );
-                          }
-                        }}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select affiliation" />
-                          </SelectTrigger>
-                        </FormControl>
+                      <SelectContent>
+                        <SelectItem value="company">
+                          Company / Institution
+                        </SelectItem>
+                        <SelectItem value="academic">
+                          Academic Institution
+                        </SelectItem>
+                        <SelectItem value="none">No Application</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-                        <SelectContent>
-                          <SelectItem value="company">
-                            Company / Institution
-                          </SelectItem>
-                          <SelectItem value="academic">
-                            Academic Institution
-                          </SelectItem>
-                          <SelectItem value="none">No Application</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <FormDescription>
+                      {field.value === "company" &&
+                        "Provide information about your company or institution"}
 
-                      <FormDescription>
-                        {affiliationValue === "company" &&
-                          "Provide information about your company or institution"}
+                      {field.value === "academic" &&
+                        "Provide information about your college and department"}
 
-                        {affiliationValue === "academic" &&
-                          "Provide information about your college and department"}
+                      {field.value === "none" &&
+                        "No affiliation details are required"}
+                    </FormDescription>
 
-                        {affiliationValue === "none" &&
-                          "No affiliation details are required"}
-                      </FormDescription>
-
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              /> 
 
               {/* COMPANY / INSTITUTION FIELDS */}
               {form.watch("affiliationType") === "company" && (

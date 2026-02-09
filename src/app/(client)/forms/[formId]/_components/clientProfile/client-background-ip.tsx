@@ -1340,11 +1340,10 @@ export function ClientBackgroundIP({
 
       console.log("Form submitted successfully:", result);
 
-      // Instead of redirecting to dashboard, refresh the current page to show updated status
+      // Move directly to the Application Title form after successful submission
       setTimeout(() => {
-        // Use Next.js router refresh to update the page without navigation
-        router.refresh();
-      }, 500);
+        router.push("/forms?tab=application-title");
+      }, 300);
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error(
@@ -1430,7 +1429,7 @@ export function ClientBackgroundIP({
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">
-                      Have you published any research output? <span className="text-red-500">*</span>
+                      Have you published asdasdany research output? <span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex items-center space-x-2">

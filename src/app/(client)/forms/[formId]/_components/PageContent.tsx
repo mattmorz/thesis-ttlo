@@ -1053,6 +1053,26 @@ export function PageContent() {
           `Client profile form ${completed ? "completed" : "incomplete"}`
         );
 
+        // Update cached status so the next tab enables immediately
+        setKnownApplicationStatus((prev) => {
+          const existing = prev[applicationId]?.status || {
+            clientProfile: false,
+            ipDisclosure: false,
+            substantialUse: false,
+            deedAssignment: false,
+          };
+          return {
+            ...prev,
+            [applicationId]: {
+              timestamp: Date.now(),
+              status: {
+                ...existing,
+                clientProfile: completed,
+              },
+            },
+          };
+        });
+
         // If completed, register in database
         if (completed) {
           registerFormCompletion(

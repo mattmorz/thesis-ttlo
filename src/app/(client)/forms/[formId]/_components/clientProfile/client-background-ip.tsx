@@ -241,7 +241,7 @@ export function ClientBackgroundIP({
         // If user has no IP experience, ensure types array is empty
         if (
           formattedData.ipExperience &&
-          formattedData.ipExperience.hasExperience === "no"
+          formattedData.ipExperience.hasExperience === false
         ) {
           formattedData.ipExperience.types = {
             patent: false,
@@ -295,7 +295,7 @@ export function ClientBackgroundIP({
         // If user has no IP experience, ensure types array is empty
         if (
           formattedData.ipExperience &&
-          formattedData.ipExperience.hasExperience === "no"
+          formattedData.ipExperience.hasExperience === false
         ) {
           formattedData.ipExperience.types = {
             patent: false,
@@ -524,7 +524,7 @@ export function ClientBackgroundIP({
       // If user has no IP experience, ensure types array is empty
       if (
         formattedData.ipExperience &&
-        formattedData.ipExperience.hasExperience === "no"
+        formattedData.ipExperience.hasExperience === false
       ) {
         setIpTypeCheckboxes({
           patent: false,

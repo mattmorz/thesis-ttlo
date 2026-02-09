@@ -414,6 +414,9 @@ export function PageContent() {
   // !! check above
   const [lastCheckTime, setLastCheckTime] = useState(0);
   const [isApplicationsExpanded, setIsApplicationsExpanded] = useState(false);
+  const [isCreatingFirstApplication, setIsCreatingFirstApplication] =
+    useState(false);
+  const [isCreateCooldown, setIsCreateCooldown] = useState(false);
   const [clientSideAllFormsCompleted, setClientSideAllFormsCompleted] =
     useState(false);
   const [hasSeenGuide, setHasSeenGuide] = useState(false);
@@ -437,13 +440,17 @@ export function PageContent() {
         toast.dismiss("creating-app-toast");
         toast.success("New application created successfully.");
         setActiveApplicationId(newApplication.id);
+        refetchApplications();
       }
     },
     onError: (error) => {
       toast.dismiss("creating-app-toast");
       toast.error("Failed to create application.");
       console.error("Error creating application:", error);
-    }
+    },
+    onSettled: () => {
+      setIsCreatingFirstApplication(false);
+    },
   });
 
   // Form status state
@@ -532,7 +539,7 @@ export function PageContent() {
 
       if (counterElements && counterElements.length > 0) {
         counterElements.forEach((el) => {
-          el.textContent = `${completedCount} of 4 completed`;
+          el.textContent = `${completedCount} of 5 completed`;
           console.log("Updated form progress counter:", el.textContent);
         });
 
@@ -574,7 +581,7 @@ export function PageContent() {
         // Show a notification about the update
         if (completedCount > 0) {
           toast.success(
-            `Form progress updated: ${completedCount} of 4 completed`,
+            `Form progress updated: ${completedCount} of 5 completed`,
             {
               id: "form-progress-updated",
               duration: 3000,
@@ -958,7 +965,7 @@ export function PageContent() {
             ".form-progress-counter"
           );
           if (formProgressCounter) {
-            formProgressCounter.textContent = `${completedCount} of 4 completed`;
+            formProgressCounter.textContent = `${completedCount} of 5 completed`;
             console.log(
               "Form progress counter updated directly:",
               formProgressCounter.textContent
@@ -1511,17 +1518,29 @@ export function PageContent() {
   };
 
   const handleCreateFirstApplication = () => {
+    if (
+      isCreatingFirstApplication ||
+      createApplicationMutation.isLoading ||
+      isCreateCooldown
+    ) {
+      return;
+    }
+
     if (!session?.user?.id) {
       toast.error("You must be logged in to create an application.");
       return;
     }
 
+    setIsCreatingFirstApplication(true);
+    setIsCreateCooldown(true);
+    setTimeout(() => setIsCreateCooldown(false), 10000);
     toast.loading("Creating new application...", { id: "creating-app-toast" });
 
     createApplicationMutation.mutate({
       userId: session.user.id,
       title: "Untitled Application", // Default title as requested
       ipType: "not_sure", // Safe default
+      // Ensure button state resets even if mutation errors before callbacks
     });
   };
 
@@ -1824,13 +1843,19 @@ export function PageContent() {
                       To begin your intellectual property application, please
                       create or select an application.
                     </p>
-                                        <Button
+                    <Button
                       onClick={handleCreateFirstApplication}
-                      disabled={createApplicationMutation.isLoading}
+                      disabled={
+                        createApplicationMutation.isLoading ||
+                        isCreatingFirstApplication ||
+                        isCreateCooldown
+                      }
                       className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
                     >
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      {createApplicationMutation.isLoading
+                      {createApplicationMutation.isLoading ||
+                      isCreatingFirstApplication ||
+                      isCreateCooldown
                         ? "Creating..."
                         : "Create Your First Application"}
                     </Button>

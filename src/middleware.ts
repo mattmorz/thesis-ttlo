@@ -107,8 +107,7 @@ export async function middleware(request: NextRequest) {
   const callbackUrl = searchParams.get("callbackUrl") || pathname;
 
   if (isAuthenticated && isAuthOnly) {
-    const redirectUrl =
-      callbackUrl && callbackUrl !== "/auth/signin" ? callbackUrl : "/";
+    const redirectUrl = "/forms?tab=client-profile";
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 

@@ -139,6 +139,7 @@ export function FormProgressTracker({
 
       // Update each form indicator
       updateFormDot("client-profile", status.clientProfile);
+      updateFormDot("application-title", status.applicationTitle);
       updateFormDot("ip-disclosure", status.ipDisclosure);
       updateFormDot("substantial-use", status.substantialUse);
       updateFormDot("deed-assignment", status.deedAssignment);

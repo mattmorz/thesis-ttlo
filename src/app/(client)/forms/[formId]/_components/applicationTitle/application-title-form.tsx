@@ -77,6 +77,11 @@ export function ApplicationTitleForm() {
           detail: { completed: true, applicationId: activeApplication.id },
         });
         window.dispatchEvent(event);
+
+        const refreshEvent = new CustomEvent("formProgressRefresh", {
+          detail: { applicationId: activeApplication.id },
+        });
+        window.dispatchEvent(refreshEvent);
       }
       router.push("/forms?tab=ip-disclosure");
     },

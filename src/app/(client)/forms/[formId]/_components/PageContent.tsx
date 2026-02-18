@@ -642,8 +642,10 @@ export function PageContent() {
       const formStatus = {
         clientProfile: Boolean(result.data.clientProfile),
         applicationTitle:
-          knownApplicationStatus[activeApplicationId]?.status
-            ?.applicationTitle || false,
+          typeof result.data.applicationTitle !== "undefined"
+            ? Boolean(result.data.applicationTitle)
+            : knownApplicationStatus[activeApplicationId]?.status
+                ?.applicationTitle || false,
         ipDisclosure: Boolean(result.data.ipDisclosure),
         substantialUse: Boolean(result.data.substantialUse),
         deedAssignment: Boolean(result.data.deedAssignment),
@@ -1202,6 +1204,21 @@ export function PageContent() {
       }
     };
 
+    const handleFormProgressRefresh = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { applicationId } = customEvent.detail || {};
+
+      if (applicationId && applicationId !== activeApplicationId) {
+        return;
+      }
+
+      if (!mounted || !activeApplicationId || isCheckingFormStatus) {
+        return;
+      }
+
+      checkFormProgressFromRegistry(true);
+    };
+
     // Add event listeners
     window.addEventListener(
       "clientProfileFormCompleted",
@@ -1222,6 +1239,10 @@ export function PageContent() {
     window.addEventListener(
       "deedAssignmentFormCompleted",
       handleDeedAssignmentFormCompleted,
+    );
+    window.addEventListener(
+      "formProgressRefresh",
+      handleFormProgressRefresh,
     );
 
     // Cleanup function
@@ -1246,8 +1267,12 @@ export function PageContent() {
         "deedAssignmentFormCompleted",
         handleDeedAssignmentFormCompleted,
       );
+      window.removeEventListener(
+        "formProgressRefresh",
+        handleFormProgressRefresh,
+      );
     };
-  }, [activeApplicationId]);
+  }, [activeApplicationId, mounted, isCheckingFormStatus]);
 
   // Effect 9: Set up helper functions for form status management
   useEffect(() => {

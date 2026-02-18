@@ -593,11 +593,6 @@ export function EducationalBackground({
         formattedValues
       );
 
-      // If we have an active application, update the form status silently
-      if (activeApplicationId && window.updateIPFormStatus) {
-        window.updateIPFormStatus("clientProfile", true, activeApplicationId);
-      }
-
       // Navigate to the next tab by updating URL params
       const url = new URL(window.location.href);
       url.searchParams.set("clientTab", "background");

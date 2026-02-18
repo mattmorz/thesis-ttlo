@@ -106,7 +106,7 @@ const sidebarItems = formNavigationConfig.map((item) => {
     case FormTabs.Application_Title:
       icon = <FolderOpen className="h-4 w-4" />;
       break;
-      
+
     case FormTabs.IP_DISCLOSURE:
       icon = <FileText className="h-4 w-4" />;
       break;
@@ -404,7 +404,7 @@ export function PageContent() {
   const tabParam = searchParams?.get("tab");
   const subTabParam = searchParams?.get("subTab");
   const [activeForm, setActiveForm] = useState<FormTabId>(
-    FormTabs.CLIENT_PROFILE
+    FormTabs.CLIENT_PROFILE,
   );
 
   // UI state hooks - all defined at the top
@@ -434,24 +434,25 @@ export function PageContent() {
     isLoading: isApplicationsLoading,
   } = useActiveApplication();
 
-  const createApplicationMutation = trpc.formIntegration.createApplication.useMutation({
-    onSuccess: (newApplication) => {
-      if (newApplication?.id) {
+  const createApplicationMutation =
+    trpc.formIntegration.createApplication.useMutation({
+      onSuccess: (newApplication) => {
+        if (newApplication?.id) {
+          toast.dismiss("creating-app-toast");
+          toast.success("New application created successfully.");
+          setActiveApplicationId(newApplication.id);
+          refetchApplications();
+        }
+      },
+      onError: (error) => {
         toast.dismiss("creating-app-toast");
-        toast.success("New application created successfully.");
-        setActiveApplicationId(newApplication.id);
-        refetchApplications();
-      }
-    },
-    onError: (error) => {
-      toast.dismiss("creating-app-toast");
-      toast.error("Failed to create application.");
-      console.error("Error creating application:", error);
-    },
-    onSettled: () => {
-      setIsCreatingFirstApplication(false);
-    },
-  });
+        toast.error("Failed to create application.");
+        console.error("Error creating application:", error);
+      },
+      onSettled: () => {
+        setIsCreatingFirstApplication(false);
+      },
+    });
 
   // Form status state
   const [knownApplicationStatus, setKnownApplicationStatus] = useState<
@@ -536,7 +537,7 @@ export function PageContent() {
 
       // Update the form progress counter in the DOM
       const counterElements = document.querySelectorAll(
-        ".form-progress-counter"
+        ".form-progress-counter",
       );
 
       if (counterElements && counterElements.length > 0) {
@@ -548,7 +549,7 @@ export function PageContent() {
         // Also update the form status indicators
         const updateFormDot = (formType: string, isCompleted: boolean) => {
           const formDot = document.querySelector(
-            `.form-status-dot-${formType}`
+            `.form-status-dot-${formType}`,
           );
           if (formDot) {
             if (isCompleted) {
@@ -561,7 +562,7 @@ export function PageContent() {
           }
 
           const formLabel = document.querySelector(
-            `.form-status-label-${formType}`
+            `.form-status-label-${formType}`,
           );
           if (formLabel) {
             if (isCompleted) {
@@ -588,7 +589,7 @@ export function PageContent() {
             {
               id: "form-progress-updated",
               duration: 3000,
-            }
+            },
           );
         }
       } else {
@@ -609,7 +610,7 @@ export function PageContent() {
 
     try {
       console.log(
-        `Directly checking form registry for application: ${activeApplicationId}`
+        `Directly checking form registry for application: ${activeApplicationId}`,
       );
 
       // Create a specific endpoint call to check form registry status without creating entries
@@ -621,7 +622,7 @@ export function PageContent() {
             "Cache-Control": "no-cache",
             Pragma: "no-cache",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -662,13 +663,13 @@ export function PageContent() {
         });
 
         // Update the React state
-      setClientSideAllFormsCompleted(
-        formStatus.clientProfile &&
-          formStatus.applicationTitle &&
-          formStatus.ipDisclosure &&
-          formStatus.substantialUse &&
-          formStatus.deedAssignment
-      );
+        setClientSideAllFormsCompleted(
+          formStatus.clientProfile &&
+            formStatus.applicationTitle &&
+            formStatus.ipDisclosure &&
+            formStatus.substantialUse &&
+            formStatus.deedAssignment,
+        );
 
         // Count completed forms and set states accordingly
         const completedCount = Object.values(formStatus).filter(Boolean).length;
@@ -737,7 +738,7 @@ export function PageContent() {
     ) {
       console.log(
         "Using cached form status for application:",
-        activeApplicationId
+        activeApplicationId,
       );
       console.log("Cached status:", knownStatus.status);
       setClientSideAllFormsCompleted(
@@ -745,7 +746,7 @@ export function PageContent() {
           knownStatus.status.applicationTitle &&
           knownStatus.status.ipDisclosure &&
           knownStatus.status.substantialUse &&
-          knownStatus.status.deedAssignment
+          knownStatus.status.deedAssignment,
       );
 
       // Directly update the DOM with the cached status
@@ -921,13 +922,13 @@ export function PageContent() {
 
     window.addEventListener(
       "application-created",
-      handleApplicationCreated as EventListener
+      handleApplicationCreated as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "application-created",
-        handleApplicationCreated as EventListener
+        handleApplicationCreated as EventListener,
       );
     };
   }, [setActiveApplicationId]);
@@ -942,18 +943,18 @@ export function PageContent() {
     // Log form status data to help debug
     console.log("Current form status data:", clientSideAllFormsCompleted);
     const completedCount = Object.values(clientSideAllFormsCompleted).filter(
-      Boolean
+      Boolean,
     ).length;
     console.log("Form completed count:", completedCount);
 
     // Display debug toast for form progress
     if (activeApplicationId && completedCount > 0) {
       console.log(
-        `===== DEBUG: Application ${activeApplicationId} has ${completedCount} completed forms =====`
+        `===== DEBUG: Application ${activeApplicationId} has ${completedCount} completed forms =====`,
       );
       console.log(
         "clientSideAllFormsCompleted:",
-        JSON.stringify(clientSideAllFormsCompleted)
+        JSON.stringify(clientSideAllFormsCompleted),
       );
 
       // Only show toast once per session after form status loads
@@ -963,7 +964,7 @@ export function PageContent() {
           {
             id: "form-progress-debug",
             duration: 3000,
-          }
+          },
         );
         sessionStorage.setItem(`debug-toast-${activeApplicationId}`, "true");
       }
@@ -972,13 +973,13 @@ export function PageContent() {
       try {
         setTimeout(() => {
           const formProgressCounter = document.querySelector(
-            ".form-progress-counter"
+            ".form-progress-counter",
           );
           if (formProgressCounter) {
             formProgressCounter.textContent = `${completedCount} of 5 completed`;
             console.log(
               "Form progress counter updated directly:",
-              formProgressCounter.textContent
+              formProgressCounter.textContent,
             );
           }
         }, 300);
@@ -1024,7 +1025,7 @@ export function PageContent() {
       sourceType: string,
       sourceId: string,
       applicationId: string,
-      title: string
+      title: string,
     ) => {
       try {
         const response = await fetch("/api/form-registry", {
@@ -1060,7 +1061,7 @@ export function PageContent() {
         // Update UI state
         setClientSideAllFormsCompleted(completed);
         console.log(
-          `Client profile form ${completed ? "completed" : "incomplete"}`
+          `Client profile form ${completed ? "completed" : "incomplete"}`,
         );
 
         // Update cached status so the next tab enables immediately
@@ -1090,7 +1091,7 @@ export function PageContent() {
             "client_profile",
             applicationId, // Use application ID as source ID for client profile
             applicationId,
-            "Client Profile"
+            "Client Profile",
           );
         }
       }
@@ -1104,7 +1105,7 @@ export function PageContent() {
         // Update UI state
         setClientSideAllFormsCompleted(completed);
         console.log(
-          `IP disclosure form ${completed ? "completed" : "incomplete"}`
+          `IP disclosure form ${completed ? "completed" : "incomplete"}`,
         );
 
         // If completed and we have a disclosure ID, register in database
@@ -1113,7 +1114,7 @@ export function PageContent() {
             "ip_disclosure",
             disclosureId,
             applicationId,
-            "IP Disclosure Form"
+            "IP Disclosure Form",
           );
         }
       }
@@ -1124,49 +1125,34 @@ export function PageContent() {
       const { completed, applicationId } = customEvent.detail;
 
       if (applicationId === activeApplicationId) {
-        let nextStatus:
-          | {
-              clientProfile: boolean;
-              applicationTitle: boolean;
-              ipDisclosure: boolean;
-              substantialUse: boolean;
-              deedAssignment: boolean;
-            }
-          | null = null;
+        const nextStatus = {
+          clientProfile: false,
+          applicationTitle: false,
+          ipDisclosure: false,
+          substantialUse: false,
+          deedAssignment: false,
+        };
+
+        const existing = knownApplicationStatus[applicationId]?.status;
+        if (existing) {
+          Object.assign(nextStatus, existing);
+        }
+
+        nextStatus.applicationTitle = completed;
 
         setKnownApplicationStatus((prev) => {
-          const existing = prev[applicationId]?.status || {
-            clientProfile: false,
-            applicationTitle: false,
-            ipDisclosure: false,
-            substantialUse: false,
-            deedAssignment: false,
-          };
-
-          nextStatus = {
-            ...existing,
-            applicationTitle: completed,
-          };
-
           return {
             ...prev,
             [applicationId]: {
               timestamp: Date.now(),
-              status: nextStatus!,
+              status: {
+                ...nextStatus,
+              },
             },
           };
         });
 
-        if (nextStatus) {
-          updateFormProgressDisplay(nextStatus);
-          setClientSideAllFormsCompleted(
-            nextStatus.clientProfile &&
-              nextStatus.applicationTitle &&
-              nextStatus.ipDisclosure &&
-              nextStatus.substantialUse &&
-              nextStatus.deedAssignment
-          );
-        }
+        updateFormProgressDisplay(nextStatus);
       }
     };
 
@@ -1178,7 +1164,7 @@ export function PageContent() {
         // Update UI state
         setClientSideAllFormsCompleted(completed);
         console.log(
-          `Substantial use form ${completed ? "completed" : "incomplete"}`
+          `Substantial use form ${completed ? "completed" : "incomplete"}`,
         );
 
         // If completed and we have a substantial use ID, register in database
@@ -1187,7 +1173,7 @@ export function PageContent() {
             "substantial_use",
             substantialUseId,
             applicationId,
-            "Substantial Use Certification"
+            "Substantial Use Certification",
           );
         }
       }
@@ -1201,7 +1187,7 @@ export function PageContent() {
         // Update UI state
         setClientSideAllFormsCompleted(completed);
         console.log(
-          `Deed assignment form ${completed ? "completed" : "incomplete"}`
+          `Deed assignment form ${completed ? "completed" : "incomplete"}`,
         );
 
         // If completed and we have a deed assignment ID, register in database
@@ -1210,7 +1196,7 @@ export function PageContent() {
             "deed_of_assignment",
             deedAssignmentId,
             applicationId,
-            "Deed of Assignment"
+            "Deed of Assignment",
           );
         }
       }
@@ -1219,46 +1205,46 @@ export function PageContent() {
     // Add event listeners
     window.addEventListener(
       "clientProfileFormCompleted",
-      handleClientProfileFormCompleted
+      handleClientProfileFormCompleted,
     );
     window.addEventListener(
       "ipDisclosureFormCompleted",
-      handleIPDisclosureFormCompleted
+      handleIPDisclosureFormCompleted,
     );
     window.addEventListener(
       "applicationTitleFormCompleted",
-      handleApplicationTitleFormCompleted
+      handleApplicationTitleFormCompleted,
     );
     window.addEventListener(
       "substantialUseFormCompleted",
-      handleSubstantialUseFormCompleted
+      handleSubstantialUseFormCompleted,
     );
     window.addEventListener(
       "deedAssignmentFormCompleted",
-      handleDeedAssignmentFormCompleted
+      handleDeedAssignmentFormCompleted,
     );
 
     // Cleanup function
     return () => {
       window.removeEventListener(
         "clientProfileFormCompleted",
-        handleClientProfileFormCompleted
+        handleClientProfileFormCompleted,
       );
       window.removeEventListener(
         "ipDisclosureFormCompleted",
-        handleIPDisclosureFormCompleted
+        handleIPDisclosureFormCompleted,
       );
       window.removeEventListener(
         "applicationTitleFormCompleted",
-        handleApplicationTitleFormCompleted
+        handleApplicationTitleFormCompleted,
       );
       window.removeEventListener(
         "substantialUseFormCompleted",
-        handleSubstantialUseFormCompleted
+        handleSubstantialUseFormCompleted,
       );
       window.removeEventListener(
         "deedAssignmentFormCompleted",
-        handleDeedAssignmentFormCompleted
+        handleDeedAssignmentFormCompleted,
       );
     };
   }, [activeApplicationId]);
@@ -1307,28 +1293,26 @@ export function PageContent() {
           console.log(
             `Updating form status: ${formType} -> ${
               completed ? "completed" : "incomplete"
-            }`
+            }`,
           );
 
           if (!normalizedFormType) {
             console.warn(
               "Unknown form type for status update:",
               formType,
-              "Skipping status cache update."
+              "Skipping status cache update.",
             );
             return;
           }
 
           // Update cached status so the next tab enables immediately
-          let nextStatus:
-            | {
-                clientProfile: boolean;
-                applicationTitle: boolean;
-                ipDisclosure: boolean;
-                substantialUse: boolean;
-                deedAssignment: boolean;
-              }
-            | null = null;
+          let nextStatus: {
+            clientProfile: boolean;
+            applicationTitle: boolean;
+            ipDisclosure: boolean;
+            substantialUse: boolean;
+            deedAssignment: boolean;
+          } | null = null;
 
           setKnownApplicationStatus((prev) => {
             const existing = prev[applicationId]?.status || {
@@ -1361,18 +1345,18 @@ export function PageContent() {
                 nextStatus.applicationTitle &&
                 nextStatus.ipDisclosure &&
                 nextStatus.substantialUse &&
-                nextStatus.deedAssignment
+                nextStatus.deedAssignment,
             );
           }
 
           console.log(
             `Form status updated: ${formType} is now ${
               completed ? "completed" : "incomplete"
-            }`
+            }`,
           );
         } else {
           console.log(
-            `Ignoring form status update for different application: ${applicationId} vs active ${activeApplicationId}`
+            `Ignoring form status update for different application: ${applicationId} vs active ${activeApplicationId}`,
           );
         }
       };
@@ -1927,15 +1911,17 @@ export function PageContent() {
                             ? "bg-[#1B5E20]/10 text-[#1B5E20] font-medium"
                             : "text-gray-600 hover:text-gray-900",
                           !isTabEnabled(item.id) &&
-                          !activeApplicationId &&
-                            "opacity-50 cursor-not-allowed hover:bg-transparent"
+                            !activeApplicationId &&
+                            "opacity-50 cursor-not-allowed hover:bg-transparent",
                         )}
                         onClick={() =>
                           isTabEnabled(item.id) &&
                           activeApplicationId &&
                           handleTabChange(item.id as string)
                         }
-                        disabled={!isTabEnabled(item.id) || !activeApplicationId}
+                        disabled={
+                          !isTabEnabled(item.id) || !activeApplicationId
+                        }
                       >
                         <div className="flex items-center gap-2">
                           <div
@@ -1943,7 +1929,7 @@ export function PageContent() {
                               "size-6 rounded-md flex items-center justify-center",
                               activeForm === item.id
                                 ? "bg-[#1B5E20]/20"
-                                : "bg-gray-100"
+                                : "bg-gray-100",
                             )}
                           >
                             {item.icon}

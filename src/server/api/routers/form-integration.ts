@@ -239,6 +239,18 @@ export const formIntegrationRouter = createTRPCRouter({
         applicationId: z.string(),
         title: z.string().optional(),
         description: z.string().optional(),
+        ipType: z
+          .enum([
+            "patent",
+            "copyright",
+            "trademark",
+            "utility_model",
+            "industrial_design",
+            "trade_secret",
+            "not_sure",
+            "other",
+          ])
+          .optional(),
         status: z
           .enum(["draft", "pending", "in_progress", "approved", "rejected"])
           .optional(),
@@ -273,6 +285,7 @@ export const formIntegrationRouter = createTRPCRouter({
         if (input.title) updateData.title = input.title;
         if (input.description !== undefined)
           updateData.description = input.description;
+        if (input.ipType) updateData.ipType = input.ipType;
         if (input.status) updateData.status = input.status;
         if (input.progress !== undefined) updateData.progress = input.progress;
 

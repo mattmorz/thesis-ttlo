@@ -461,6 +461,7 @@ export function PageContent() {
         timestamp: number;
         status: {
           clientProfile: boolean;
+          applicationTitle: boolean;
           ipDisclosure: boolean;
           substantialUse: boolean;
           deedAssignment: boolean;
@@ -520,6 +521,7 @@ export function PageContent() {
   // The helper function to update the form progress display
   const updateFormProgressDisplay = (status: {
     clientProfile: boolean;
+    applicationTitle: boolean;
     ipDisclosure: boolean;
     substantialUse: boolean;
     deedAssignment: boolean;
@@ -574,6 +576,7 @@ export function PageContent() {
 
         // Update each form indicator
         updateFormDot("client-profile", status.clientProfile);
+        updateFormDot("application-title", status.applicationTitle);
         updateFormDot("ip-disclosure", status.ipDisclosure);
         updateFormDot("substantial-use", status.substantialUse);
         updateFormDot("deed-assignment", status.deedAssignment);
@@ -637,6 +640,9 @@ export function PageContent() {
       // Extract the form status from the result
       const formStatus = {
         clientProfile: Boolean(result.data.clientProfile),
+        applicationTitle:
+          knownApplicationStatus[activeApplicationId]?.status
+            ?.applicationTitle || false,
         ipDisclosure: Boolean(result.data.ipDisclosure),
         substantialUse: Boolean(result.data.substantialUse),
         deedAssignment: Boolean(result.data.deedAssignment),
@@ -656,12 +662,13 @@ export function PageContent() {
         });
 
         // Update the React state
-        setClientSideAllFormsCompleted(
-          formStatus.clientProfile &&
-            formStatus.ipDisclosure &&
-            formStatus.substantialUse &&
-            formStatus.deedAssignment
-        );
+      setClientSideAllFormsCompleted(
+        formStatus.clientProfile &&
+          formStatus.applicationTitle &&
+          formStatus.ipDisclosure &&
+          formStatus.substantialUse &&
+          formStatus.deedAssignment
+      );
 
         // Count completed forms and set states accordingly
         const completedCount = Object.values(formStatus).filter(Boolean).length;
@@ -735,6 +742,7 @@ export function PageContent() {
       console.log("Cached status:", knownStatus.status);
       setClientSideAllFormsCompleted(
         knownStatus.status.clientProfile &&
+          knownStatus.status.applicationTitle &&
           knownStatus.status.ipDisclosure &&
           knownStatus.status.substantialUse &&
           knownStatus.status.deedAssignment
@@ -805,6 +813,7 @@ export function PageContent() {
   const formTypeMapping: Record<string, string> = {
     // camelCase to kebab-case (used for form registry)
     clientProfile: "client-profile",
+    applicationTitle: "application-title",
     ipDisclosure: "ip-disclosure",
     substantialUse: "substantial-use",
     deedOfAssignment: "deed-assignment", // The key that was missing before
@@ -812,6 +821,7 @@ export function PageContent() {
 
     // kebab-case to camelCase (for accessing status data)
     "client-profile": "clientProfile",
+    "application-title": "applicationTitle",
     "ip-disclosure": "ipDisclosure",
     "substantial-use": "substantialUse",
     "deed-assignment": "deedAssignment",
@@ -1057,6 +1067,7 @@ export function PageContent() {
         setKnownApplicationStatus((prev) => {
           const existing = prev[applicationId]?.status || {
             clientProfile: false,
+            applicationTitle: false,
             ipDisclosure: false,
             substantialUse: false,
             deedAssignment: false,
@@ -1103,6 +1114,57 @@ export function PageContent() {
             disclosureId,
             applicationId,
             "IP Disclosure Form"
+          );
+        }
+      }
+    };
+
+    const handleApplicationTitleFormCompleted = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { completed, applicationId } = customEvent.detail;
+
+      if (applicationId === activeApplicationId) {
+        let nextStatus:
+          | {
+              clientProfile: boolean;
+              applicationTitle: boolean;
+              ipDisclosure: boolean;
+              substantialUse: boolean;
+              deedAssignment: boolean;
+            }
+          | null = null;
+
+        setKnownApplicationStatus((prev) => {
+          const existing = prev[applicationId]?.status || {
+            clientProfile: false,
+            applicationTitle: false,
+            ipDisclosure: false,
+            substantialUse: false,
+            deedAssignment: false,
+          };
+
+          nextStatus = {
+            ...existing,
+            applicationTitle: completed,
+          };
+
+          return {
+            ...prev,
+            [applicationId]: {
+              timestamp: Date.now(),
+              status: nextStatus!,
+            },
+          };
+        });
+
+        if (nextStatus) {
+          updateFormProgressDisplay(nextStatus);
+          setClientSideAllFormsCompleted(
+            nextStatus.clientProfile &&
+              nextStatus.applicationTitle &&
+              nextStatus.ipDisclosure &&
+              nextStatus.substantialUse &&
+              nextStatus.deedAssignment
           );
         }
       }
@@ -1164,6 +1226,10 @@ export function PageContent() {
       handleIPDisclosureFormCompleted
     );
     window.addEventListener(
+      "applicationTitleFormCompleted",
+      handleApplicationTitleFormCompleted
+    );
+    window.addEventListener(
       "substantialUseFormCompleted",
       handleSubstantialUseFormCompleted
     );
@@ -1181,6 +1247,10 @@ export function PageContent() {
       window.removeEventListener(
         "ipDisclosureFormCompleted",
         handleIPDisclosureFormCompleted
+      );
+      window.removeEventListener(
+        "applicationTitleFormCompleted",
+        handleApplicationTitleFormCompleted
       );
       window.removeEventListener(
         "substantialUseFormCompleted",
@@ -1203,14 +1273,97 @@ export function PageContent() {
       window.updateIPFormStatus = (formType, completed, applicationId) => {
         // Only process if this is for the current active application
         if (applicationId === activeApplicationId) {
+          // Normalize form type to our internal status keys
+          const normalizedFormType = (() => {
+            switch (formType) {
+              case "client_profile":
+              case "clientProfile":
+              case "client-profile":
+                return "clientProfile";
+              case "application_title":
+              case "applicationTitle":
+              case "application-title":
+                return "applicationTitle";
+              case "ip_disclosure":
+              case "ipDisclosure":
+              case "ip-disclosure":
+                return "ipDisclosure";
+              case "substantial_use":
+              case "substantialUse":
+              case "substantial-use":
+                return "substantialUse";
+              case "deed_assignment":
+              case "deedAssignment":
+              case "deed-assignment":
+              case "deed_of_assignment":
+              case "deedOfAssignment":
+              case "deed-of-assignment":
+                return "deedAssignment";
+              default:
+                return null;
+            }
+          })();
+
           console.log(
             `Updating form status: ${formType} -> ${
               completed ? "completed" : "incomplete"
             }`
           );
 
-          // Update the form status in our local state
-          setClientSideAllFormsCompleted(completed);
+          if (!normalizedFormType) {
+            console.warn(
+              "Unknown form type for status update:",
+              formType,
+              "Skipping status cache update."
+            );
+            return;
+          }
+
+          // Update cached status so the next tab enables immediately
+          let nextStatus:
+            | {
+                clientProfile: boolean;
+                applicationTitle: boolean;
+                ipDisclosure: boolean;
+                substantialUse: boolean;
+                deedAssignment: boolean;
+              }
+            | null = null;
+
+          setKnownApplicationStatus((prev) => {
+            const existing = prev[applicationId]?.status || {
+              clientProfile: false,
+              applicationTitle: false,
+              ipDisclosure: false,
+              substantialUse: false,
+              deedAssignment: false,
+            };
+
+            nextStatus = {
+              ...existing,
+              [normalizedFormType]: completed,
+            };
+
+            return {
+              ...prev,
+              [applicationId]: {
+                timestamp: Date.now(),
+                status: nextStatus!,
+              },
+            };
+          });
+
+          if (nextStatus) {
+            // Keep UI in sync with the latest status
+            updateFormProgressDisplay(nextStatus);
+            setClientSideAllFormsCompleted(
+              nextStatus.clientProfile &&
+                nextStatus.applicationTitle &&
+                nextStatus.ipDisclosure &&
+                nextStatus.substantialUse &&
+                nextStatus.deedAssignment
+            );
+          }
 
           console.log(
             `Form status updated: ${formType} is now ${

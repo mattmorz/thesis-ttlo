@@ -20,21 +20,65 @@ import { trpc } from "@/app/_trpc/client";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formSchema = z.object({
   title: z.string().min(5, {
     message: "Title must be at least 5 characters.",
   }),
   description: z.string().optional(),
+  ipType: z.enum([
+    "patent",
+    "copyright",
+    "trademark",
+    "utility_model",
+    "industrial_design",
+    "trade_secret",
+    "not_sure",
+    "other",
+  ]),
 });
 
 export function ApplicationTitleForm() {
-  const { activeApplication, refetchApplications } = useActiveApplication();
+  const router = useRouter();
+  const { activeApplication, refetchApplications, setApplications } =
+    useActiveApplication();
 
   const updateApplicationMutation = trpc.formIntegration.updateApplication.useMutation({
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       toast.success("Application updated successfully!");
+      if (activeApplication?.id) {
+        setApplications((prev) =>
+          prev.map((app) =>
+            app.id === activeApplication.id
+              ? {
+                  ...app,
+                  title: variables.title ?? app.title,
+                  description:
+                    variables.description !== undefined
+                      ? variables.description
+                      : app.description,
+                  ipType: variables.ipType ?? app.ipType,
+                }
+              : app
+          )
+        );
+      }
       refetchApplications();
+      if (activeApplication?.id) {
+        const event = new CustomEvent("applicationTitleFormCompleted", {
+          detail: { completed: true, applicationId: activeApplication.id },
+        });
+        window.dispatchEvent(event);
+      }
+      router.push("/forms?tab=ip-disclosure");
     },
     onError: (error) => {
       toast.error("Failed to update application", {
@@ -48,6 +92,7 @@ export function ApplicationTitleForm() {
     defaultValues: {
       title: activeApplication?.title || "",
       description: activeApplication?.description || "",
+      ipType: (activeApplication?.ipType as any) || "not_sure",
     },
   });
 
@@ -56,6 +101,7 @@ export function ApplicationTitleForm() {
       form.reset({
         title: activeApplication.title,
         description: activeApplication.description || "",
+        ipType: (activeApplication.ipType as any) || "not_sure",
       });
     }
   }, [activeApplication, form]);
@@ -110,6 +156,41 @@ export function ApplicationTitleForm() {
                   </FormControl>
                   <FormDescription>
                     A short description helps in quickly identifying the application's purpose.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ipType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>IP Type</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select IP type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="patent">Patent</SelectItem>
+                        <SelectItem value="trademark">Trademark</SelectItem>
+                        <SelectItem value="copyright">Copyright</SelectItem>
+                        <SelectItem value="industrial_design">
+                          Industrial Design
+                        </SelectItem>
+                        <SelectItem value="utility_model">
+                          Utility Model
+                        </SelectItem>
+                        <SelectItem value="trade_secret">Trade Secret</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="not_sure">Not Sure</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormDescription>
+                    Choose the category that best fits your intellectual
+                    property.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

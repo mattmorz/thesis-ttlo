@@ -56,11 +56,11 @@ export function DisclosureConfirmation() {
     activeTab,
     setActiveTab,
     copyrightApplication,
-    transactionFormPart1,
-    transactionFormPart2,
+    // transactionFormPart1,
+    // transactionFormPart2,
     setCopyrightApplication,
-    setTransactionFormPart1,
-    setTransactionFormPart2,
+    // setTransactionFormPart1,
+    // setTransactionFormPart2,
     resetSubmissionState,
     patentUtilityModelApplication,
     setPatentUtilityModelApplication,
@@ -783,101 +783,102 @@ export function DisclosureConfirmation() {
           }
         }
 
-        // Save transaction form part 1 if present
-        if (applicantsInfo?.ipTypes?.copyright && transactionFormPart1) {
-          try {
-            console.log(
-              "Saving transaction form part 1:",
-              transactionFormPart1
-            );
+        // Transaction form part 1/2 saving removed per updated requirements.
+            // Save transaction form part 1 if present
+        // if (applicantsInfo?.ipTypes?.copyright && transactionFormPart1) {
+        //   try {
+        //     console.log(
+        //       "Saving transaction form part 1:",
+        //       transactionFormPart1
+        //     );
 
-            // Update the store with current transaction form data
-            setTransactionFormPart1(transactionFormPart1);
+        //     // Update the store with current transaction form data
+        //     setTransactionFormPart1(transactionFormPart1);
 
-            // Make direct API call with registry flag
-            const currentDisclosureId =
-              useIpDisclosureStore.getState().disclosureId;
-            const response = await fetch(
-              `/api/ip-disclosure/${currentDisclosureId}/transaction-part1`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  disclosureId: currentDisclosureId,
-                  data: transactionFormPart1,
-                  registerForm: true,
-                }),
-              }
-            );
+        //     // Make direct API call with registry flag
+        //     const currentDisclosureId =
+        //       useIpDisclosureStore.getState().disclosureId;
+        //     const response = await fetch(
+        //       `/api/ip-disclosure/${currentDisclosureId}/transaction-part1`,
+        //       {
+        //         method: "POST",
+        //         headers: {
+        //           "Content-Type": "application/json",
+        //         },
+        //         body: JSON.stringify({
+        //           disclosureId: currentDisclosureId,
+        //           data: transactionFormPart1,
+        //           registerForm: true,
+        //         }),
+        //       }
+        //     );
 
-            if (!response.ok) {
-              throw new Error(
-                `Failed to save transaction part 1: ${response.status}`
-              );
-            }
+        //     if (!response.ok) {
+        //       throw new Error(
+        //         `Failed to save transaction part 1: ${response.status}`
+        //       );
+        //     }
 
-            const result = await response.json();
-            console.log(
-              "Transaction part 1 saved via direct API call:",
-              result
-            );
-          } catch (error: unknown) {
-            console.error(
-              "Error saving transaction form part 1:",
-              error instanceof Error ? error.message : "Unknown error"
-            );
-          }
-        }
+        //     const result = await response.json();
+        //     console.log(
+        //       "Transaction part 1 saved via direct API call:",
+        //       result
+        //     );
+        //   } catch (error: unknown) {
+        //     console.error(
+        //       "Error saving transaction form part 1:",
+        //       error instanceof Error ? error.message : "Unknown error"
+        //     );
+        //   }
+        // }
 
-        // Save transaction form part 2 if present
-        if (applicantsInfo?.ipTypes?.copyright && transactionFormPart2) {
-          try {
-            console.log(
-              "Saving transaction form part 2:",
-              transactionFormPart2
-            );
+        // // Save transaction form part 2 if present
+        // if (applicantsInfo?.ipTypes?.copyright && transactionFormPart2) {
+        //   try {
+        //     console.log(
+        //       "Saving transaction form part 2:",
+        //       transactionFormPart2
+        //     );
 
-            // Update the store with current transaction form data
-            setTransactionFormPart2(transactionFormPart2);
+        //     // Update the store with current transaction form data
+        //     setTransactionFormPart2(transactionFormPart2);
 
-            // Make direct API call with registry flag
-            const currentDisclosureId =
-              useIpDisclosureStore.getState().disclosureId;
-            const response = await fetch(
-              `/api/ip-disclosure/${currentDisclosureId}/transaction-part2`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  disclosureId: currentDisclosureId,
-                  data: transactionFormPart2,
-                  registerForm: true,
-                }),
-              }
-            );
+        //     // Make direct API call with registry flag
+        //     const currentDisclosureId =
+        //       useIpDisclosureStore.getState().disclosureId;
+        //     const response = await fetch(
+        //       `/api/ip-disclosure/${currentDisclosureId}/transaction-part2`,
+        //       {
+        //         method: "POST",
+        //         headers: {
+        //           "Content-Type": "application/json",
+        //         },
+        //         body: JSON.stringify({
+        //           disclosureId: currentDisclosureId,
+        //           data: transactionFormPart2,
+        //           registerForm: true,
+        //         }),
+        //       }
+        //     );
 
-            if (!response.ok) {
-              throw new Error(
-                `Failed to save transaction part 2: ${response.status}`
-              );
-            }
+        //     if (!response.ok) {
+        //       throw new Error(
+        //         `Failed to save transaction part 2: ${response.status}`
+        //       );
+        //     }
 
-            const result = await response.json();
-            console.log(
-              "Transaction part 2 saved via direct API call:",
-              result
-            );
-          } catch (error: unknown) {
-            console.error(
-              "Error saving transaction form part 2:",
-              error instanceof Error ? error.message : "Unknown error"
-            );
-          }
-        }
+        //     const result = await response.json();
+        //     console.log(
+        //       "Transaction part 2 saved via direct API call:",
+        //       result
+        //     );
+        //   } catch (error: unknown) {
+        //     console.error(
+        //       "Error saving transaction form part 2:",
+        //       error instanceof Error ? error.message : "Unknown error"
+        //     );
+        //   }
+        // }
 
         // Save patent/utility model application if present
         if (
@@ -990,8 +991,8 @@ export function DisclosureConfirmation() {
         applicantsInfo,
         disclosureConfirmation: confirmationData,
         copyrightApplication,
-        transactionFormPart1,
-        transactionFormPart2,
+        // transactionFormPart1,
+        // transactionFormPart2,
         patentUtilityModelApplication,
         trademarkApplication,
         tradeSecretApplication,
@@ -1019,19 +1020,20 @@ export function DisclosureConfirmation() {
         );
       }
 
-      if (completeFormData.transactionFormPart1) {
-        console.log(
-          "SUBMISSION DATA - Transaction Part 1:",
-          completeFormData.transactionFormPart1
-        );
-      }
+      // Transaction form part 1/2 removed per updated requirements.
+      //      if (completeFormData.transactionFormPart1) {
+      //   console.log(
+      //     "SUBMISSION DATA - Transaction Part 1:",
+      //     completeFormData.transactionFormPart1
+      //   );
+      // }
 
-      if (completeFormData.transactionFormPart2) {
-        console.log(
-          "SUBMISSION DATA - Transaction Part 2:",
-          completeFormData.transactionFormPart2
-        );
-      }
+      // if (completeFormData.transactionFormPart2) {
+      //   console.log(
+      //     "SUBMISSION DATA - Transaction Part 2:",
+      //     completeFormData.transactionFormPart2
+      //   );
+      // }
 
       if (completeFormData.patentUtilityModelApplication) {
         console.log(
@@ -1573,14 +1575,15 @@ export function DisclosureConfirmation() {
                       Work Title:{" "}
                       {copyrightApplication.workTitle || "Not provided"}
                     </span>
-                    {transactionFormPart1 && (
+                    {/* Transaction form parts removed per updated requirements. */}
+                       {/* {transactionFormPart1 && (
                       <span className="block">Transaction Type: Included</span>
                     )}
                     {transactionFormPart2 && (
                       <span className="block">
                         Transaction Details: Completed
                       </span>
-                    )}
+                    )} */}
                   </div>
                 </div>
               )}

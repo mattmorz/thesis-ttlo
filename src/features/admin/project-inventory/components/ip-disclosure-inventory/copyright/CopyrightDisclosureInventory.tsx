@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CopyrightBasicApplicationInventory } from "./CopyrightBasicApplicationInventory";
-import { CopyrightTransactionPart1Inventory } from "./CopyrightTransactionPart1Inventory";
-import { CopyrightTransactionPart2Inventory } from "./CopyrightTransactionPart2Inventory";
+// import { CopyrightTransactionPart1Inventory } from "./CopyrightTransactionPart1Inventory";
+// import { CopyrightTransactionPart2Inventory } from "./CopyrightTransactionPart2Inventory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookCopy, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -47,10 +47,7 @@ function GlobalSearchBar() {
 
 /**
  * Main Copyright Disclosure Inventory component
- * This component manages tabs for the three different copyright tables:
- * - Basic Application
- * - Transaction Part 1
- * - Transaction Part 2
+ * This component manages tabs for the copyright tables.
  */
 export function CopyrightDisclosureInventory() {
   const [activeTab, setActiveTab] = useState("basic-application");
@@ -72,29 +69,30 @@ export function CopyrightDisclosureInventory() {
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="mb-4 grid grid-cols-3 w-full md:w-auto">
+              <TabsList className="mb-4 grid grid-cols-1 w-full md:w-auto">
                 <TabsTrigger value="basic-application">
                   Basic Application
                 </TabsTrigger>
-                <TabsTrigger value="transaction-part1">
+                {/* Commented the Transaction 1 and 2 */}
+                       {/* <TabsTrigger value="transaction-part1">
                   Transaction Part 1
                 </TabsTrigger>
                 <TabsTrigger value="transaction-part2">
                   Transaction Part 2
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="basic-application">
                 <CopyrightBasicApplicationInventory />
               </TabsContent>
-
-              <TabsContent value="transaction-part1">
+              {/*Commented the transaction form 1 and 2 */}
+              {/* <TabsContent value="transaction-part1">
                 <CopyrightTransactionPart1Inventory />
               </TabsContent>
 
               <TabsContent value="transaction-part2">
                 <CopyrightTransactionPart2Inventory />
-              </TabsContent>
+              </TabsContent> */}
             </Tabs>
           </CardContent>
         </Card>

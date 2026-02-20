@@ -38,6 +38,15 @@ import { useFormSubmission } from "@/features/client/form-integration/hooks/useF
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { safeFetch } from "@/lib/utils";
 
+// ✅ Interface for progress tracking prop
+interface ClientProfileFormProps {
+  handleSectionCompletion?: (
+    section: "personalInfo" | "educationalBackground" | "backgroundIP",
+    isCompleted: boolean
+  ) => void;
+}
+
+
 // Add TypeScript declaration for window global methods
 declare global {
   interface Window {
@@ -59,6 +68,7 @@ const clientProfileSchema = z.object({
   legalName: z.string().min(1, "Legal name is required"),
   businessType: z.enum(["company", "soleProprietor"]),
   // Add more fields as needed
+
 });
 
 /**
@@ -76,7 +86,7 @@ const clientProfileSchema = z.object({
  * 2. Educational Background
  * 3. Background IP
  */
-export function ClientProfileForm() {
+export function ClientProfileForm({ handleSectionCompletion }: ClientProfileFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Get the current tab parameter, default to "personal" if not provided
@@ -115,11 +125,45 @@ export function ClientProfileForm() {
     education: null,
     background: null,
   });
+  /*
+useEffect(() => {
+  if (!formState) return;
+
+  // Check if Personal Info is complete
+  const personalComplete =
+    formState.personal?.firstName?.trim() &&
+    formState.personal?.lastName?.trim() &&
+    formState.personal?.mailingAddress?.trim() &&
+    formState.personal?.contactNumber?.trim();
+
+  // Check if Education is complete
+  const educationComplete =
+    formState.education?.degree?.trim() &&
+    formState.education?.profession?.trim() &&
+    (formState.education?.highestDegree?.value !== "other" ||
+      (formState.education?.highestDegree?.otherValue?.trim()));
+
+  // Check if Background IP is complete
+  const backgroundComplete =
+    formState.background?.familiarWithIPRights?.value ||
+    formState.background?.ipExperience?.hasExperience !== null;
+
+  // 🔹 Enable/disable tabs based on completion
+  setIsEducationTabDisabled(!personalComplete);
+  setIsBackgroundTabDisabled(!personalComplete || !educationComplete);
+
+  // 🔹 Call handleSectionCompletion if prop exists
+  if (handleSectionCompletion) {
+    handleSectionCompletion("personalInfo", !!personalComplete);
+    handleSectionCompletion("educationalBackground", !!educationComplete);
+    handleSectionCompletion("backgroundIP", !!backgroundComplete);
+  }
+}, [formState, handleSectionCompletion]);
+ */
 
   const [isEducationTabDisabled, setIsEducationTabDisabled] = useState(true);
   const [isBackgroundTabDisabled, setIsBackgroundTabDisabled] = useState(true);
 
-  // Add a useEffect to check form completion and disable tabs accordingly
   useEffect(() => {
     const checkPersonalFormCompletion = () => {
       if (typeof window === "undefined") return false;

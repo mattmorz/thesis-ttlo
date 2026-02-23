@@ -1176,13 +1176,13 @@ export function CopyrightApplication() {
             information
           </p>
         </div>
-
-        <Alert className="border-green-200 bg-green-50 text-green-800">
+      {/*!! commented as such this is not needed as for that reason the form is already on a dynamic hiding and showing of form upon selecting a type of IP*/}
+        {/* <Alert className="border-green-200 bg-green-50 text-green-800">
           <Info className="h-4 w-4 text-green-700" />
           <AlertDescription>
             Skip this section if your application is not related to Copyright.
           </AlertDescription>
-        </Alert>
+        </Alert> */}
 
         <Card className="border-green-200">
           <CardContent className="pt-6 space-y-6">

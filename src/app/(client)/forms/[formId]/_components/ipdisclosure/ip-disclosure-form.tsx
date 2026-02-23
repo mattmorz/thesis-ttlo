@@ -148,25 +148,10 @@ export function IPDisclosureForm() {
     }
   }, [clearLocalStorage]);
 
-  // Get active IP types, prioritizing applicantsInfo from the store over selectedIpTypes from context
-  const activeIpTypes: IpTypes = useMemo(() => {
-    // Always prefer the store data if available
-    if (applicantsInfo?.ipTypes) {
-      const formattedTypes = {
-        copyright: Boolean(applicantsInfo.ipTypes.copyright),
-        patent: Boolean(applicantsInfo.ipTypes.patent),
-        utilityModel: Boolean(applicantsInfo.ipTypes.utilityModel),
-        industrialDesign: Boolean(applicantsInfo.ipTypes.industrialDesign),
-        trademark: Boolean(applicantsInfo.ipTypes.trademark),
-        tradeSecret: Boolean(applicantsInfo.ipTypes.tradeSecret),
-        other: Boolean(applicantsInfo.ipTypes.other),
-        notSure: Boolean(applicantsInfo.ipTypes.notSure),
-      };
-      return formattedTypes;
-    }
-    // Fall back to context data if store data isn't available
-    return selectedIpTypes;
-  }, [applicantsInfo?.ipTypes, selectedIpTypes]);
+  // Get active IP types from context to reflect live checkbox changes
+  const activeIpTypes: IpTypes = useMemo(() => selectedIpTypes, [
+    selectedIpTypes,
+  ]);
 
   // Memoize visible tab components based on active IP types
   const visibleTabComponents = useMemo(() => {

@@ -1189,6 +1189,26 @@ export function ApplicantsInformation() {
     ([key, value]) => key !== "notSure" && value === true
   );
 
+  const goToIpTab = (type: IpTypeKeys) => {
+    switch (type) {
+      case "copyright":
+        setActiveTab("copyright-application");
+        break;
+      case "patent":
+      case "utilityModel":
+        setActiveTab("patent-application");
+        break;
+      case "trademark":
+        setActiveTab("trademark");
+        break;
+      case "tradeSecret":
+        setActiveTab("trade-secret");
+        break;
+      default:
+        break;
+    }
+  };
+
   useEffect(() => {
     if (!isApplicantAlsoInventor) return;
     if (!watchedApplicants || watchedApplicants.length === 0) return;
@@ -1596,6 +1616,9 @@ export function ApplicantsInformation() {
                                         });
                                       }
                                       field.onChange(checked);
+                                      setSelectedIpTypes({
+                                        notSure: checked === true,
+                                      });
                                       return;
                                     }
 
@@ -1603,6 +1626,15 @@ export function ApplicantsInformation() {
                                     if (checked) {
                                       form.setValue("ipTypes.notSure", false, {
                                         shouldDirty: true,
+                                      });
+                                      setSelectedIpTypes({
+                                        [item.name]: true,
+                                        notSure: false,
+                                      });
+                                      goToIpTab(item.name);
+                                    } else {
+                                      setSelectedIpTypes({
+                                        [item.name]: false,
                                       });
                                     }
                                   }}

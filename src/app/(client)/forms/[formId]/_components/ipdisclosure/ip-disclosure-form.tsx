@@ -148,10 +148,26 @@ export function IPDisclosureForm() {
     }
   }, [clearLocalStorage]);
 
-  // Get active IP types from context to reflect live checkbox changes
-  const activeIpTypes: IpTypes = useMemo(() => selectedIpTypes, [
-    selectedIpTypes,
-  ]);
+  // Get active IP types, using live checkbox state on the applicants tab,
+  // and saved store data once navigating away.
+  const activeIpTypes: IpTypes = useMemo(() => {
+    if (activeTab === "applicants-information") {
+      return selectedIpTypes;
+    }
+    if (applicantsInfo?.ipTypes) {
+      return {
+        copyright: Boolean(applicantsInfo.ipTypes.copyright),
+        patent: Boolean(applicantsInfo.ipTypes.patent),
+        utilityModel: Boolean(applicantsInfo.ipTypes.utilityModel),
+        industrialDesign: Boolean(applicantsInfo.ipTypes.industrialDesign),
+        trademark: Boolean(applicantsInfo.ipTypes.trademark),
+        tradeSecret: Boolean(applicantsInfo.ipTypes.tradeSecret),
+        other: Boolean(applicantsInfo.ipTypes.other),
+        notSure: Boolean(applicantsInfo.ipTypes.notSure),
+      };
+    }
+    return selectedIpTypes;
+  }, [activeTab, applicantsInfo?.ipTypes, selectedIpTypes]);
 
   // Memoize visible tab components based on active IP types
   const visibleTabComponents = useMemo(() => {

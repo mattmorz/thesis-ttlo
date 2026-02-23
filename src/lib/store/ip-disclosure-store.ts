@@ -606,8 +606,8 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
       applicationId: null, // Initialize applicationId
       applicantsInfo: null,
       disclosureConfirmation: null,
-      activeTab: "applicants-info",
-      visibleTabs: ["applicants-info", "confirmation"],
+      activeTab: "applicants-information",
+      visibleTabs: ["applicants-information", "confirmation"],
       isSubmitted: false,
       hydrated: false, // Add hydration tracking
       initialDataFetched: false, // Track if initial data has been fetched
@@ -1732,8 +1732,8 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
           // applicationId: null,
           applicantsInfo: null,
           disclosureConfirmation: null,
-          activeTab: "applicants-info",
-          visibleTabs: ["applicants-info", "confirmation"],
+          activeTab: "applicants-information",
+          visibleTabs: ["applicants-information", "confirmation"],
           isSubmitted: false,
           initialDataFetched: false,
           fetchAttempted: false,

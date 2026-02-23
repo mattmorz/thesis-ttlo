@@ -1209,6 +1209,16 @@ export function ApplicantsInformation() {
     }
   };
 
+  const syncIpTypesToStore = () => {
+    const nextValues = form.getValues();
+    setFormData((prev) => ({
+      ...prev,
+      ipTypes: nextValues.ipTypes,
+      otherIpType: nextValues.otherIpType,
+    }));
+    setApplicantsInfo(nextValues);
+  };
+
   useEffect(() => {
     if (!isApplicantAlsoInventor) return;
     if (!watchedApplicants || watchedApplicants.length === 0) return;
@@ -1619,6 +1629,7 @@ export function ApplicantsInformation() {
                                       setSelectedIpTypes({
                                         notSure: checked === true,
                                       });
+                                      syncIpTypesToStore();
                                       return;
                                     }
 
@@ -1631,12 +1642,12 @@ export function ApplicantsInformation() {
                                         [item.name]: true,
                                         notSure: false,
                                       });
-                                      goToIpTab(item.name);
                                     } else {
                                       setSelectedIpTypes({
                                         [item.name]: false,
                                       });
                                     }
+                                    syncIpTypesToStore();
                                   }}
                                 />
                               </FormControl>

@@ -66,7 +66,12 @@ const ApplicantsInfoFormSchema = z.object({
     notSure: z.boolean().default(false),
   }),
   otherIpType: z.string().optional(),
-  isRightfulOwner: z.boolean().default(false),
+  isRightfulOwner: z
+    .boolean()
+    .refine((value) => value === true, {
+      message: "This confirmation is required.",
+    }),
+  isApplicantAlsoInventor: z.boolean().default(false),
   authorizedRepresentative: z.string().optional(),
 });
 
@@ -133,6 +138,7 @@ export function ApplicantsInformation() {
     },
     otherIpType: "",
     isRightfulOwner: false,
+    isApplicantAlsoInventor: false,
     authorizedRepresentative: "",
   });
 
@@ -358,6 +364,9 @@ export function ApplicantsInformation() {
               isRightfulOwner: Boolean(
                 loadedData.applicantsInfo.isRightfulOwner
               ),
+              isApplicantAlsoInventor: Boolean(
+                loadedData.applicantsInfo.isApplicantAlsoInventor
+              ),
               authorizedRepresentative:
                 loadedData.applicantsInfo.authorizedRepresentative || "",
             };
@@ -381,6 +390,10 @@ export function ApplicantsInformation() {
                 // Then manually set each field to be extra sure
                 form.setValue("email", formattedData.email);
                 form.setValue("isRightfulOwner", formattedData.isRightfulOwner);
+                form.setValue(
+                  "isApplicantAlsoInventor",
+                  formattedData.isApplicantAlsoInventor
+                );
                 form.setValue(
                   "authorizedRepresentative",
                   formattedData.authorizedRepresentative
@@ -446,6 +459,7 @@ export function ApplicantsInformation() {
           },
           otherIpType: "",
           isRightfulOwner: false,
+          isApplicantAlsoInventor: false,
           authorizedRepresentative: "",
         };
         setFormData(defaultValues);
@@ -507,6 +521,9 @@ export function ApplicantsInformation() {
         ipTypes: formattedIpTypes,
         otherIpType: applicantsInfo.otherIpType || "",
         isRightfulOwner: Boolean(applicantsInfo.isRightfulOwner),
+        isApplicantAlsoInventor: Boolean(
+          applicantsInfo.isApplicantAlsoInventor
+        ),
         authorizedRepresentative: applicantsInfo.authorizedRepresentative || "",
       };
 
@@ -526,6 +543,10 @@ export function ApplicantsInformation() {
         // Manually set each field to be extra sure
         form.setValue("email", formattedData.email);
         form.setValue("isRightfulOwner", formattedData.isRightfulOwner);
+        form.setValue(
+          "isApplicantAlsoInventor",
+          formattedData.isApplicantAlsoInventor
+        );
         form.setValue(
           "authorizedRepresentative",
           formattedData.authorizedRepresentative
@@ -600,6 +621,10 @@ export function ApplicantsInformation() {
           form.setValue(
             "isRightfulOwner",
             Boolean(applicantsInfo.isRightfulOwner)
+          );
+          form.setValue(
+            "isApplicantAlsoInventor",
+            Boolean(applicantsInfo.isApplicantAlsoInventor)
           );
           form.setValue(
             "authorizedRepresentative",
@@ -710,6 +735,9 @@ export function ApplicantsInformation() {
             },
             otherIpType: data.applicantsInfo.otherIpType || "",
             isRightfulOwner: Boolean(data.applicantsInfo.isRightfulOwner),
+            isApplicantAlsoInventor: Boolean(
+              data.applicantsInfo.isApplicantAlsoInventor
+            ),
             authorizedRepresentative:
               data.applicantsInfo.authorizedRepresentative || "",
           };
@@ -1150,6 +1178,47 @@ export function ApplicantsInformation() {
     };
   }, [form, setSelectedIpTypes]);
 
+  const isApplicantAlsoInventor = form.watch("isApplicantAlsoInventor");
+  const watchedApplicants = form.watch("applicants");
+  const watchedIpTypes = form.watch("ipTypes");
+  const hasSelectedIpType = Object.values(watchedIpTypes || {}).some(
+    (value) => value === true
+  );
+  const isNotSureSelected = Boolean(watchedIpTypes?.notSure);
+  const hasSpecificIpSelected = Object.entries(watchedIpTypes || {}).some(
+    ([key, value]) => key !== "notSure" && value === true
+  );
+
+  useEffect(() => {
+    if (!isApplicantAlsoInventor) return;
+    if (!watchedApplicants || watchedApplicants.length === 0) return;
+
+    const normalizedApplicants = watchedApplicants.map((applicant) => ({
+      firstName: applicant?.firstName || "",
+      middleInitial: applicant?.middleInitial || "",
+      lastName: applicant?.lastName || "",
+    }));
+
+    const currentInventors = form.getValues("inventors") || [];
+    const isSame =
+      currentInventors.length === normalizedApplicants.length &&
+      currentInventors.every((inventor, index) => {
+        const applicant = normalizedApplicants[index];
+        return (
+          inventor?.firstName === applicant.firstName &&
+          inventor?.middleInitial === applicant.middleInitial &&
+          inventor?.lastName === applicant.lastName
+        );
+      });
+
+    if (!isSame) {
+      form.setValue("inventors", normalizedApplicants, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [form, isApplicantAlsoInventor, watchedApplicants]);
+
   // Fix the handleSaveToDatabase function to use these state variables
   const handleSaveToDatabase = async () => {
     console.log(
@@ -1324,6 +1393,28 @@ export function ApplicantsInformation() {
                       Add Inventor
                     </Button>
                   </div>
+                  <FormField
+                    control={form.control}
+                    name="isApplicantAlsoInventor"
+                    render={({ field }) => (
+                      <FormItem className="flex items-start space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            Applicant is also the Author/Inventor/Creator
+                          </FormLabel>
+                          <FormDescription>
+                            This will copy the applicant name(s) below
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
                   {inventorFields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
                       <div className="flex-1 flex gap-2">
@@ -1336,6 +1427,13 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="First Name"
                                   {...field}
+                                  readOnly={isApplicantAlsoInventor}
+                                  aria-readonly={isApplicantAlsoInventor}
+                                  className={
+                                    isApplicantAlsoInventor
+                                      ? "bg-slate-100 text-slate-500"
+                                      : undefined
+                                  }
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -1356,6 +1454,13 @@ export function ApplicantsInformation() {
                                   placeholder="M.I."
                                   maxLength={2}
                                   {...field}
+                                  readOnly={isApplicantAlsoInventor}
+                                  aria-readonly={isApplicantAlsoInventor}
+                                  className={
+                                    isApplicantAlsoInventor
+                                      ? "bg-slate-100 text-slate-500"
+                                      : undefined
+                                  }
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -1375,6 +1480,13 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="Last Name"
                                   {...field}
+                                  readOnly={isApplicantAlsoInventor}
+                                  aria-readonly={isApplicantAlsoInventor}
+                                  className={
+                                    isApplicantAlsoInventor
+                                      ? "bg-slate-100 text-slate-500"
+                                      : undefined
+                                  }
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -1457,14 +1569,42 @@ export function ApplicantsInformation() {
                         name={`ipTypes.${item.name}` as IpTypeFieldPath}
                         render={({ field }) => {
                           const isChecked = field.value;
+                          const isNotSureField = item.name === "notSure";
+                          const isDisabled = isNotSureField
+                            ? hasSpecificIpSelected
+                            : isNotSureSelected;
                           return (
                             <FormItem className="flex items-center space-x-2">
                               <FormControl>
                                 <Checkbox
                                   id={`checkbox-${item.name}`}
                                   checked={isChecked}
+                                  disabled={isDisabled}
                                   onCheckedChange={(checked) => {
+                                    if (item.name === "notSure") {
+                                      if (checked) {
+                                        Object.keys(
+                                          form.getValues("ipTypes")
+                                        ).forEach((key) => {
+                                          if (key !== "notSure") {
+                                            form.setValue(
+                                              `ipTypes.${key as IpTypeKeys}`,
+                                              false,
+                                              { shouldDirty: true }
+                                            );
+                                          }
+                                        });
+                                      }
+                                      field.onChange(checked);
+                                      return;
+                                    }
+
                                     field.onChange(checked);
+                                    if (checked) {
+                                      form.setValue("ipTypes.notSure", false, {
+                                        shouldDirty: true,
+                                      });
+                                    }
                                   }}
                                 />
                               </FormControl>
@@ -1480,6 +1620,11 @@ export function ApplicantsInformation() {
                       />
                     ))}
                   </div>
+                  {!hasSelectedIpType && (
+                    <p className="text-sm text-red-600">
+                      Please select at least one IP type.
+                    </p>
+                  )}
 
                   <div className="space-y-4">
                     {form.watch("ipTypes.other") && (
@@ -1512,21 +1657,25 @@ export function ApplicantsInformation() {
                 control={form.control}
                 name="isRightfulOwner"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormDescription className="font-semibold text-foreground">
-                        Applicant&apos;s Right and Ownership
-                        <br />I confirm that I am the rightful applicant or
-                        authorized representative
-                      </FormDescription>
-                      <FormLabel className="text-sm text-muted-foreground" />
+                  <FormItem className="space-y-2">
+                    <div className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormDescription className="font-semibold text-foreground">
+                          Applicant&apos;s Right and Ownership
+                          <span className="ml-2 text-red-600">*</span>
+                          <br />I confirm that I am the rightful applicant or
+                          authorized representative
+                        </FormDescription>
+                        <FormLabel className="text-sm text-muted-foreground" />
+                      </div>
                     </div>
+                    <FormMessage />
                   </FormItem>
                 )}
               />

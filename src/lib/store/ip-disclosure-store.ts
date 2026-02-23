@@ -470,7 +470,12 @@ export const applicantsInfoSchema = z
       .min(1, "At least one inventor is required"),
     ipTypes: ipTypesSchema,
     otherIpType: z.string().optional(),
-    isRightfulOwner: z.boolean().default(false),
+    isRightfulOwner: z
+      .boolean()
+      .refine((value) => value === true, {
+        message: "This confirmation is required.",
+      }),
+    isApplicantAlsoInventor: z.boolean().default(false),
     authorizedRepresentative: z.string().optional(),
   })
   .refine(

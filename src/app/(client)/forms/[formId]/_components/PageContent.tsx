@@ -106,7 +106,7 @@ const sidebarItems = formNavigationConfig.map((item) => {
     case FormTabs.Application_Title:
       icon = <FolderOpen className="h-4 w-4" />;
       break;
-      
+
     case FormTabs.IP_DISCLOSURE:
       icon = <FileText className="h-4 w-4" />;
       break;
@@ -169,12 +169,11 @@ const getStatusBadge = (status: string) => {
         <Badge variant="outline" className="text-xs">
           {status}
         </Badge>
-        
       );
   }
 };
 
-// Getting Started Guide Component
+// Getting Started Guide Component - NAA KOY CHANGES DIRI
 const GettingStartedGuide = ({
   isCollapsed,
   setIsCollapsed,
@@ -182,293 +181,318 @@ const GettingStartedGuide = ({
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
 }) => {
-  // Track main progress for all 5 forms
-const [progress, setProgress] = useState({
-  clientProfile: false,
-  applicationTitle: false,
-  ipDisclosure: false,
-  substantialUse: false,
-  deedOfAssignment: false,
-});
   // Track completion of each section
-const [completedSections, setCompletedSections] = useState({
-  personalInfo: false,
-  educationalBackground: false,
-  backgroundIP: false,
-});
+  const [completedSections, setCompletedSections] = useState({
+    personalInfo: false,
+    educationalBackground: false,
+    backgroundIP: false,
+  });
 
-const totalSteps = Object.keys(completedSections).length;
+  const totalSteps = Object.keys(completedSections).length;
 
-// Compute completed steps dynamically
-const completedStep = Object.values(completedSections).filter(Boolean).length;
-const handleSectionCompletion = (
-  section: "personalInfo" | "educationalBackground" | "backgroundIP",
-  isCompleted: boolean
-) => {
-  setCompletedSections(prev => ({ ...prev, [section]: isCompleted }));
-};
+  // Compute completed steps dynamically
+  const completedStep = Object.values(completedSections).filter(Boolean).length;
+  const handleSectionCompletion = (
+    section: "personalInfo" | "educationalBackground" | "backgroundIP",
+    isCompleted: boolean,
+  ) => {
+    setCompletedSections((prev) => ({ ...prev, [section]: isCompleted }));
+  };
 
-return (
-  
-  
+  return (
 
-  <Card className="w-full border-[#1B5E20]/20 bg-white shadow-sm">
-    <CardHeader className="pb-3 flex flex-row items-center justify-between border-b">
-      <div>
-        <CardTitle className="text-[#1B5E20] flex items-center gap-2 text-lg">
-          <BookOpen className="h-5 w-5" />
-          Getting Started with Your IP Application
-        </CardTitle>
-        <CardDescription>
-          Complete these forms in order to submit your intellectual property
-          application
-        </CardDescription>
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {isCollapsed ? (
-          <ChevronDown className="h-4 w-4" />
-        ) : (
-          <ChevronUp className="h-4 w-4" />
-        )}
-      </Button>
-    </CardHeader>
-
-    {!isCollapsed && (
-      <>
-        <CardContent className="pt-4 pb-2">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
-                <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
-                  Step 1
-                </div>
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
-                    <ClipboardList className="h-4 w-4" />
-                    Client Profile Form
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Provide your personal information, contact details, and
-                    affiliations. This establishes your identity as the
-                    applicant or inventor.
-                  </p>
-                </div>
-                <ul className="text-xs space-y-1.5 text-slate-700">
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Personal and contact information</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Professional background</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Institutional affiliations</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
-                <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
-                  Step 2
-                </div>
-                {/* Make below disabled as they need to complete their client profile or personal information  */}
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
-                    <FileText className="h-4 w-4" />
-                    IP Disclosure Form
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Document the details of your intellectual property including
-                    description, development timeline, and potential
-                    applications.
-                  </p>
-                </div>
-                <ul className="text-xs space-y-1.5 text-slate-700">
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Detailed IP description</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Development history</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Contributors and ownership</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
-                <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
-                  Step 3
-                </div>
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
-                    <FileType className="h-4 w-4" />
-                    Substantial Use Form
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Declare and document any university resources used in
-                    creating your intellectual property.
-                  </p>
-                </div>
-                <ul className="text-xs space-y-1.5 text-slate-700">
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>University facilities used</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Financial support received</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Equipment and materials</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
-                <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
-                  Step 4
-                </div>
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
-                    <ClipboardCheck className="h-4 w-4" />
-                    Deed of Assignment
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Formally transfer ownership rights of your intellectual
-                    property as required by institutional policies.
-                  </p>
-                </div>
-                <ul className="text-xs space-y-1.5 text-slate-700">
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Legal rights transfer</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Ownership documentation</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Signature and authorization</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h5 className="font-medium text-blue-800">Important Note</h5>
-                  <p className="text-xs text-blue-700 mt-0.5">
-                    All forms should be completed accurately to avoid delays in
-                    processing. You can save your progress at any time and
-                    return to complete your application later. Supporting
-                    documents may be required for each form.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
-              <div className="flex items-start gap-2">
-                <Phone className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h5 className="font-medium text-amber-800">
-                    TTLO Staff Consultation
-                  </h5>
-                  <p className="text-xs text-amber-700 mt-0.5">
-                    Always consult with TTLO staff before finalizing your
-                    submission. They can provide valuable guidance on completing
-                    your forms correctly and ensuring your application meets all
-                    requirements. Contact the TTLO office via email at
-                    ttlo@csu.edu.ph or visit during office hours.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="pt-0 pb-4 flex justify-between items-center">
-          <Button variant="link" className="text-[#1B5E20] p-0" asChild>
-            <Link href="/guidelines/introduction">
-              Learn more about IP protection{" "}
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Link>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-[#1B5E20]"
-            onClick={() => setIsCollapsed(true)}
-          >
-            Hide Guide
-          </Button>
-        </CardFooter>
-      </>
-      
-    )}
-    
-    {/* Progress Tracker */}
-<div className="relative mb-6">
-  {/* Background line */}
-  <div className="absolute top-1/2 left-2 right-2 h-1 bg-slate-200 rounded-full" />
-
-  {/* Active progress line */}
-  <div
-    className="absolute top-1/2 left-0 h-1 bg-[#1B5E20] rounded-full transition-all"
-  style={{
-  width: `${(completedStep / totalSteps) * 100}%`,
-}}
-
-  />
-
-  <div className="relative flex justify-between">
-    {[
-      "",
-      "Client Profile",
-      "Application Title",
-      "IP Disclosure",
-      "Substantial Use",
-      "Deed of Assignment",
-    ].map((label, index) => (
-      <div key={index} className="flex flex-col items-center">
-        <div
-          className={`h-8 w-8 rounded-full border-2 flex items-center justify-center text-xs font-semibold
-            ${
-             index < completedStep
-          ? "bg-[#1B5E20] text-white border-[#1B5E20]"
-          : index === completedStep
-                ? "bg-[#1B5E20] text-white border-[#1B5E20]"
-                : "bg-white text-slate-400 border-slate-300"
-            }`}
-        >
-         
+    <Card className="w-full border-[#1B5E20]/20 bg-white shadow-sm">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between border-b">
+        <div>
+          <CardTitle className="text-[#1B5E20] flex items-center gap-2 text-lg">
+            <BookOpen className="h-5 w-5" />
+            Getting Started with Your IP Application
+          </CardTitle>
+          <CardDescription>
+            Complete these forms in order to submit your intellectual property
+            application
+          </CardDescription>
         </div>
-        <span className="mt-2 text-[11px] text-center text-slate-600 max-w-[80px]">
-          {label}
-        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronUp className="h-4 w-4" />
+          )}
+        </Button>
+      </CardHeader>
+
+      {!isCollapsed && (
+        <>
+          <CardContent className="pt-4 pb-2">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 1
+                  </div>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <ClipboardList className="h-4 w-4" />
+                      Client Profile Form
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Provide your personal information, contact details, and
+                      affiliations. This establishes your identity as the
+                      applicant or inventor.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Personal and contact information</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Professional background</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Institutional affiliations</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 2
+                  </div>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <FileType className="h-4 w-4" />
+                      Application Title 
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                     Provide the Title of your Intellectual Property and a short description of its purpose, development, and potential applications.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Application Title</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Description</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Identify the Application purpose</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 3
+                  </div>
+                  {/* Make below disabled as they need to complete their client profile or personal information  */}
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <FileText className="h-4 w-4" />
+                      IP Disclosure Form
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Document the details of your intellectual property
+                      including description, development timeline, and potential
+                      applications.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Detailed IP description</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Development history</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Contributors and ownership</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 4
+                  </div>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <FileType className="h-4 w-4" />
+                      Substantial Use Form
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Declare and document any university resources used in
+                      creating your intellectual property.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>University facilities used</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Financial support received</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Equipment and materials</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 5
+                  </div>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <ClipboardCheck className="h-4 w-4" />
+                      Deed of Assignment
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Formally transfer ownership rights of your intellectual
+                      property as required by institutional policies.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Legal rights transfer</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Ownership documentation</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Signature and authorization</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h5 className="font-medium text-blue-800">
+                      Important Note
+                    </h5>
+                    <p className="text-xs text-blue-700 mt-0.5">
+                      All forms should be completed accurately to avoid delays
+                      in processing. You can save your progress at any time and
+                      return to complete your application later. Supporting
+                      documents may be required for each form.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <Phone className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h5 className="font-medium text-amber-800">
+                      TTLO Staff Consultation
+                    </h5>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      Always consult with TTLO staff before finalizing your
+                      submission. They can provide valuable guidance on
+                      completing your forms correctly and ensuring your
+                      application meets all requirements. Contact the TTLO
+                      office via email at ttlo@csu.edu.ph or visit during office
+                      hours.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0 pb-4 flex justify-between items-center">
+            <Button variant="link" className="text-[#1B5E20] p-0" asChild>
+              <Link href="/guidelines/introduction">
+                Learn more about IP protection{" "}
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-[#1B5E20]"
+              onClick={() => setIsCollapsed(true)}
+            >
+              Hide Guide
+            </Button>
+          </CardFooter>
+        </>
+      )}
+
+      {/* Progress Tracker  */}
+      <div className="relative mb-6">
+        {/* Background line */}
+        <div className="absolute top-1/2 left-2 right-2 h-1 bg-slate-200 rounded-full" />
+
+        {/* Active progress line */}
+        <div
+          className="absolute top-1/2 left-0 h-1 bg-[#1B5E20] rounded-full transition-all"
+          style={{
+            width: `${(completedStep / totalSteps) * 100}%`,
+          }}
+        />
+        <div className="relative flex justify-between"></div>
+        <div className="relative flex justify-between  left-2">
+          {[
+            "Client Profile",
+            "Application Title",
+            "IP Disclosure",
+            "Substantial Use",
+            "Deed of Assignment",
+          ].map((label, index) => (
+            <div key={index} className="flex flex-col items-center">
+              <div
+                className={`h-8 w-8 rounded-full border-2 flex items-center justify-center text-xs font-semibold
+            ${
+              index < completedStep
+                ? "bg-[#1B5E20] text-white border-[#1B5E20]"
+                : index === completedStep
+                  ? "bg-[#1B5E20] text-white border-[#1B5E20]"
+                  : "bg-white text-slate-400 border-slate-300"
+            }`}
+              >
+                {index < completedStep ? "✓" : index + 1}
+              </div>
+              <span className="mt-2 text-[11px] text-center text-slate-600 max-w-[80px]">
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
-    ))}
-  </div>
-</div>
-  </Card>
-);
+    </Card>
+  );
 };
 
 export function PageContent() {
+  const [progress, setProgress] = useState({
+    clientProfile: false,
+    applicationTitle: false,
+    ipDisclosure: false,
+    substantialUse: false,
+    deedOfAssignment: false,
+  });
   // Router and param hooks
   const router = useRouter();
   const params = useParams();
@@ -481,7 +505,7 @@ export function PageContent() {
   const tabParam = searchParams?.get("tab");
   const subTabParam = searchParams?.get("subTab");
   const [activeForm, setActiveForm] = useState<FormTabId>(
-    FormTabs.CLIENT_PROFILE
+    FormTabs.CLIENT_PROFILE,
   );
 
   // UI state hooks - all defined at the top
@@ -508,20 +532,21 @@ export function PageContent() {
     isLoading: isApplicationsLoading,
   } = useActiveApplication();
 
-  const createApplicationMutation = trpc.formIntegration.createApplication.useMutation({
-    onSuccess: (newApplication) => {
-      if (newApplication?.id) {
+  const createApplicationMutation =
+    trpc.formIntegration.createApplication.useMutation({
+      onSuccess: (newApplication) => {
+        if (newApplication?.id) {
+          toast.dismiss("creating-app-toast");
+          toast.success("New application created successfully.");
+          setActiveApplicationId(newApplication.id);
+        }
+      },
+      onError: (error) => {
         toast.dismiss("creating-app-toast");
-        toast.success("New application created successfully.");
-        setActiveApplicationId(newApplication.id);
-      }
-    },
-    onError: (error) => {
-      toast.dismiss("creating-app-toast");
-      toast.error("Failed to create application.");
-      console.error("Error creating application:", error);
-    }
-  });
+        toast.error("Failed to create application.");
+        console.error("Error creating application:", error);
+      },
+    });
 
   // Form status state
   const [knownApplicationStatus, setKnownApplicationStatus] = useState<
@@ -604,7 +629,7 @@ export function PageContent() {
 
       // Update the form progress counter in the DOM
       const counterElements = document.querySelectorAll(
-        ".form-progress-counter"
+        ".form-progress-counter",
       );
 
       if (counterElements && counterElements.length > 0) {
@@ -616,7 +641,7 @@ export function PageContent() {
         // Also update the form status indicators
         const updateFormDot = (formType: string, isCompleted: boolean) => {
           const formDot = document.querySelector(
-            `.form-status-dot-${formType}`
+            `.form-status-dot-${formType}`,
           );
           if (formDot) {
             if (isCompleted) {
@@ -629,7 +654,7 @@ export function PageContent() {
           }
 
           const formLabel = document.querySelector(
-            `.form-status-label-${formType}`
+            `.form-status-label-${formType}`,
           );
           if (formLabel) {
             if (isCompleted) {
@@ -655,7 +680,7 @@ export function PageContent() {
             {
               id: "form-progress-updated",
               duration: 3000,
-            }
+            },
           );
         }
       } else {
@@ -676,7 +701,7 @@ export function PageContent() {
 
     try {
       console.log(
-        `Directly checking form registry for application: ${activeApplicationId}`
+        `Directly checking form registry for application: ${activeApplicationId}`,
       );
 
       // Create a specific endpoint call to check form registry status without creating entries
@@ -688,7 +713,7 @@ export function PageContent() {
             "Cache-Control": "no-cache",
             Pragma: "no-cache",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -730,7 +755,7 @@ export function PageContent() {
           formStatus.clientProfile &&
             formStatus.ipDisclosure &&
             formStatus.substantialUse &&
-            formStatus.deedAssignment
+            formStatus.deedAssignment,
         );
 
         // Count completed forms and set states accordingly
@@ -800,14 +825,14 @@ export function PageContent() {
     ) {
       console.log(
         "Using cached form status for application:",
-        activeApplicationId
+        activeApplicationId,
       );
       console.log("Cached status:", knownStatus.status);
       setClientSideAllFormsCompleted(
         knownStatus.status.clientProfile &&
           knownStatus.status.ipDisclosure &&
           knownStatus.status.substantialUse &&
-          knownStatus.status.deedAssignment
+          knownStatus.status.deedAssignment,
       );
 
       // Directly update the DOM with the cached status
@@ -981,13 +1006,13 @@ export function PageContent() {
 
     window.addEventListener(
       "application-created",
-      handleApplicationCreated as EventListener
+      handleApplicationCreated as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "application-created",
-        handleApplicationCreated as EventListener
+        handleApplicationCreated as EventListener,
       );
     };
   }, [setActiveApplicationId]);
@@ -1002,18 +1027,18 @@ export function PageContent() {
     // Log form status data to help debug
     console.log("Current form status data:", clientSideAllFormsCompleted);
     const completedCount = Object.values(clientSideAllFormsCompleted).filter(
-      Boolean
+      Boolean,
     ).length;
     console.log("Form completed count:", completedCount);
 
     // Display debug toast for form progress
     if (activeApplicationId && completedCount > 0) {
       console.log(
-        `===== DEBUG: Application ${activeApplicationId} has ${completedCount} completed forms =====`
+        `===== DEBUG: Application ${activeApplicationId} has ${completedCount} completed forms =====`,
       );
       console.log(
         "clientSideAllFormsCompleted:",
-        JSON.stringify(clientSideAllFormsCompleted)
+        JSON.stringify(clientSideAllFormsCompleted),
       );
 
       // Only show toast once per session after form status loads
@@ -1023,7 +1048,7 @@ export function PageContent() {
           {
             id: "form-progress-debug",
             duration: 3000,
-          }
+          },
         );
         sessionStorage.setItem(`debug-toast-${activeApplicationId}`, "true");
       }
@@ -1032,13 +1057,13 @@ export function PageContent() {
       try {
         setTimeout(() => {
           const formProgressCounter = document.querySelector(
-            ".form-progress-counter"
+            ".form-progress-counter",
           );
           if (formProgressCounter) {
             formProgressCounter.textContent = `${completedCount} of 4 completed`;
             console.log(
               "Form progress counter updated directly:",
-              formProgressCounter.textContent
+              formProgressCounter.textContent,
             );
           }
         }, 300);
@@ -1084,7 +1109,7 @@ export function PageContent() {
       sourceType: string,
       sourceId: string,
       applicationId: string,
-      title: string
+      title: string,
     ) => {
       try {
         const response = await fetch("/api/form-registry", {
@@ -1120,7 +1145,7 @@ export function PageContent() {
         // Update UI state
         setClientSideAllFormsCompleted(completed);
         console.log(
-          `Client profile form ${completed ? "completed" : "incomplete"}`
+          `Client profile form ${completed ? "completed" : "incomplete"}`,
         );
 
         // If completed, register in database
@@ -1129,7 +1154,7 @@ export function PageContent() {
             "client_profile",
             applicationId, // Use application ID as source ID for client profile
             applicationId,
-            "Client Profile"
+            "Client Profile",
           );
         }
       }
@@ -1143,7 +1168,7 @@ export function PageContent() {
         // Update UI state
         setClientSideAllFormsCompleted(completed);
         console.log(
-          `IP disclosure form ${completed ? "completed" : "incomplete"}`
+          `IP disclosure form ${completed ? "completed" : "incomplete"}`,
         );
 
         // If completed and we have a disclosure ID, register in database
@@ -1152,7 +1177,7 @@ export function PageContent() {
             "ip_disclosure",
             disclosureId,
             applicationId,
-            "IP Disclosure Form"
+            "IP Disclosure Form",
           );
         }
       }
@@ -1166,7 +1191,7 @@ export function PageContent() {
         // Update UI state
         setClientSideAllFormsCompleted(completed);
         console.log(
-          `Substantial use form ${completed ? "completed" : "incomplete"}`
+          `Substantial use form ${completed ? "completed" : "incomplete"}`,
         );
 
         // If completed and we have a substantial use ID, register in database
@@ -1175,7 +1200,7 @@ export function PageContent() {
             "substantial_use",
             substantialUseId,
             applicationId,
-            "Substantial Use Certification"
+            "Substantial Use Certification",
           );
         }
       }
@@ -1189,7 +1214,7 @@ export function PageContent() {
         // Update UI state
         setClientSideAllFormsCompleted(completed);
         console.log(
-          `Deed assignment form ${completed ? "completed" : "incomplete"}`
+          `Deed assignment form ${completed ? "completed" : "incomplete"}`,
         );
 
         // If completed and we have a deed assignment ID, register in database
@@ -1198,7 +1223,7 @@ export function PageContent() {
             "deed_of_assignment",
             deedAssignmentId,
             applicationId,
-            "Deed of Assignment"
+            "Deed of Assignment",
           );
         }
       }
@@ -1207,38 +1232,38 @@ export function PageContent() {
     // Add event listeners
     window.addEventListener(
       "clientProfileFormCompleted",
-      handleClientProfileFormCompleted
+      handleClientProfileFormCompleted,
     );
     window.addEventListener(
       "ipDisclosureFormCompleted",
-      handleIPDisclosureFormCompleted
+      handleIPDisclosureFormCompleted,
     );
     window.addEventListener(
       "substantialUseFormCompleted",
-      handleSubstantialUseFormCompleted
+      handleSubstantialUseFormCompleted,
     );
     window.addEventListener(
       "deedAssignmentFormCompleted",
-      handleDeedAssignmentFormCompleted
+      handleDeedAssignmentFormCompleted,
     );
 
     // Cleanup function
     return () => {
       window.removeEventListener(
         "clientProfileFormCompleted",
-        handleClientProfileFormCompleted
+        handleClientProfileFormCompleted,
       );
       window.removeEventListener(
         "ipDisclosureFormCompleted",
-        handleIPDisclosureFormCompleted
+        handleIPDisclosureFormCompleted,
       );
       window.removeEventListener(
         "substantialUseFormCompleted",
-        handleSubstantialUseFormCompleted
+        handleSubstantialUseFormCompleted,
       );
       window.removeEventListener(
         "deedAssignmentFormCompleted",
-        handleDeedAssignmentFormCompleted
+        handleDeedAssignmentFormCompleted,
       );
     };
   }, [activeApplicationId]);
@@ -1256,7 +1281,7 @@ export function PageContent() {
           console.log(
             `Updating form status: ${formType} -> ${
               completed ? "completed" : "incomplete"
-            }`
+            }`,
           );
 
           // Update the form status in our local state
@@ -1265,11 +1290,11 @@ export function PageContent() {
           console.log(
             `Form status updated: ${formType} is now ${
               completed ? "completed" : "incomplete"
-            }`
+            }`,
           );
         } else {
           console.log(
-            `Ignoring form status update for different application: ${applicationId} vs active ${activeApplicationId}`
+            `Ignoring form status update for different application: ${applicationId} vs active ${activeApplicationId}`,
           );
         }
       };
@@ -1607,6 +1632,7 @@ export function PageContent() {
     try {
       return (
         <GettingStartedGuide
+          progress={progress}
           isCollapsed={isGuideCollapsed}
           setIsCollapsed={(collapsed) => {
             try {
@@ -1812,15 +1838,17 @@ export function PageContent() {
                             ? "bg-[#1B5E20]/10 text-[#1B5E20] font-medium"
                             : "text-gray-600 hover:text-gray-900",
                           !isTabEnabled(item.id) &&
-                          !activeApplicationId &&
-                            "opacity-50 cursor-not-allowed hover:bg-transparent"
+                            !activeApplicationId &&
+                            "opacity-50 cursor-not-allowed hover:bg-transparent",
                         )}
                         onClick={() =>
                           isTabEnabled(item.id) &&
                           activeApplicationId &&
                           handleTabChange(item.id as string)
                         }
-                        disabled={!isTabEnabled(item.id) || !activeApplicationId}
+                        disabled={
+                          !isTabEnabled(item.id) || !activeApplicationId
+                        }
                       >
                         <div className="flex items-center gap-2">
                           <div
@@ -1828,7 +1856,7 @@ export function PageContent() {
                               "size-6 rounded-md flex items-center justify-center",
                               activeForm === item.id
                                 ? "bg-[#1B5E20]/20"
-                                : "bg-gray-100"
+                                : "bg-gray-100",
                             )}
                           >
                             {item.icon}
@@ -1901,7 +1929,7 @@ export function PageContent() {
                       To begin your intellectual property application, please
                       create or select an application.
                     </p>
-                                        <Button
+                    <Button
                       onClick={handleCreateFirstApplication}
                       disabled={createApplicationMutation.isLoading}
                       className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"

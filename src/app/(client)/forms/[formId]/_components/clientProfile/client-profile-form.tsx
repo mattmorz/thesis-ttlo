@@ -125,41 +125,11 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
     education: null,
     background: null,
   });
-  /*
-useEffect(() => {
-  if (!formState) return;
-
-  // Check if Personal Info is complete
-  const personalComplete =
-    formState.personal?.firstName?.trim() &&
-    formState.personal?.lastName?.trim() &&
-    formState.personal?.mailingAddress?.trim() &&
-    formState.personal?.contactNumber?.trim();
-
-  // Check if Education is complete
-  const educationComplete =
-    formState.education?.degree?.trim() &&
-    formState.education?.profession?.trim() &&
-    (formState.education?.highestDegree?.value !== "other" ||
-      (formState.education?.highestDegree?.otherValue?.trim()));
-
-  // Check if Background IP is complete
-  const backgroundComplete =
-    formState.background?.familiarWithIPRights?.value ||
-    formState.background?.ipExperience?.hasExperience !== null;
-
-  // 🔹 Enable/disable tabs based on completion
-  setIsEducationTabDisabled(!personalComplete);
-  setIsBackgroundTabDisabled(!personalComplete || !educationComplete);
-
-  // 🔹 Call handleSectionCompletion if prop exists
-  if (handleSectionCompletion) {
-    handleSectionCompletion("personalInfo", !!personalComplete);
-    handleSectionCompletion("educationalBackground", !!educationComplete);
-    handleSectionCompletion("backgroundIP", !!backgroundComplete);
-  }
-}, [formState, handleSectionCompletion]);
- */
+ const [completedSections, setCompletedSections] = useState({
+  personalInfo: false,
+  educationalBackground: false,
+  backgroundIP: false,
+});
 
   const [isEducationTabDisabled, setIsEducationTabDisabled] = useState(true);
   const [isBackgroundTabDisabled, setIsBackgroundTabDisabled] = useState(true);

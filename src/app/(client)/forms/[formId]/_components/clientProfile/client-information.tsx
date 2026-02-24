@@ -49,6 +49,7 @@ import {
  * 3. Contact Information
  * 4. Company/Institution or Academic Information
  */
+
 const formSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -93,7 +94,7 @@ declare global {
     ) => void;
     _apiRequestsInProgress?: Record<string, boolean>;
   }
-}
+} 
 
 /**
  * ClientInformation Component

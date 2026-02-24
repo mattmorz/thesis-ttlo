@@ -69,7 +69,7 @@ declare global {
     updateIPFormStatus?: (
       formType: string,
       completed: boolean,
-      applicationId: string
+      applicationId: string,
     ) => void;
   }
 }
@@ -101,7 +101,7 @@ export function EducationalBackground({
   const currentTab = searchParams.get("tab") || "education";
   const { data: session } = useSession();
   const [formData, setFormData] = useState<z.infer<typeof formSchema> | null>(
-    null
+    null,
   );
   const [error, setError] = useState<Error | null>(null);
   const [isFormLoaded, setIsFormLoaded] = useState(false);
@@ -122,7 +122,7 @@ export function EducationalBackground({
     userId: string,
     sourceId: string,
     formTitle: string,
-    formDescription: string
+    formDescription: string,
   ) => {
     // Skip registration completely if any dependencies are missing
     if (!formSubmission || !activeApplicationId) {
@@ -144,7 +144,7 @@ export function EducationalBackground({
           description: formDescription,
           applicationId: activeApplicationId,
         },
-        false // Don't immediately submit - just register
+        false, // Don't immediately submit - just register
       );
     } catch (error) {
       console.error("Error registering form with registry:", error);
@@ -180,7 +180,7 @@ export function EducationalBackground({
       // Ensure otherValue is set in the form when "other" is selected
       form.setValue(
         "highestDegree.otherValue",
-        formData.highestDegree.otherValue
+        formData.highestDegree.otherValue,
       );
     }
   }, [selectedDegree, formData, form]);
@@ -196,7 +196,7 @@ export function EducationalBackground({
         const parsedData = JSON.parse(savedData);
         console.log(
           "Found saved educational background data in localStorage:",
-          parsedData
+          parsedData,
         );
 
         // Apply the same correction to data from localStorage
@@ -206,7 +206,7 @@ export function EducationalBackground({
           // Ensure highestDegree.value is one of the allowed values
           if (
             !["bachelor", "master", "doctorate", "other"].includes(
-              parsedData.highestDegree.value
+              parsedData.highestDegree.value,
             )
           ) {
             formattedData.highestDegree.value = "bachelor";
@@ -224,7 +224,7 @@ export function EducationalBackground({
             };
             console.log(
               "Corrected saved highestDegree with empty value to 'other':",
-              formattedData.highestDegree
+              formattedData.highestDegree,
             );
           }
         } else {
@@ -241,7 +241,7 @@ export function EducationalBackground({
       else if (initialData) {
         console.log(
           "No localStorage data found, using initialData:",
-          initialData
+          initialData,
         );
 
         // Handle the case where highestDegree.value is empty but otherValue exists
@@ -252,7 +252,7 @@ export function EducationalBackground({
           // Ensure highestDegree.value is one of the allowed values
           if (
             !["bachelor", "master", "doctorate", "other"].includes(
-              initialData.highestDegree.value
+              initialData.highestDegree.value,
             )
           ) {
             formattedData.highestDegree.value = "bachelor";
@@ -270,7 +270,7 @@ export function EducationalBackground({
             };
             console.log(
               "Corrected highestDegree with empty value to 'other':",
-              formattedData.highestDegree
+              formattedData.highestDegree,
             );
           }
         } else {
@@ -284,7 +284,7 @@ export function EducationalBackground({
         // Also save initialData to localStorage for consistency
         localStorage.setItem(
           "educationalBackgroundData",
-          JSON.stringify(formattedData)
+          JSON.stringify(formattedData),
         );
       }
 
@@ -306,7 +306,7 @@ export function EducationalBackground({
           if (formattedData.highestDegree?.value === "other") {
             form.setValue(
               "highestDegree.otherValue",
-              formattedData.highestDegree.otherValue
+              formattedData.highestDegree.otherValue,
             );
           }
 
@@ -352,10 +352,10 @@ export function EducationalBackground({
 
       // First, check if a profile already exists for this application
       console.log(
-        `Checking if profile exists for application: ${applicationId}`
+        `Checking if profile exists for application: ${applicationId}`,
       );
       const checkResponse = await fetch(
-        `/api/client-profile/exists/${applicationId}`
+        `/api/client-profile/exists/${applicationId}`,
       );
       const checkData = await checkResponse.json();
 
@@ -369,7 +369,7 @@ export function EducationalBackground({
       // Determine whether to use POST (create) or PUT (update)
       const method = checkData.exists ? "PUT" : "POST";
       console.log(
-        `Using ${method} method for client profile submission. Profile exists: ${checkData.exists}`
+        `Using ${method} method for client profile submission. Profile exists: ${checkData.exists}`,
       );
 
       // Submit to API
@@ -384,7 +384,7 @@ export function EducationalBackground({
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error || "Failed to save educational background"
+          errorData.error || "Failed to save educational background",
         );
       }
 
@@ -414,7 +414,7 @@ export function EducationalBackground({
       toast.error(
         error instanceof Error
           ? error.message
-          : "An error occurred while saving your data"
+          : "An error occurred while saving your data",
       );
     } finally {
       setIsSubmitting(false);
@@ -458,7 +458,7 @@ export function EducationalBackground({
       // Store form data in localStorage
       localStorage.setItem(
         "educationalBackgroundData",
-        JSON.stringify(formattedEducationalData)
+        JSON.stringify(formattedEducationalData),
       );
       setFormData(formattedEducationalData);
 
@@ -473,7 +473,7 @@ export function EducationalBackground({
           personalInfo = JSON.parse(personalData);
           console.log(
             "Loaded personal information data for update:",
-            personalInfo
+            personalInfo,
           );
         }
 
@@ -494,10 +494,10 @@ export function EducationalBackground({
 
       // First, check if a profile already exists for this application
       console.log(
-        `Checking if profile exists for application: ${applicationId}`
+        `Checking if profile exists for application: ${applicationId}`,
       );
       const checkResponse = await fetch(
-        `/api/client-profile/exists/${applicationId}`
+        `/api/client-profile/exists/${applicationId}`,
       );
       const checkData = await checkResponse.json();
 
@@ -513,7 +513,7 @@ export function EducationalBackground({
       // Determine whether to use POST (create) or PUT (update)
       const method = checkData.exists ? "PUT" : "POST";
       console.log(
-        `Using ${method} method for complete profile update. Profile exists: ${checkData.exists}`
+        `Using ${method} method for complete profile update. Profile exists: ${checkData.exists}`,
       );
 
       // Submit to API for update
@@ -586,11 +586,11 @@ export function EducationalBackground({
       // Save to localStorage without making an API call
       localStorage.setItem(
         "educationalBackgroundData",
-        JSON.stringify(formattedValues)
+        JSON.stringify(formattedValues),
       );
       console.log(
         "Educational background saved to localStorage:",
-        formattedValues
+        formattedValues,
       );
 
       // If we have an active application, update the form status silently
@@ -638,11 +638,11 @@ export function EducationalBackground({
       // Save to localStorage without making an API call
       localStorage.setItem(
         "educationalBackgroundData",
-        JSON.stringify(formattedValues)
+        JSON.stringify(formattedValues),
       );
       console.log(
         "Educational background saved to localStorage before navigating back:",
-        formattedValues
+        formattedValues,
       );
 
       // Navigate to the previous tab by updating URL params
@@ -668,11 +668,11 @@ export function EducationalBackground({
           const values = form.getValues();
           localStorage.setItem(
             "educationalBackgroundData",
-            JSON.stringify(values)
+            JSON.stringify(values),
           );
           console.log(
             "Saved educational background data on tab change:",
-            values
+            values,
           );
         } catch (error) {
           console.error("Error saving educational data:", error);
@@ -704,37 +704,41 @@ export function EducationalBackground({
                 Please provide information about your educational qualifications
               </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-6">
               <div className="space-y-4">
+                {/* 1️⃣ Highest Degree / Education Level */}
                 <FormField
                   control={form.control}
                   name="highestDegree.value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Highest Degree Earned <span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>
+                        Highest Degree Earned{" "}
+                        <span className="text-red-500">*</span>
+                      </FormLabel>
                       <Select
+                        value={field.value}
                         onValueChange={(value) => {
                           field.onChange(value);
-                          // If changing away from "other", clear the otherValue
-                          if (value !== "other") {
-                            form.setValue("highestDegree.otherValue", null);
+                          // Reset subType if switching to higher degrees
+                          if (
+                            !["associate", "vocational", "highschool"].includes(
+                              value,
+                            )
+                          ) {
+                            form.setValue("subType", null);
                           }
-                          // Update form data state
+                          // Update formData
                           const currentValues = form.getValues();
                           setFormData({
                             ...currentValues,
                             highestDegree: {
                               ...currentValues.highestDegree,
-                              value: value as
-                                | "bachelor"
-                                | "master"
-                                | "doctorate"
-                                | "other",
+                              value,
                             },
                           });
                         }}
-                        defaultValue={field.value}
-                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -742,16 +746,18 @@ export function EducationalBackground({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="bachelor">
-                            Bachelor&apos;s Degree
-                          </SelectItem>
-                          <SelectItem value="master">
-                            Master&apos;s Degree
-                          </SelectItem>
                           <SelectItem value="doctorate">
                             Doctorate Degree
                           </SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="master">
+                            Master's Degree
+                          </SelectItem>
+                          <SelectItem value="bachelor">
+                            Bachelor's Degree
+                          </SelectItem>
+                          <SelectItem value="associate">
+                            Associate Degree/Vocational/Senior High
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -759,61 +765,104 @@ export function EducationalBackground({
                   )}
                 />
 
-                {selectedDegree === "other" && (
+                {/* 2️⃣ Sub-type for lower levels */}
+                {["associate", "vocational", "highschool"].includes(
+                  form.getValues("highestDegree.value"),
+                ) && (
                   <FormField
                     control={form.control}
-                    name="highestDegree.otherValue"
+                    name="subType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Specify Other Degree</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter your degree"
-                            {...field}
-                            value={field.value || ""}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              // Update formData state to ensure persistence
-                              const currentValues = form.getValues();
-                              setFormData({
-                                ...currentValues,
-                                highestDegree: {
-                                  ...currentValues.highestDegree,
-                                  otherValue: e.target.value,
-                                },
-                              });
-                            }}
-                          />
-                        </FormControl>
+                        <FormLabel>
+                          Sub-type / Program Type{" "}
+                          <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <div className="flex flex-col space-y-2">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              value="associate"
+                              checked={field.value === "associate"}
+                              onChange={() => field.onChange("associate")}
+                            />
+                            Associate Degree
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              value="vocational"
+                              checked={field.value === "vocational"}
+                              onChange={() => field.onChange("vocational")}
+                            />
+                            Vocational / Technical Education
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              value="highschool"
+                              checked={field.value === "highschool"}
+                              onChange={() => field.onChange("highschool")}
+                            />
+                            Senior High / High School Diploma
+                          </label>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 )}
 
+                {/* 3️⃣ Degree Program input with dynamic placeholder */}
                 <FormField
                   control={form.control}
                   name="degree"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Degree Program <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="e.g. Bachelor of Science in Information Technology"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const degreeLevel = form.getValues("highestDegree.value");
+                    const subType = form.getValues("subType");
+
+                    let placeholder = "Enter your program/strand";
+                    if (degreeLevel === "doctorate")
+                      placeholder = "e.g. PhD in Computer Science";
+                    else if (degreeLevel === "master")
+                      placeholder =
+                        "e.g. Master of Science in Information Technology";
+                    else if (degreeLevel === "bachelor")
+                      placeholder =
+                        "e.g. Bachelor of Science in Information Technology";
+                    else if (subType === "associate")
+                      placeholder =
+                        "e.g. Associate in IT, Associate in Nursing";
+                    else if (subType === "vocational")
+                      placeholder =
+                        "e.g. STEM, Computer Technician, Culinary Arts";
+                    else if (subType === "highschool")
+                      placeholder = "e.g. STEM, ABM, HUMSS, GAS, TVL";
+
+                    return (
+                      <FormItem>
+                        <FormLabel>
+                          Degree Program <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder={placeholder} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
+                {/* 4️⃣ Current Profession */}
                 <FormField
                   control={form.control}
                   name="profession"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Current Profession <span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>
+                        Current Profession{" "}
+                        <span className="text-red-500">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input
                           placeholder="e.g. Software Engineer, Student"

@@ -169,6 +169,7 @@ const getStatusBadge = (status: string) => {
         <Badge variant="outline" className="text-xs">
           {status}
         </Badge>
+        
       );
   }
 };
@@ -180,7 +181,37 @@ const GettingStartedGuide = ({
 }: {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
-}) => (
+}) => {
+  // Track main progress for all 5 forms
+const [progress, setProgress] = useState({
+  clientProfile: false,
+  applicationTitle: false,
+  ipDisclosure: false,
+  substantialUse: false,
+  deedOfAssignment: false,
+});
+  // Track completion of each section
+const [completedSections, setCompletedSections] = useState({
+  personalInfo: false,
+  educationalBackground: false,
+  backgroundIP: false,
+});
+
+const totalSteps = Object.keys(completedSections).length;
+
+// Compute completed steps dynamically
+const completedStep = Object.values(completedSections).filter(Boolean).length;
+const handleSectionCompletion = (
+  section: "personalInfo" | "educationalBackground" | "backgroundIP",
+  isCompleted: boolean
+) => {
+  setCompletedSections(prev => ({ ...prev, [section]: isCompleted }));
+};
+
+return (
+  
+  
+
   <Card className="w-full border-[#1B5E20]/20 bg-white shadow-sm">
     <CardHeader className="pb-3 flex flex-row items-center justify-between border-b">
       <div>
@@ -387,9 +418,55 @@ const GettingStartedGuide = ({
           </Button>
         </CardFooter>
       </>
+      
     )}
+    
+    {/* Progress Tracker */}
+<div className="relative mb-6">
+  {/* Background line */}
+  <div className="absolute top-1/2 left-2 right-2 h-1 bg-slate-200 rounded-full" />
+
+  {/* Active progress line */}
+  <div
+    className="absolute top-1/2 left-0 h-1 bg-[#1B5E20] rounded-full transition-all"
+  style={{
+  width: `${(completedStep / totalSteps) * 100}%`,
+}}
+
+  />
+
+  <div className="relative flex justify-between">
+    {[
+      "",
+      "Client Profile",
+      "Application Title",
+      "IP Disclosure",
+      "Substantial Use",
+      "Deed of Assignment",
+    ].map((label, index) => (
+      <div key={index} className="flex flex-col items-center">
+        <div
+          className={`h-8 w-8 rounded-full border-2 flex items-center justify-center text-xs font-semibold
+            ${
+             index < completedStep
+          ? "bg-[#1B5E20] text-white border-[#1B5E20]"
+          : index === completedStep
+                ? "bg-[#1B5E20] text-white border-[#1B5E20]"
+                : "bg-white text-slate-400 border-slate-300"
+            }`}
+        >
+         
+        </div>
+        <span className="mt-2 text-[11px] text-center text-slate-600 max-w-[80px]">
+          {label}
+        </span>
+      </div>
+    ))}
+  </div>
+</div>
   </Card>
 );
+};
 
 export function PageContent() {
   // Router and param hooks

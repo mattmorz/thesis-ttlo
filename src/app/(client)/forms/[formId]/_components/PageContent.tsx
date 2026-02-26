@@ -64,7 +64,7 @@ import { ApplicationSelector } from "../../../../../components/ApplicationSelect
 import { ApplicationCreationDialog } from "../../../../../components/ApplicationCreationDialog";
 import { ClientFormStatusLoader } from "./ClientFormStatusLoader";
 import { ClientOnlyContent } from "./ClientOnlyContent";
-import { FormProgressTracker } from "./FormProgressTracker";
+// import { FormProgressTracker } from "./FormProgressTracker";
 import {
   Accordion,
   AccordionContent,
@@ -420,7 +420,8 @@ export function PageContent() {
   const [clientSideAllFormsCompleted, setClientSideAllFormsCompleted] =
     useState(false);
   const [hasSeenGuide, setHasSeenGuide] = useState(false);
-  const [showHelpPanel, setShowHelpPanel] = useState(false);
+  // Commented out: help panel state (form sections hidden)
+  // const [showHelpPanel, setShowHelpPanel] = useState(false);
   const [isGuideCollapsed, setIsGuideCollapsed] = useState(false);
   const [hasCompletedForms, setHasCompletedForms] = useState(false);
 
@@ -519,86 +520,87 @@ export function PageContent() {
     setHasCompletedForms(false);
   }, [activeApplicationId, mounted]); // No circular reference to safelyUpdateGuideState
 
+  // Commented out: form progress updater function (form progress hidden)
   // The helper function to update the form progress display
-  const updateFormProgressDisplay = (status: {
-    clientProfile: boolean;
-    applicationTitle: boolean;
-    ipDisclosure: boolean;
-    substantialUse: boolean;
-    deedAssignment: boolean;
-  }) => {
-    try {
-      // Calculate the count of completed forms
-      const completedCount = Object.values(status).filter(Boolean).length;
-      console.log("DIRECT UPDATE: Form progress count =", completedCount);
+  // const updateFormProgressDisplay = (status: {
+  //   clientProfile: boolean;
+  //   applicationTitle: boolean;
+  //   ipDisclosure: boolean;
+  //   substantialUse: boolean;
+  //   deedAssignment: boolean;
+  // }) => {
+  //   try {
+  //     // Calculate the count of completed forms
+  //     const completedCount = Object.values(status).filter(Boolean).length;
+  //     console.log("DIRECT UPDATE: Form progress count =", completedCount);
 
-      // Safely update the guide state using our helper function
-      safelyUpdateGuideState(completedCount);
+  //     // Safely update the guide state using our helper function
+  //     safelyUpdateGuideState(completedCount);
 
-      // Update the form progress counter in the DOM
-      const counterElements = document.querySelectorAll(
-        ".form-progress-counter",
-      );
+  //     // Update the form progress counter in the DOM
+  //     const counterElements = document.querySelectorAll(
+  //       ".form-progress-counter",
+  //     );
 
-      if (counterElements && counterElements.length > 0) {
-        counterElements.forEach((el) => {
-          el.textContent = `${completedCount} of 5 completed`;
-          console.log("Updated form progress counter:", el.textContent);
-        });
+  //     if (counterElements && counterElements.length > 0) {
+  //       counterElements.forEach((el) => {
+  //         el.textContent = `${completedCount} of 5 completed`;
+  //         console.log("Updated form progress counter:", el.textContent);
+  //       });
 
-        // Also update the form status indicators
-        const updateFormDot = (formType: string, isCompleted: boolean) => {
-          const formDot = document.querySelector(
-            `.form-status-dot-${formType}`,
-          );
-          if (formDot) {
-            if (isCompleted) {
-              formDot.classList.remove("bg-gray-200");
-              formDot.classList.add("bg-[#1B5E20]");
-            } else {
-              formDot.classList.remove("bg-[#1B5E20]");
-              formDot.classList.add("bg-gray-200");
-            }
-          }
+  //       // Also update the form status indicators
+  //       const updateFormDot = (formType: string, isCompleted: boolean) => {
+  //         const formDot = document.querySelector(
+  //           `.form-status-dot-${formType}`,
+  //         );
+  //         if (formDot) {
+  //           if (isCompleted) {
+  //             formDot.classList.remove("bg-gray-200");
+  //             formDot.classList.add("bg-[#1B5E20]");
+  //           } else {
+  //             formDot.classList.remove("bg-[#1B5E20]");
+  //             formDot.classList.add("bg-gray-200");
+  //           }
+  //         }
 
-          const formLabel = document.querySelector(
-            `.form-status-label-${formType}`,
-          );
-          if (formLabel) {
-            if (isCompleted) {
-              formLabel.classList.remove("text-gray-500");
-              formLabel.classList.add("text-gray-800", "font-medium");
-            } else {
-              formLabel.classList.remove("text-gray-800", "font-medium");
-              formLabel.classList.add("text-gray-500");
-            }
-          }
-        };
+  //         const formLabel = document.querySelector(
+  //           `.form-status-label-${formType}`,
+  //         );
+  //         if (formLabel) {
+  //           if (isCompleted) {
+  //             formLabel.classList.remove("text-gray-500");
+  //             formLabel.classList.add("text-gray-800", "font-medium");
+  //           } else {
+  //             formLabel.classList.remove("text-gray-800", "font-medium");
+  //             formLabel.classList.add("text-gray-500");
+  //           }
+  //         }
+  //       };
 
-        // Update each form indicator
-        updateFormDot("client-profile", status.clientProfile);
-        updateFormDot("application-title", status.applicationTitle);
-        updateFormDot("ip-disclosure", status.ipDisclosure);
-        updateFormDot("substantial-use", status.substantialUse);
-        updateFormDot("deed-assignment", status.deedAssignment);
+  //       // Update each form indicator
+  //       updateFormDot("client-profile", status.clientProfile);
+  //       updateFormDot("application-title", status.applicationTitle);
+  //       updateFormDot("ip-disclosure", status.ipDisclosure);
+  //       updateFormDot("substantial-use", status.substantialUse);
+  //       updateFormDot("deed-assignment", status.deedAssignment);
 
-        // Show a notification about the update
-        if (completedCount > 0) {
-          toast.success(
-            `Form progress updated: ${completedCount} of 5 completed`,
-            {
-              id: "form-progress-updated",
-              duration: 3000,
-            },
-          );
-        }
-      } else {
-        console.log("Form progress counter not found in DOM");
-      }
-    } catch (e) {
-      console.error("Error directly updating form progress display:", e);
-    }
-  };
+  //       // Show a notification about the update
+  //       if (completedCount > 0) {
+  //         toast.success(
+  //           `Form progress updated: ${completedCount} of 5 completed`,
+  //           {
+  //             id: "form-progress-updated",
+  //             duration: 3000,
+  //           },
+  //         );
+  //       }
+  //     } else {
+  //       console.log("Form progress counter not found in DOM");
+  //     }
+  //   } catch (e) {
+  //     console.error("Error directly updating form progress display:", e);
+  //   }
+  // };
 
   // DEDICATED FUNCTION: Directly check the form_submission_registry for this specific application
   const checkFormProgressFromRegistry = async (isMounted: boolean) => {
@@ -680,12 +682,12 @@ export function PageContent() {
         safelyUpdateGuideState(completedCount);
 
         // Directly update the DOM for immediate feedback
-        updateFormProgressDisplay(formStatus);
+        // updateFormProgressDisplay(formStatus);
 
         // Schedule another UI refresh after React has updated
         setTimeout(() => {
           if (isMounted) {
-            updateFormProgressDisplay(formStatus);
+            // updateFormProgressDisplay(formStatus);
           }
         }, 300);
       }
@@ -752,7 +754,7 @@ export function PageContent() {
       );
 
       // Directly update the DOM with the cached status
-      updateFormProgressDisplay(knownStatus.status);
+      // updateFormProgressDisplay(knownStatus.status);
       setIsCheckingFormStatus(false);
       return;
     }
@@ -1154,7 +1156,7 @@ export function PageContent() {
           };
         });
 
-        updateFormProgressDisplay(nextStatus);
+        // updateFormProgressDisplay(nextStatus);
       }
     };
 
@@ -1364,7 +1366,7 @@ export function PageContent() {
 
           if (nextStatus) {
             // Keep UI in sync with the latest status
-            updateFormProgressDisplay(nextStatus);
+            // updateFormProgressDisplay(nextStatus);
             setClientSideAllFormsCompleted(
               nextStatus.clientProfile &&
                 nextStatus.applicationTitle &&
@@ -1642,62 +1644,62 @@ export function PageContent() {
   }
 
   // Additional help content based on current form
-  const getContextualHelp = () => {
-    switch (activeForm) {
-      case FormTabs.CLIENT_PROFILE:
-        return (
-          <div className="space-y-3 text-sm">
-            <h4 className="font-medium">Client Profile Tips:</h4>
-            <ul className="space-y-1 pl-5 list-disc text-gray-600">
-              <li>Provide your complete contact information</li>
-              <li>Make sure your email address is current and accessible</li>
-              <li>If representing an organization, include company details</li>
-              <li>All fields marked with * are required</li>
-            </ul>
-          </div>
-        );
-      case FormTabs.IP_DISCLOSURE:
-        return (
-          <div className="space-y-3 text-sm">
-            <h4 className="font-medium">IP Disclosure Tips:</h4>
-            <ul className="space-y-1 pl-5 list-disc text-gray-600">
-              <li>Describe your invention or creative work in detail</li>
-              <li>List all contributors and their specific contributions</li>
-              <li>Include relevant dates of conception and development</li>
-              <li>Mention any public disclosures or prior publications</li>
-            </ul>
-          </div>
-        );
-      case FormTabs.SUBSTANTIAL_USE:
-        return (
-          <div className="space-y-3 text-sm">
-            <h4 className="font-medium">Substantial Use Tips:</h4>
-            <ul className="space-y-1 pl-5 list-disc text-gray-600">
-              <li>Document all university resources used in your project</li>
-              <li>Specify facilities, equipment, and materials utilized</li>
-              <li>
-                Include funding sources and grant information if applicable
-              </li>
-              <li>Be thorough to avoid delays in processing</li>
-            </ul>
-          </div>
-        );
-      case FormTabs.DEED_ASSIGNMENT:
-        return (
-          <div className="space-y-3 text-sm">
-            <h4 className="font-medium">Deed of Assignment Tips:</h4>
-            <ul className="space-y-1 pl-5 list-disc text-gray-600">
-              <li>Review all terms before signing the document</li>
-              <li>Ensure all inventors/creators are properly listed</li>
-              <li>Understand the rights being transferred</li>
-              <li>Contact TTLO staff if you have questions about terms</li>
-            </ul>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+  // const getContextualHelp = () => {
+  //   switch (activeForm) {
+  //     case FormTabs.CLIENT_PROFILE:
+  //       return (
+  //         <div className="space-y-3 text-sm">
+  //           <h4 className="font-medium">Client Profile Tips:</h4>
+  //           <ul className="space-y-1 pl-5 list-disc text-gray-600">
+  //             <li>Provide your complete contact information</li>
+  //             <li>Make sure your email address is current and accessible</li>
+  //             <li>If representing an organization, include company details</li>
+  //             <li>All fields marked with * are required</li>
+  //           </ul>
+  //         </div>
+  //       );
+  //     case FormTabs.IP_DISCLOSURE:
+  //       return (
+  //         <div className="space-y-3 text-sm">
+  //           <h4 className="font-medium">IP Disclosure Tips:</h4>
+  //           <ul className="space-y-1 pl-5 list-disc text-gray-600">
+  //             <li>Describe your invention or creative work in detail</li>
+  //             <li>List all contributors and their specific contributions</li>
+  //             <li>Include relevant dates of conception and development</li>
+  //             <li>Mention any public disclosures or prior publications</li>
+  //           </ul>
+  //         </div>
+  //       );
+  //     case FormTabs.SUBSTANTIAL_USE:
+  //       return (
+  //         <div className="space-y-3 text-sm">
+  //           <h4 className="font-medium">Substantial Use Tips:</h4>
+  //           <ul className="space-y-1 pl-5 list-disc text-gray-600">
+  //             <li>Document all university resources used in your project</li>
+  //             <li>Specify facilities, equipment, and materials utilized</li>
+  //             <li>
+  //               Include funding sources and grant information if applicable
+  //             </li>
+  //             <li>Be thorough to avoid delays in processing</li>
+  //           </ul>
+  //         </div>
+  //       );
+  //     case FormTabs.DEED_ASSIGNMENT:
+  //       return (
+  //         <div className="space-y-3 text-sm">
+  //           <h4 className="font-medium">Deed of Assignment Tips:</h4>
+  //           <ul className="space-y-1 pl-5 list-disc text-gray-600">
+  //             <li>Review all terms before signing the document</li>
+  //             <li>Ensure all inventors/creators are properly listed</li>
+  //             <li>Understand the rights being transferred</li>
+  //             <li>Contact TTLO staff if you have questions about terms</li>
+  //           </ul>
+  //         </div>
+  //       );
+  //     default:
+  //       return null;
+  //   }
+  // };
 
   const handleCreateFirstApplication = () => {
     if (
@@ -1895,10 +1897,9 @@ export function PageContent() {
           {/* Left Sidebar - Form Navigation */}
           <div className="col-span-12 md:col-span-3 lg:col-span-3">
             <div className="sticky top-6 space-y-5">
-              {/* Forms Navigation */}
-              <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
+              {/* Forms Navigation (commented out to hide form sections) */}
+              {/* <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
                 <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
-                  {/* !! add below button being inactive as the progress needs to be completed in order */}
                   <h2 className="font-medium text-sm text-gray-700">
                     Form Sections
                   </h2>
@@ -1968,10 +1969,10 @@ export function PageContent() {
                     );
                   })}
                 </nav>
-              </div>
+              </div> */}
 
-              {/* Form Status Summary */}
-              {activeApplicationId && (
+              {/* Form Status Summary (commented out to hide form progress) */}
+              {/* {activeApplicationId && (
                 <Card className="shadow-sm">
                   <CardHeader className="py-3 px-4">
                     <CardTitle className="text-sm font-medium">
@@ -1985,7 +1986,7 @@ export function PageContent() {
                     />
                   </CardContent>
                 </Card>
-              )}
+              )} */}
 
               {/* Additional Actions */}
               {activeApplicationId && (
@@ -2061,8 +2062,8 @@ export function PageContent() {
                   </div>
                 </div>
 
-                {/* Contextual Help Panel - Sliding from right */}
-                {showHelpPanel && (
+                {/* Contextual Help Panel - Sliding from right (commented out) */}
+                {/* {showHelpPanel && (
                   <div className="fixed top-[5.5rem] right-4 w-80 bg-white rounded-lg border shadow-lg p-4 z-50 animate-in slide-in-from-right">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-medium text-[#1B5E20] flex items-center gap-2">
@@ -2084,7 +2085,7 @@ export function PageContent() {
                       Need more help? Contact TTLO staff at ttlo@csu.edu.ph
                     </div>
                   </div>
-                )}
+                )} */}
               </>
             )}
           </div>

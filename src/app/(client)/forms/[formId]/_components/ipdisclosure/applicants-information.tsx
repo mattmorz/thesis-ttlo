@@ -181,6 +181,7 @@ export function ApplicantsInformation() {
   // Add these state variables at the beginning of the component near other useState declarations
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const applicantsSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Simplified function to load data from disclosure or existing data
   useEffect(() => {
@@ -203,10 +204,9 @@ export function ApplicantsInformation() {
           const currentAppId = useIpDisclosureStore.getState().applicationId;
 
           if (!currentAppId) {
-            console.warn("No application ID in store, cannot load data");
-            setInitialDataLoaded(false);
-            initializeWithDefaults();
-            return;
+            console.warn(
+              "No application ID in store, continuing without appId checks"
+            );
           }
 
           console.log("Current application ID:", currentAppId);
@@ -221,6 +221,7 @@ export function ApplicantsInformation() {
 
               // Verify application ID match
               if (
+                currentAppId &&
                 data &&
                 data.applicationId &&
                 data.applicationId !== currentAppId
@@ -249,6 +250,7 @@ export function ApplicantsInformation() {
 
               // Verify application ID match
               if (
+                currentAppId &&
                 existingData &&
                 existingData.applicationId &&
                 existingData.applicationId !== currentAppId
@@ -284,7 +286,10 @@ export function ApplicantsInformation() {
 
             if (storeData.applicantsInfo) {
               // Before using store data, verify it belongs to the current application
-              if (storeData.applicationId !== currentAppId) {
+              if (
+                currentAppId &&
+                storeData.applicationId !== currentAppId
+              ) {
                 console.log(
                   `Store data belongs to application ${storeData.applicationId}, not current application ${currentAppId}. Ignoring.`
                 );
@@ -1219,6 +1224,25 @@ export function ApplicantsInformation() {
     setApplicantsInfo(nextValues);
   };
 
+  const syncApplicantsAndInventors = () => {
+    const nextValues = form.getValues();
+    setFormData((prev) => ({
+      ...prev,
+      applicants: nextValues.applicants,
+      inventors: nextValues.inventors,
+    }));
+    setApplicantsInfo(nextValues);
+  };
+
+  const scheduleApplicantsSync = () => {
+    if (applicantsSyncTimeoutRef.current) {
+      clearTimeout(applicantsSyncTimeoutRef.current);
+    }
+    applicantsSyncTimeoutRef.current = setTimeout(() => {
+      syncApplicantsAndInventors();
+    }, 150);
+  };
+
   useEffect(() => {
     if (!isApplicantAlsoInventor) return;
     if (!watchedApplicants || watchedApplicants.length === 0) return;
@@ -1248,6 +1272,43 @@ export function ApplicantsInformation() {
       });
     }
   }, [form, isApplicantAlsoInventor, watchedApplicants]);
+
+  useEffect(() => {
+    let updateTimeout: NodeJS.Timeout | null = null;
+
+    const subscription = form.watch((_, { name }) => {
+      if (!name) return;
+      if (name.startsWith("applicants.") || name.startsWith("inventors.")) {
+        if (updateTimeout) {
+          clearTimeout(updateTimeout);
+        }
+        updateTimeout = setTimeout(() => {
+          const nextValues = form.getValues();
+          setFormData((prev) => ({
+            ...prev,
+            applicants: nextValues.applicants,
+            inventors: nextValues.inventors,
+          }));
+          setApplicantsInfo(nextValues);
+        }, 200);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+    };
+  }, [form, setApplicantsInfo]);
+
+  useEffect(() => {
+    return () => {
+      if (applicantsSyncTimeoutRef.current) {
+        clearTimeout(applicantsSyncTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Fix the handleSaveToDatabase function to use these state variables
   const handleSaveToDatabase = async () => {
@@ -1335,9 +1396,11 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="First Name"
                                   {...field}
+                                  onBlur={syncApplicantsAndInventors}
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
+                                  onInput={scheduleApplicantsSync}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1355,9 +1418,11 @@ export function ApplicantsInformation() {
                                   placeholder="M.I."
                                   maxLength={2}
                                   {...field}
+                                  onBlur={syncApplicantsAndInventors}
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
+                                  onInput={scheduleApplicantsSync}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1374,9 +1439,11 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="Last Name"
                                   {...field}
+                                  onBlur={syncApplicantsAndInventors}
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
+                                  onInput={scheduleApplicantsSync}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1457,6 +1524,7 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="First Name"
                                   {...field}
+                                  onBlur={syncApplicantsAndInventors}
                                   readOnly={isApplicantAlsoInventor}
                                   aria-readonly={isApplicantAlsoInventor}
                                   className={
@@ -1467,6 +1535,7 @@ export function ApplicantsInformation() {
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
+                                  onInput={scheduleApplicantsSync}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1484,6 +1553,7 @@ export function ApplicantsInformation() {
                                   placeholder="M.I."
                                   maxLength={2}
                                   {...field}
+                                  onBlur={syncApplicantsAndInventors}
                                   readOnly={isApplicantAlsoInventor}
                                   aria-readonly={isApplicantAlsoInventor}
                                   className={
@@ -1494,6 +1564,7 @@ export function ApplicantsInformation() {
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
+                                  onInput={scheduleApplicantsSync}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1510,6 +1581,7 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="Last Name"
                                   {...field}
+                                  onBlur={syncApplicantsAndInventors}
                                   readOnly={isApplicantAlsoInventor}
                                   aria-readonly={isApplicantAlsoInventor}
                                   className={
@@ -1520,6 +1592,7 @@ export function ApplicantsInformation() {
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
+                                  onInput={scheduleApplicantsSync}
                                 />
                               </FormControl>
                               <FormMessage />

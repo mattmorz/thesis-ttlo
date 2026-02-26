@@ -1295,7 +1295,7 @@ export function useIpDisclosure() {
         store.transactionFormPart1 ||
         store.transactionFormPart2;
 
-      if (!hasSelectedIpTypes && hasCopyrightData) {
+      if (!hasSelectedIpTypes && hasCopyrightData && !dataToSave.ipTypes) {
         console.log(
           "No IP types selected but copyright data exists - setting copyright to true"
         );

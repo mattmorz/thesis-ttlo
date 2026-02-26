@@ -470,7 +470,12 @@ export const applicantsInfoSchema = z
       .min(1, "At least one inventor is required"),
     ipTypes: ipTypesSchema,
     otherIpType: z.string().optional(),
-    isRightfulOwner: z.boolean().default(false),
+    isRightfulOwner: z
+      .boolean()
+      .refine((value) => value === true, {
+        message: "This confirmation is required.",
+      }),
+    isApplicantAlsoInventor: z.boolean().default(false),
     authorizedRepresentative: z.string().optional(),
   })
   .refine(
@@ -601,8 +606,8 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
       applicationId: null, // Initialize applicationId
       applicantsInfo: null,
       disclosureConfirmation: null,
-      activeTab: "applicants-info",
-      visibleTabs: ["applicants-info", "confirmation"],
+      activeTab: "applicants-information",
+      visibleTabs: ["applicants-information", "confirmation"],
       isSubmitted: false,
       hydrated: false, // Add hydration tracking
       initialDataFetched: false, // Track if initial data has been fetched
@@ -1727,8 +1732,8 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
           // applicationId: null,
           applicantsInfo: null,
           disclosureConfirmation: null,
-          activeTab: "applicants-info",
-          visibleTabs: ["applicants-info", "confirmation"],
+          activeTab: "applicants-information",
+          visibleTabs: ["applicants-information", "confirmation"],
           isSubmitted: false,
           initialDataFetched: false,
           fetchAttempted: false,

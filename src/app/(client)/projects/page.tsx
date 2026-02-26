@@ -110,6 +110,9 @@ export default function ProjectsPage() {
   const [newAppDescription, setNewAppDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [isCreatingFirstApplication, setIsCreatingFirstApplication] =
+    useState(false);
+  const [isCreateCooldown, setIsCreateCooldown] = useState(false);
 
   const {
     activeApplicationId,
@@ -118,6 +121,7 @@ export default function ProjectsPage() {
     isLoading,
     applications,
     refetchApplications,
+    setApplications,
   } = useActiveApplication();
 
   // tRPC mutation to create a new application
@@ -134,6 +138,10 @@ export default function ProjectsPage() {
 
         // Select the newly created application
         if (data?.id) {
+          setApplications((prev) => {
+            const withoutNew = prev.filter((app) => app.id !== data.id);
+            return [data as Application, ...withoutNew];
+          });
           setActiveApplicationId(data.id);
           setSelectedProject(data.id);
         }
@@ -176,6 +184,41 @@ export default function ProjectsPage() {
     } finally {
       setIsCreating(false);
       toast.dismiss();
+    }
+  };
+
+  const handleCreateFirstApplication = async () => {
+    if (
+      isCreatingFirstApplication ||
+      createApplicationMutation.isLoading ||
+      isCreateCooldown
+    ) {
+      return;
+    }
+
+    if (!userId) {
+      toast.error("Authentication required", {
+        description: "You must be signed in to create an application",
+      });
+      return;
+    }
+
+    setIsCreatingFirstApplication(true);
+    setIsCreateCooldown(true);
+    setTimeout(() => setIsCreateCooldown(false), 10000);
+    toast.loading("Creating your application...");
+
+    try {
+      await createApplicationMutation.mutateAsync({
+        userId,
+        title: "Untitled Application",
+        ipType: "not_sure" as any,
+      });
+    } catch (error) {
+      console.error("Error creating application:", error);
+    } finally {
+      toast.dismiss();
+      setIsCreatingFirstApplication(false);
     }
   };
 
@@ -416,7 +459,8 @@ export default function ProjectsPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 md:mt-0">
+{/* button hidden */}
+                {/* <div className="mt-4 md:mt-0">
                   <Dialog
                     open={isCreateDialogOpen}
                     onOpenChange={setIsCreateDialogOpen}
@@ -428,7 +472,7 @@ export default function ProjectsPage() {
                       </Button>
                     </DialogTrigger>
                   </Dialog>
-                </div>
+                </div> */}
               </div>
               <Separator className="my-5" />
             </div>
@@ -449,10 +493,19 @@ export default function ProjectsPage() {
                   </p>
                   <Button
                     className="bg-[#1B5E20] hover:bg-[#2E7D32] h-12 px-6 gap-2 text-base font-medium"
-                    onClick={() => setIsCreateDialogOpen(true)}
+                    onClick={handleCreateFirstApplication}
+                    disabled={
+                      createApplicationMutation.isLoading ||
+                      isCreatingFirstApplication ||
+                      isCreateCooldown
+                    }
                   >
                     <PlusCircle className="h-5 w-5" />
-                    Create Your First Application
+                    {createApplicationMutation.isLoading ||
+                    isCreatingFirstApplication ||
+                    isCreateCooldown
+                      ? "Creating..."
+                      : "Create Your First Application"}
                   </Button>
                   <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="p-5 bg-white rounded-lg border border-gray-200 text-center">

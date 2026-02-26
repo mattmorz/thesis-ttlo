@@ -109,7 +109,7 @@ export function FormNavigation({
       <Separator className="my-6" />
       <div className="flex justify-between items-center">
         <div className="flex gap-4">
-          {showPrevious && currentTab !== "applicants-info" && (
+          {showPrevious && currentTab !== "applicants-information" && (
             <Button
               variant="secondary"
               type="button"

@@ -679,8 +679,14 @@ export function CopyrightApplication() {
       // Success message
       toast.success("Data saved in memory", { id: toastId });
 
-      // Navigate to the next tab immediately
-      setActiveTab("transaction-form-1");
+      // Navigate to the next visible tab
+      const tabs = useIpDisclosureStore.getState().visibleTabs || [];
+      const currentIndex = tabs.indexOf("copyright-application");
+      const nextTab =
+        currentIndex >= 0 && currentIndex < tabs.length - 1
+          ? tabs[currentIndex + 1]
+          : "confirmation";
+      setActiveTab(nextTab);
     } catch (error) {
       console.error("Error in handleNext function:", error);
       if (error instanceof Error) {
@@ -690,7 +696,7 @@ export function CopyrightApplication() {
     }
   };
 
-  // Add handlePrevious function to navigate back to applicants-info
+  // Add handlePrevious function to navigate back to applicants-information
   const handlePrevious = () => {
     try {
       // Get form values and preserve them in memory
@@ -714,9 +720,9 @@ export function CopyrightApplication() {
       setCopyrightApplication(dataToSave);
       previousValuesRef.current = { ...dataToSave };
 
-      // Navigate to the previous tab (applicants-info)
-      setActiveTab("applicants-info");
-      console.log("Navigated to applicants-info");
+      // Navigate to the previous tab (applicants-information)
+      setActiveTab("applicants-information");
+      console.log("Navigated to applicants-information");
     } catch (error) {
       console.error("Error navigating to previous tab:", error);
       if (error instanceof Error) {
@@ -725,7 +731,7 @@ export function CopyrightApplication() {
       toast.error("An error occurred while navigating to the previous page");
 
       // Try emergency navigation if all else fails
-      setActiveTab("applicants-info");
+      setActiveTab("applicants-information");
     }
   };
 
@@ -1176,13 +1182,13 @@ export function CopyrightApplication() {
             information
           </p>
         </div>
-
-        <Alert className="border-green-200 bg-green-50 text-green-800">
+      {/*!! commented as such this is not needed as for that reason the form is already on a dynamic hiding and showing of form upon selecting a type of IP*/}
+        {/* <Alert className="border-green-200 bg-green-50 text-green-800">
           <Info className="h-4 w-4 text-green-700" />
           <AlertDescription>
             Skip this section if your application is not related to Copyright.
           </AlertDescription>
-        </Alert>
+        </Alert> */}
 
         <Card className="border-green-200">
           <CardContent className="pt-6 space-y-6">

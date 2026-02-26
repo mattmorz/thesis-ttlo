@@ -73,14 +73,10 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
       if (!isHydrated) return;
 
       // Update visible tabs based on selected IP types
-      const visibleTabs = ["applicants-info"];
+      const visibleTabs = ["applicants-information"];
 
       if (ipTypes.copyright) {
-        visibleTabs.push(
-          "copyright-application",
-          "transaction-form-1",
-          "transaction-form-2"
-        );
+        visibleTabs.push("copyright-application");
       }
 
       if (ipTypes.patent || ipTypes.utilityModel) {

@@ -1429,7 +1429,7 @@ export function ClientBackgroundIP({
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">
-                      Have you published research output? <span className="text-red-500">*</span>
+                      Have you published any research output? <span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex items-center space-x-2">

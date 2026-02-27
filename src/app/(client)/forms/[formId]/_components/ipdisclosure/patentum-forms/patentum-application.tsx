@@ -423,15 +423,15 @@ export function PatentApplication({
   const navigateToPrevious = () => {
     try {
       // For Patent Application, previous should always be applicants-information
-      console.log("Navigating to applicants-info");
+      console.log("Navigating to applicants-information");
 
       // Save current form data
       const values = form.getValues();
       setData(values);
 
       // Use only the global tab state for navigation
-      setGlobalActiveTab("applicants-info");
-      console.log("Global active tab set to applicants-info");
+      setGlobalActiveTab("applicants-information");
+      console.log("Global active tab set to applicants-information");
 
       toast.success("Navigated to Applicant's Information");
     } catch (error) {

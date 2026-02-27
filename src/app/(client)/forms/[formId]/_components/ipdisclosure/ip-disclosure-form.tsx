@@ -15,8 +15,8 @@ import {
   useIpDisclosureStore,
 } from "@/lib/store/ip-disclosure-store";
 import type { IpTypes } from "@/lib/store/ip-disclosure-store";
-import { TransactionFormPart1 } from "./copyright-forms/transaction-form-part1";
-import { TransactionFormPart2 } from "./copyright-forms/transaction-form-part2";
+// import { TransactionFormPart1 } from "./copyright-forms/transaction-form-part1";
+// import { TransactionFormPart2 } from "./copyright-forms/transaction-form-part2";
 import { PatentSearchForm } from "./patentum-forms/patent-search-form";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -59,18 +59,19 @@ const tabs = [
     component: CopyrightApplication,
     showIf: (types: IpTypes) => types.copyright,
   },
-  {
-    id: "transaction-form-1",
-    label: "Transaction Form Part 1",
-    component: TransactionFormPart1,
-    showIf: (types: IpTypes) => types.copyright,
-  },
-  {
-    id: "transaction-form-2",
-    label: "Transaction Form Part 2",
-    component: TransactionFormPart2,
-    showIf: (types: IpTypes) => types.copyright,
-  },
+  // Transaction Form Part 1/2 removed per updated requirements.
+  //  {
+  //   id: "transaction-form-1",
+  //   label: "Transaction Form Part 1",
+  //   component: TransactionFormPart1,
+  //   showIf: (types: IpTypes) => types.copyright,
+  // },
+  // {
+  //   id: "transaction-form-2",
+  //   label: "Transaction Form Part 2",
+  //   component: TransactionFormPart2,
+  //   showIf: (types: IpTypes) => types.copyright,
+  // },
   {
     id: "trademark",
     label: "Trademark Application",
@@ -147,11 +148,14 @@ export function IPDisclosureForm() {
     }
   }, [clearLocalStorage]);
 
-  // Get active IP types, prioritizing applicantsInfo from the store over selectedIpTypes from context
+  // Get active IP types, using live checkbox state on the applicants tab,
+  // and saved store data once navigating away.
   const activeIpTypes: IpTypes = useMemo(() => {
-    // Always prefer the store data if available
+    if (activeTab === "applicants-information") {
+      return selectedIpTypes;
+    }
     if (applicantsInfo?.ipTypes) {
-      const formattedTypes = {
+      return {
         copyright: Boolean(applicantsInfo.ipTypes.copyright),
         patent: Boolean(applicantsInfo.ipTypes.patent),
         utilityModel: Boolean(applicantsInfo.ipTypes.utilityModel),
@@ -161,11 +165,9 @@ export function IPDisclosureForm() {
         other: Boolean(applicantsInfo.ipTypes.other),
         notSure: Boolean(applicantsInfo.ipTypes.notSure),
       };
-      return formattedTypes;
     }
-    // Fall back to context data if store data isn't available
     return selectedIpTypes;
-  }, [applicantsInfo?.ipTypes, selectedIpTypes]);
+  }, [activeTab, applicantsInfo?.ipTypes, selectedIpTypes]);
 
   // Memoize visible tab components based on active IP types
   const visibleTabComponents = useMemo(() => {
@@ -403,10 +405,11 @@ export function IPDisclosureForm() {
         return <PatentSearchForm />;
       case "copyright-application":
         return <CopyrightApplication />;
-      case "transaction-form-1":
-        return <TransactionFormPart1 />;
-      case "transaction-form-2":
-        return <TransactionFormPart2 />;
+        // Commented the transaction form parts per updated requirements.
+      //     case "transaction-form-1":
+      //   return <TransactionFormPart1 />;
+      // case "transaction-form-2":
+      //   return <TransactionFormPart2 />;
       case "trademark":
       case "trademark-application":
         return <TrademarkApplication />;

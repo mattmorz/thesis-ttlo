@@ -57,6 +57,29 @@ export function useActiveApplication(): UseActiveApplicationReturn {
     locksRef.current[lockName] = false;
   }, []);
 
+  // Internal setter that avoids clearing local data/reloading (used for auto-sync)
+  const setActiveApplicationIdInternal = useCallback(
+    (id: string | null) => {
+      if (id === activeApplicationId) return;
+
+      if (typeof window !== "undefined") {
+        if (id) {
+          localStorage.setItem("activeApplicationId", id);
+        } else {
+          localStorage.removeItem("activeApplicationId");
+        }
+
+        const event = new CustomEvent("application-switched", {
+          detail: { applicationId: id },
+        });
+        window.dispatchEvent(event);
+      }
+
+      setActiveApplicationIdRaw(id);
+    },
+    [activeApplicationId, setActiveApplicationIdRaw]
+  );
+
   // Set active application mutation
   const setActiveApplicationMutation =
     trpc.formIntegration.setActiveApplication.useMutation({
@@ -318,7 +341,7 @@ export function useActiveApplication(): UseActiveApplicationReturn {
 
         // If there's no active application but there are applications, set the first one as active
         if (!activeApplicationId && applicationsData.length > 0) {
-          setActiveApplicationId(applicationsData[0].id);
+          setActiveApplicationIdInternal(applicationsData[0].id);
         }
       } else {
         console.error("Applications data is not an array:", applicationsData);
@@ -377,18 +400,18 @@ export function useActiveApplication(): UseActiveApplicationReturn {
         activeApplicationId &&
         !applications.some((app) => app.id === activeApplicationId)
       ) {
-        setActiveApplicationId(applications[0].id);
+        setActiveApplicationIdInternal(applications[0].id);
       }
       // If there's no active application ID but there are applications, set the first one
       else if (!activeApplicationId) {
-        setActiveApplicationId(applications[0].id);
+        setActiveApplicationIdInternal(applications[0].id);
       }
     }
   }, [
     applications,
     activeApplicationId,
     isLoadingApplications,
-    setActiveApplicationId,
+    setActiveApplicationIdInternal,
   ]);
 
   return {

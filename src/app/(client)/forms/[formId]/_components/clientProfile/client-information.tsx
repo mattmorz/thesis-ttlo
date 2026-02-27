@@ -4,9 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { safeFetch } from "@/lib/utils";
@@ -57,7 +56,7 @@ const formSchema = z.object({
   gender: z.object({
     value: z.enum(["male", "female", "prefer_not_to_say"]),
   }),
-  age: z.number().min(1, "Age is required").optional(),
+  age: z.number().min(1, "Age is required").max(100, "Age must be 100 or less").optional(),
   citizenship: z.object({
     value: z.enum(["filipino", "other"]),
     otherValue: z.string().optional().nullable(),
@@ -75,13 +74,13 @@ const formSchema = z.object({
   collegeName: z.string().optional(),
   departmentName: z.string().optional(),
   occupation: z.string().optional(),
+  affiliationType: z.enum(["company", "academic", "none"]).default("company"),
 });
 
 // Add these props to the component
 interface ClientInformationProps {
   initialData?: any;
   isDisabled?: boolean;
-  formStatus?: string;
 }
 
 // Add TypeScript declaration for window global methods
@@ -115,12 +114,9 @@ declare global {
 export function ClientInformation({
   initialData,
   isDisabled = false,
-  formStatus = "draft",
 }: ClientInformationProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "personal";
-  const { data: session } = useSession();
   const [formData, setFormData] = useState<z.infer<typeof formSchema> | null>(
     null,
   );
@@ -163,6 +159,7 @@ export function ClientInformation({
       collegeName: "",
       departmentName: "",
       occupation: "",
+      affiliationType: "company",
     },
   });
 
@@ -174,12 +171,42 @@ export function ClientInformation({
   const lastName = form.watch("lastName");
   const mailingAddress = form.watch("mailingAddress");
   const contactNumber = form.watch("contactNumber");
+  const email = form.watch("email");
+  const occupation = form.watch("occupation");
+  const affiliationType = form.watch("affiliationType");
+  const companyName = form.watch("companyName");
+  const companyStreet = form.watch("companyStreet");
+  const companyBarangay = form.watch("companyBarangay");
+  const companyCityMunicipality = form.watch("companyCityMunicipality");
+  const companyProvince = form.watch("companyProvince");
+  const companyEmail = form.watch("companyEmail");
+  const collegeName = form.watch("collegeName");
+  const departmentName = form.watch("departmentName");
 
-  const isNextDisabled =
+  let isNextDisabled =
     !firstName?.trim() ||
     !lastName?.trim() ||
     !mailingAddress?.trim() ||
-    !contactNumber?.trim();
+    !contactNumber?.trim() ||
+    !email?.trim() ||
+    !occupation?.trim() ||
+    !affiliationType;
+
+  if (affiliationType === "company") {
+    isNextDisabled =
+      isNextDisabled ||
+      !companyName?.trim() ||
+      !companyStreet?.trim() ||
+      !companyBarangay?.trim() ||
+      !companyCityMunicipality?.trim() ||
+      !companyProvince?.trim() ||
+      !companyEmail?.trim();
+  }
+
+  if (affiliationType === "academic") {
+    isNextDisabled =
+      isNextDisabled || !collegeName?.trim() || !departmentName?.trim();
+  }
 
   // Add effect to respond to hasCompany changes
   useEffect(() => {
@@ -272,6 +299,7 @@ export function ClientInformation({
           collegeName: "",
           departmentName: "",
           occupation: "",
+          affiliationType: "company",
         };
       }
 
@@ -2028,15 +2056,23 @@ export function ClientInformation({
                       </FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
-                          placeholder="Enter age"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          placeholder="Enter age (ex. 25)"
                           {...field}
-                          value={field.value === undefined ? "" : field.value}
+                          value={
+                            field.value === undefined ? "" : String(field.value)
+                          }
                           onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(
-                              value === "" ? undefined : parseInt(value, 10),
-                            );
+                            const next = e.target.value.replace(/[^0-9]/g, "");
+                            if (next === "") {
+                              field.onChange(undefined);
+                              return;
+                            }
+                            const parsed = parseInt(next, 10);
+                            const clamped = Math.min(parsed, 100);
+                            field.onChange(clamped);
                           }}
                         />
                       </FormControl>
@@ -2216,90 +2252,83 @@ export function ClientInformation({
                   <FormItem>
                     <FormLabel>Occupation</FormLabel>
 
-                    <FormControl>
-                      <select
-                        {...field}
-                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      >
-                        <option value="">-- Select one --</option>
+  control={form.control}
+  name="occupation"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Occupation <span className="text-red-500">*</span></FormLabel>
 
-                        <optgroup label="Healthcare Practitioners and Technical Occupations">
-                          <option value="Chiropractor">Chiropractor</option>
-                          <option value="Dentist">Dentist</option>
-                          <option value="Dietitian or Nutritionist">
-                            Dietitian or Nutritionist
-                          </option>
-                          <option value="Optometrist">Optometrist</option>
-                          <option value="Pharmacist">Pharmacist</option>
-                          <option value="Physician">Physician</option>
-                          <option value="Physician Assistant">
-                            Physician Assistant
-                          </option>
-                          <option value="Podiatrist">Podiatrist</option>
-                          <option value="Registered Nurse">
-                            Registered Nurse
-                          </option>
-                          <option value="Therapist">Therapist</option>
-                          <option value="Veterinarian">Veterinarian</option>
-                          <option value="Health Technologist or Technician">
-                            Health Technologist or Technician
-                          </option>
-                          <option value="Other Healthcare Practitioner">
-                            Other Healthcare Practitioner
-                          </option>
-                        </optgroup>
+      <FormControl>
+        <select
+          {...field}
+          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">-- Select one --</option>
 
-                        <optgroup label="Healthcare Support Occupations">
-                          <option value="Nursing Aide">
-                            Nursing / Home Health Aide
-                          </option>
-                          <option value="Therapy Assistant">
-                            Occupational / Physical Therapy Assistant
-                          </option>
-                          <option value="Other Healthcare Support">
-                            Other Healthcare Support Occupation
-                          </option>
-                        </optgroup>
+          <optgroup label="Healthcare Practitioners and Technical Occupations">
+            <option value="Chiropractor">Chiropractor</option>
+            <option value="Dentist">Dentist</option>
+            <option value="Dietitian or Nutritionist">Dietitian or Nutritionist</option>
+            <option value="Optometrist">Optometrist</option>
+            <option value="Pharmacist">Pharmacist</option>
+            <option value="Physician">Physician</option>
+            <option value="Physician Assistant">Physician Assistant</option>
+            <option value="Podiatrist">Podiatrist</option>
+            <option value="Registered Nurse">Registered Nurse</option>
+            <option value="Therapist">Therapist</option>
+            <option value="Veterinarian">Veterinarian</option>
+            <option value="Health Technologist or Technician">
+              Health Technologist or Technician
+            </option>
+            <option value="Other Healthcare Practitioner">
+              Other Healthcare Practitioner
+            </option>
+          </optgroup>
 
-                        <optgroup label="Business and Management Occupations">
-                          <option value="Chief Executive">
-                            Chief Executive
-                          </option>
-                          <option value="Operations Manager">
-                            General / Operations Manager
-                          </option>
-                          <option value="Marketing Manager">
-                            Marketing / Sales Manager
-                          </option>
-                          <option value="IT Manager">IT / HR Manager</option>
-                          <option value="Accountant">
-                            Accountant / Auditor
-                          </option>
-                          <option value="Business Owner">Business Owner</option>
-                          <option value="Other Business Occupation">
-                            Other Business Occupation
-                          </option>
-                        </optgroup>
+          <optgroup label="Healthcare Support Occupations">
+            <option value="Nursing Aide">Nursing / Home Health Aide</option>
+            <option value="Therapy Assistant">Occupational / Physical Therapy Assistant</option>
+            <option value="Other Healthcare Support">
+              Other Healthcare Support Occupation
+            </option>
+          </optgroup>
 
-                        <optgroup label="Education Occupations">
-                          <option value="College Professor">
-                            College Professor
-                          </option>
-                          <option value="School Teacher">
-                            Primary / Secondary Teacher
-                          </option>
-                          <option value="Other Teacher">Other Teacher</option>
-                        </optgroup>
+          <optgroup label="Business and Management Occupations">
+            <option value="Chief Executive">Chief Executive</option>
+            <option value="Operations Manager">General / Operations Manager</option>
+            <option value="Marketing Manager">Marketing / Sales Manager</option>
+            <option value="IT Manager">IT / HR Manager</option>
+            <option value="Accountant">Accountant / Auditor</option>
+            <option value="Business Owner">Business Owner</option>
+            <option value="Other Business Occupation">
+              Other Business Occupation
+            </option>
+          </optgroup>
 
-                        <optgroup label="Other Occupations">
-                          <option value="Military">Military</option>
-                          <option value="Homemaker">Homemaker</option>
-                          <option value="Student">Student</option>
-                          <option value="Dont Know">Don't Know</option>
-                          <option value="Not Applicable">Not Applicable</option>
-                        </optgroup>
-                      </select>
-                    </FormControl>
+          <optgroup label="Education Occupations">
+            <option value="College Professor">College Professor</option>
+            <option value="School Teacher">Primary / Secondary Teacher</option>
+            <option value="Other Teacher">Other Teacher</option>
+          </optgroup>
+
+          <optgroup label="Other Occupations">
+            <option value="Military">Military</option>
+            <option value="Homemaker">Homemaker</option>
+            <option value="Student">Student</option>
+            <option value="Dont Know">Don't Know</option>
+            <option value="Not Applicable">Not Applicable</option>
+          </optgroup>
+        </select>
+      </FormControl>
+
+      <FormDescription>
+        Select your occupation. Scroll to see more options.
+      </FormDescription>
+
+      <FormMessage />
+    </FormItem>
+  )}
+/>
 
                     <FormDescription>
                       Select your occupation. Scroll to see more options.
@@ -2328,69 +2357,62 @@ export function ClientInformation({
               <FormField
                 control={form.control}
                 name="affiliationType"
-                render={({ field }) => {
-                  const affiliationValue = field.value as
-                    | "company"
-                    | "academic"
-                    | "none";
+                render={({ field }) => (
+                  <FormItem className="rounded-md border p-4 shadow-sm space-y-2">
+                    <FormLabel>Affiliation Type <span className="text-red-500">*</span></FormLabel>
 
-                  return (
-                    <FormItem className="rounded-md border p-4 shadow-sm space-y-2">
-                      <FormLabel>Affiliation Type</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={(
+                        value: "company" | "academic" | "none",
+                      ) => {
+                        field.onChange(value);
 
-                      <Select
-                        value={affiliationValue}
-                        onValueChange={(
-                          value: "company" | "academic" | "none",
-                        ) => {
-                          field.onChange(value);
+                        if (activeApplicationId) {
+                          const currentValues = form.getValues();
+                          const storageKey = `clientInformationData-${activeApplicationId}`;
+                          localStorage.setItem(
+                            storageKey,
+                            JSON.stringify({
+                              ...currentValues,
+                              affiliationType: value,
+                            }),
+                          );
+                        }
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select affiliation" />
+                        </SelectTrigger>
+                      </FormControl>
 
-                          if (activeApplicationId) {
-                            const currentValues = form.getValues();
-                            const storageKey = `clientInformationData-${activeApplicationId}`;
-                            localStorage.setItem(
-                              storageKey,
-                              JSON.stringify({
-                                ...currentValues,
-                                affiliationType: value,
-                              }),
-                            );
-                          }
-                        }}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select affiliation" />
-                          </SelectTrigger>
-                        </FormControl>
+                      <SelectContent>
+                        <SelectItem value="company">
+                          Company / Institution
+                        </SelectItem>
+                        <SelectItem value="academic">
+                          Academic Institution
+                        </SelectItem>
+                        <SelectItem value="none">No Application</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-                        <SelectContent>
-                          <SelectItem value="company">
-                            Company / Institution
-                          </SelectItem>
-                          <SelectItem value="academic">
-                            Academic Institution
-                          </SelectItem>
-                          <SelectItem value="none">No Application</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <FormDescription>
+                      {field.value === "company" &&
+                        "Provide information about your company or institution"}
 
-                      <FormDescription>
-                        {affiliationValue === "company" &&
-                          "Provide information about your company or institution"}
+                      {field.value === "academic" &&
+                        "Provide information about your college and department"}
 
-                        {affiliationValue === "academic" &&
-                          "Provide information about your college and department"}
+                      {field.value === "none" &&
+                        "No affiliation details are required"}
+                    </FormDescription>
 
-                        {affiliationValue === "none" &&
-                          "No affiliation details are required"}
-                      </FormDescription>
-
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              /> 
 
               {/* COMPANY / INSTITUTION FIELDS */}
               {form.watch("affiliationType") === "company" && (

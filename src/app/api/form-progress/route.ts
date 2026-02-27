@@ -53,6 +53,7 @@ export async function GET(request: Request) {
       ipDisclosure: false,
       substantialUse: false,
       deedAssignment: false,
+      applicationTitle: false,
     };
 
     // Process the results
@@ -72,6 +73,28 @@ export async function GET(request: Request) {
     });
 
     console.log("Form progress status results:", formStatus);
+
+    // Check application title status from ip_application
+    const appResult = await db.execute(
+      sql`SELECT title, ip_type
+          FROM ip_application
+          WHERE id = ${applicationId}
+          AND user_id = ${session.user.id}
+          LIMIT 1`
+    );
+
+    if (appResult.length > 0) {
+      const appRow: any = appResult[0];
+      const title =
+        typeof appRow?.title === "string" ? appRow.title.trim() : "";
+      const ipType = appRow?.ip_type ?? appRow?.ipType;
+
+      formStatus.applicationTitle =
+        Boolean(title) &&
+        title.toLowerCase() !== "untitled application" &&
+        Boolean(ipType) &&
+        String(ipType).toLowerCase() !== "not_sure";
+    }
 
     // Return the form status results
     return NextResponse.json({

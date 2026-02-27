@@ -9,6 +9,13 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { disclosureId: string } }
 ) {
+  return NextResponse.json(
+    {
+      error:
+        "Transaction form part 2 has been removed and this endpoint is deprecated.",
+    },
+    { status: 410 }
+  );
   try {
     // Get the disclosure ID from the params
     const { disclosureId } = params;

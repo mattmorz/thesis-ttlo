@@ -106,7 +106,7 @@ export function FormProgressTracker({
       );
       if (counterElements && counterElements.length > 0) {
         counterElements.forEach((el) => {
-          el.textContent = `${completedCount} of 4 completed`;
+          el.textContent = `${completedCount} of 5 completed`;
         });
       }
 
@@ -139,6 +139,7 @@ export function FormProgressTracker({
 
       // Update each form indicator
       updateFormDot("client-profile", status.clientProfile);
+      updateFormDot("application-title", status.applicationTitle);
       updateFormDot("ip-disclosure", status.ipDisclosure);
       updateFormDot("substantial-use", status.substantialUse);
       updateFormDot("deed-assignment", status.deedAssignment);
@@ -224,7 +225,7 @@ export function FormProgressTracker({
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-sm font-medium text-gray-700">Form Progress</h4>
         <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 form-progress-counter">
-          {loading ? "..." : `${completedCount} of 4 completed`}
+          {loading ? "..." : `${completedCount} of 5 completed`}
         </span>
       </div>
 
@@ -238,7 +239,7 @@ export function FormProgressTracker({
           },
           {
             id: "application-title",
-            label: "Application Title",
+            label: <>Application <br /> Title</>,
             required: true,
             completed: formStatus.applicationTitle,
           },

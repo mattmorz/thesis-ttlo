@@ -2,6 +2,8 @@ import AUTH_COVER from "@/assets/auth_cover.jpg";
 import { ChevronLeft } from "lucide-react";
 
 import { LoginForm } from "@/app/(auth)/auth/_components/login-form";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -10,13 +12,19 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const revalidate = 0; // Don't cache this page
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
   searchParams?: { callbackUrl?: string };
 }) {
+  const session = await auth();
+  if (session) {
+    redirect("/forms?tab=client-profile");
+  }
+
   // Get the callback URL if it exists
-  const callbackUrl = searchParams?.callbackUrl || "/";
+  const callbackUrl =
+    searchParams?.callbackUrl || "/forms?tab=client-profile";
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">

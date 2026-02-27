@@ -12,7 +12,7 @@ interface LoginFormProps extends React.ComponentPropsWithoutRef<"form"> {
 // that might trigger additional session checks
 function LoginFormComponent({
   className,
-  callbackUrl = "/",
+  callbackUrl = "/forms?tab=client-profile",
   ...props
 }: LoginFormProps) {
   return (

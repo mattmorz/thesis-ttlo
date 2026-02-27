@@ -241,7 +241,7 @@ export function ClientBackgroundIP({
         // If user has no IP experience, ensure types array is empty
         if (
           formattedData.ipExperience &&
-          formattedData.ipExperience.hasExperience === "no"
+          formattedData.ipExperience.hasExperience === false
         ) {
           formattedData.ipExperience.types = {
             patent: false,
@@ -295,7 +295,7 @@ export function ClientBackgroundIP({
         // If user has no IP experience, ensure types array is empty
         if (
           formattedData.ipExperience &&
-          formattedData.ipExperience.hasExperience === "no"
+          formattedData.ipExperience.hasExperience === false
         ) {
           formattedData.ipExperience.types = {
             patent: false,
@@ -524,7 +524,7 @@ export function ClientBackgroundIP({
       // If user has no IP experience, ensure types array is empty
       if (
         formattedData.ipExperience &&
-        formattedData.ipExperience.hasExperience === "no"
+        formattedData.ipExperience.hasExperience === false
       ) {
         setIpTypeCheckboxes({
           patent: false,
@@ -1340,11 +1340,10 @@ export function ClientBackgroundIP({
 
       console.log("Form submitted successfully:", result);
 
-      // Instead of redirecting to dashboard, refresh the current page to show updated status
+      // Move directly to the Application Title form after successful submission
       setTimeout(() => {
-        // Use Next.js router refresh to update the page without navigation
-        router.refresh();
-      }, 500);
+        router.push("/forms?tab=application-title");
+      }, 300);
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error(

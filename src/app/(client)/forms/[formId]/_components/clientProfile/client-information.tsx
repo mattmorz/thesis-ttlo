@@ -93,7 +93,7 @@ declare global {
     ) => void;
     _apiRequestsInProgress?: Record<string, boolean>;
   }
-} 
+}
 
 /**
  * ClientInformation Component
@@ -1966,22 +1966,21 @@ export function ClientInformation({
             <CardContent className="pt-6 space-y-6">
               {/* First row: First Name, Middle Name, Last Name */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-               <FormField
-  control={form.control}
-  name="firstName"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>
-        First Name <span className="text-red-500">*</span>
-      </FormLabel>
-      <FormControl>
-        <Input placeholder="Enter first name" {...field} />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
-  )}
-/>
-
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        First Name <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter first name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
@@ -2002,7 +2001,9 @@ export function ClientInformation({
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name <span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>
+                        Last Name <span className="text-red-500">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter last name" {...field} />
                       </FormControl>
@@ -2019,7 +2020,9 @@ export function ClientInformation({
                   name="gender.value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Gender <span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>
+                        Gender <span className="text-red-500">*</span>
+                      </FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -2048,7 +2051,9 @@ export function ClientInformation({
                   name="age"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Age <span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>
+                        Age <span className="text-red-500">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input
                           type="text"
@@ -2089,7 +2094,9 @@ export function ClientInformation({
                     name="citizenship.value"
                     render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <FormLabel>Citizenship <span className="text-red-500">*</span></FormLabel>
+                        <FormLabel>
+                          Citizenship <span className="text-red-500">*</span>
+                        </FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
@@ -2177,7 +2184,9 @@ export function ClientInformation({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>
+                        Email <span className="text-red-500">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter email address" {...field} />
                       </FormControl>
@@ -2191,7 +2200,9 @@ export function ClientInformation({
                   name="contactNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Contact Number <span className="text-red-500">*</span></FormLabel>
+                      <FormLabel>
+                        Contact Number <span className="text-red-500">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter contact number" {...field} />
                       </FormControl>
@@ -2207,7 +2218,7 @@ export function ClientInformation({
           <Card className="shadow-sm">
             <CardHeader className="bg-slate-50 rounded-t-lg">
               <CardTitle className="text-xl text-[#1B5E20]">
-                Mailing Address 
+                Mailing Address
               </CardTitle>
               <CardDescription>
                 Please provide your current mailing address
@@ -2219,7 +2230,9 @@ export function ClientInformation({
                 name="mailingAddress"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mailing Address <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>
+                      Mailing Address <span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Enter complete mailing address"
@@ -2233,6 +2246,11 @@ export function ClientInformation({
               />
 
               <FormField
+                control={form.control}
+                name="occupation"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Occupation</FormLabel>
 
   control={form.control}
   name="occupation"
@@ -2312,7 +2330,14 @@ export function ClientInformation({
   )}
 />
 
+                    <FormDescription>
+                      Select your occupation. Scroll to see more options.
+                    </FormDescription>
 
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 

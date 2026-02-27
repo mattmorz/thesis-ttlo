@@ -23,6 +23,8 @@ import {
   FileType,
   Phone,
   ChevronRight,
+  FolderOpenDot,
+  LucideFolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -268,11 +270,11 @@ const GettingStartedGuide = ({
                   </div>
                   <div className="mb-3">
                     <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
-                      <FileType className="h-4 w-4" />
+                      <LucideFolderOpen className="h-4 w-4" />
                       Application Title 
                     </h4>
                     <p className="text-xs text-muted-foreground mt-1.5">
-                     Provide the Title of your Intellectual Property and a short description of its purpose, development, and potential applications.
+                     Provide the title of your intellectual property and a short description of its purpose, development, and potential applications.
                     </p>
                   </div>
                   <ul className="text-xs space-y-1.5 text-slate-700">
@@ -286,7 +288,7 @@ const GettingStartedGuide = ({
                     </li>
                     <li className="flex items-center gap-1.5">
                       <Check className="h-3 w-3 text-[#1B5E20]" />
-                      <span>Identify the Application purpose</span>
+                      <span>Identify the application purpose</span>
                     </li>
                   </ul>
                 </div>
@@ -440,47 +442,61 @@ const GettingStartedGuide = ({
         </>
       )}
 
-      {/* Progress Tracker  */}
-      <div className="relative mb-6">
-        {/* Background line */}
-        <div className="absolute top-1/2 left-2 right-2 h-1 bg-slate-200 rounded-full" />
+      {/* Progress Tracker */}
+<div className="relative mb-10 px-4">
 
-        {/* Active progress line */}
-        <div
-          className="absolute top-1/2 left-0 h-1 bg-[#1B5E20] rounded-full transition-all"
-          style={{
-            width: `${(completedStep / totalSteps) * 100}%`,
-          }}
-        />
-        <div className="relative flex justify-between"></div>
-        <div className="relative flex justify-between  left-2">
-          {[
-            "Client Profile",
-            "Application Title",
-            "IP Disclosure",
-            "Substantial Use",
-            "Deed of Assignment",
-          ].map((label, index) => (
-            <div key={index} className="flex flex-col items-center">
-              <div
-                className={`h-8 w-8 rounded-full border-2 flex items-center justify-center text-xs font-semibold
-            ${
-              index < completedStep
-                ? "bg-[#1B5E20] text-white border-[#1B5E20]"
-                : index === completedStep
+  {/* Background line */}
+  <div className="absolute top-4 left-12 right-12 h-1 bg-slate-200 rounded-full" />
+
+  {/* Active progress line */}
+  <div
+    className="absolute top-4 left-6 h-1 bg-[#1B5E20] rounded-full transition-all duration-300"
+    style={{
+      width: `${
+        (completedStep / (totalSteps - 1)) * 100
+      }%`,
+    }}
+  />
+
+  {/* Steps */}
+  <div className="relative flex justify-between">
+    {[ 
+      "Client Profile",
+      "Application Title",
+      "IP Disclosure",
+      "Substantial Use",
+      "Deed of Assignment",
+    ].map((label, index) => {
+
+      const isCompleted = index < completedStep;
+      const isActive = index === completedStep;
+
+      return (
+        <div key={index} className="flex flex-col items-center w-24 text-center">
+          
+          {/* Circle */}
+          <div
+            className={`h-9 w-9 rounded-full border-2 flex items-center justify-center text-xs font-semibold transition-all
+              ${
+                isCompleted
+                  ? "bg-[#1B5E20] text-white border-[#1B5E20]"
+                  : isActive
                   ? "bg-[#1B5E20] text-white border-[#1B5E20]"
                   : "bg-white text-slate-400 border-slate-300"
-            }`}
-              >
-                {index < completedStep ? "✓" : index + 1}
-              </div>
-              <span className="mt-2 text-[11px] text-center text-slate-600 max-w-[80px]">
-                {label}
-              </span>
-            </div>
-          ))}
+              }`}
+          >
+            {isCompleted ? "✓" : index + 1}
+          </div>
+
+          {/* Label */}
+          <span className="mt-2 text-[11px] text-slate-600">
+            {label}
+          </span>
         </div>
-      </div>
+      );
+    })}
+  </div>
+</div>
     </Card>
   );
 };
@@ -595,6 +611,7 @@ export function PageContent() {
       setHasSeenGuide(guideSeen === "true");
     }
 
+    
     return () => {
       // Cleanup code here if needed
     };
@@ -1642,7 +1659,9 @@ export function PageContent() {
             }
           }}
         />
+        
       );
+      
     } catch (error) {
       console.error("Error rendering Getting Started Guide:", error);
       // Fall back to a simple version if there's an error

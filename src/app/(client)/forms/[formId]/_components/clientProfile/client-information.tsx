@@ -2250,90 +2250,87 @@ export function ClientInformation({
                 name="occupation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Occupation</FormLabel>
-
-  control={form.control}
-  name="occupation"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Occupation <span className="text-red-500">*</span></FormLabel>
-
-      <FormControl>
-        <select
-          {...field}
-          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">-- Select one --</option>
-
-          <optgroup label="Healthcare Practitioners and Technical Occupations">
-            <option value="Chiropractor">Chiropractor</option>
-            <option value="Dentist">Dentist</option>
-            <option value="Dietitian or Nutritionist">Dietitian or Nutritionist</option>
-            <option value="Optometrist">Optometrist</option>
-            <option value="Pharmacist">Pharmacist</option>
-            <option value="Physician">Physician</option>
-            <option value="Physician Assistant">Physician Assistant</option>
-            <option value="Podiatrist">Podiatrist</option>
-            <option value="Registered Nurse">Registered Nurse</option>
-            <option value="Therapist">Therapist</option>
-            <option value="Veterinarian">Veterinarian</option>
-            <option value="Health Technologist or Technician">
-              Health Technologist or Technician
-            </option>
-            <option value="Other Healthcare Practitioner">
-              Other Healthcare Practitioner
-            </option>
-          </optgroup>
-
-          <optgroup label="Healthcare Support Occupations">
-            <option value="Nursing Aide">Nursing / Home Health Aide</option>
-            <option value="Therapy Assistant">Occupational / Physical Therapy Assistant</option>
-            <option value="Other Healthcare Support">
-              Other Healthcare Support Occupation
-            </option>
-          </optgroup>
-
-          <optgroup label="Business and Management Occupations">
-            <option value="Chief Executive">Chief Executive</option>
-            <option value="Operations Manager">General / Operations Manager</option>
-            <option value="Marketing Manager">Marketing / Sales Manager</option>
-            <option value="IT Manager">IT / HR Manager</option>
-            <option value="Accountant">Accountant / Auditor</option>
-            <option value="Business Owner">Business Owner</option>
-            <option value="Other Business Occupation">
-              Other Business Occupation
-            </option>
-          </optgroup>
-
-          <optgroup label="Education Occupations">
-            <option value="College Professor">College Professor</option>
-            <option value="School Teacher">Primary / Secondary Teacher</option>
-            <option value="Other Teacher">Other Teacher</option>
-          </optgroup>
-
-          <optgroup label="Other Occupations">
-            <option value="Military">Military</option>
-            <option value="Homemaker">Homemaker</option>
-            <option value="Student">Student</option>
-            <option value="Dont Know">Don't Know</option>
-            <option value="Not Applicable">Not Applicable</option>
-          </optgroup>
-        </select>
-      </FormControl>
-
-      <FormDescription>
-        Select your occupation. Scroll to see more options.
-      </FormDescription>
-
-      <FormMessage />
-    </FormItem>
-  )}
-/>
-
+                    <FormLabel>
+                      Occupation <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="">-- Select one --</option>
+                        <optgroup label="Healthcare Practitioners and Technical Occupations">
+                          <option value="Chiropractor">Chiropractor</option>
+                          <option value="Dentist">Dentist</option>
+                          <option value="Dietitian or Nutritionist">
+                            Dietitian or Nutritionist
+                          </option>
+                          <option value="Optometrist">Optometrist</option>
+                          <option value="Pharmacist">Pharmacist</option>
+                          <option value="Physician">Physician</option>
+                          <option value="Physician Assistant">
+                            Physician Assistant
+                          </option>
+                          <option value="Podiatrist">Podiatrist</option>
+                          <option value="Registered Nurse">
+                            Registered Nurse
+                          </option>
+                          <option value="Therapist">Therapist</option>
+                          <option value="Veterinarian">Veterinarian</option>
+                          <option value="Health Technologist or Technician">
+                            Health Technologist or Technician
+                          </option>
+                          <option value="Other Healthcare Practitioner">
+                            Other Healthcare Practitioner
+                          </option>
+                        </optgroup>
+                        <optgroup label="Healthcare Support Occupations">
+                          <option value="Nursing Aide">
+                            Nursing / Home Health Aide
+                          </option>
+                          <option value="Therapy Assistant">
+                            Occupational / Physical Therapy Assistant
+                          </option>
+                          <option value="Other Healthcare Support">
+                            Other Healthcare Support Occupation
+                          </option>
+                        </optgroup>
+                        <optgroup label="Business and Management Occupations">
+                          <option value="Chief Executive">Chief Executive</option>
+                          <option value="Operations Manager">
+                            General / Operations Manager
+                          </option>
+                          <option value="Marketing Manager">
+                            Marketing / Sales Manager
+                          </option>
+                          <option value="IT Manager">IT / HR Manager</option>
+                          <option value="Accountant">Accountant / Auditor</option>
+                          <option value="Business Owner">Business Owner</option>
+                          <option value="Other Business Occupation">
+                            Other Business Occupation
+                          </option>
+                        </optgroup>
+                        <optgroup label="Education Occupations">
+                          <option value="College Professor">
+                            College Professor
+                          </option>
+                          <option value="School Teacher">
+                            Primary / Secondary Teacher
+                          </option>
+                          <option value="Other Teacher">Other Teacher</option>
+                        </optgroup>
+                        <optgroup label="Other Occupations">
+                          <option value="Military">Military</option>
+                          <option value="Homemaker">Homemaker</option>
+                          <option value="Student">Student</option>
+                          <option value="Dont Know">Don't Know</option>
+                          <option value="Not Applicable">Not Applicable</option>
+                        </optgroup>
+                      </select>
+                    </FormControl>
                     <FormDescription>
                       Select your occupation. Scroll to see more options.
                     </FormDescription>
-
                     <FormMessage />
                   </FormItem>
                 )}

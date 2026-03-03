@@ -176,30 +176,59 @@ const getStatusBadge = (status: string) => {
 };
 
 // Getting Started Guide Component - NAA KOY CHANGES DIRI
+type FormStatus = {
+  clientProfile: boolean;
+  applicationTitle: boolean;
+  ipDisclosure: boolean;
+  substantialUse: boolean;
+  deedAssignment: boolean;
+};
+
 const GettingStartedGuide = ({
   isCollapsed,
   setIsCollapsed,
+  formStatus,
+  onStepClick,
 }: {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
+  formStatus?: FormStatus;
+  onStepClick?: (tabId: FormTabId) => void;
 }) => {
-  // Track completion of each section
-  const [completedSections, setCompletedSections] = useState({
-    personalInfo: false,
-    educationalBackground: false,
-    backgroundIP: false,
-  });
+  const steps = [
+    {
+      label: "Client Profile",
+      tabId: FormTabs.CLIENT_PROFILE,
+      statusKey: "clientProfile",
+    },
+    {
+      label: "Application Title",
+      tabId: FormTabs.Application_Title,
+      statusKey: "applicationTitle",
+    },
+    {
+      label: "IP Disclosure",
+      tabId: FormTabs.IP_DISCLOSURE,
+      statusKey: "ipDisclosure",
+    },
+    {
+      label: "Substantial Use",
+      tabId: FormTabs.SUBSTANTIAL_USE,
+      statusKey: "substantialUse",
+    },
+    {
+      label: "Deed of Assignment",
+      tabId: FormTabs.DEED_ASSIGNMENT,
+      statusKey: "deedAssignment",
+    },
+  ] as const;
 
-  const totalSteps = Object.keys(completedSections).length;
+  const completedCount = steps.reduce((count, step) => {
+    return count + (formStatus?.[step.statusKey] ? 1 : 0);
+  }, 0);
 
-  // Compute completed steps dynamically
-  const completedStep = Object.values(completedSections).filter(Boolean).length;
-  const handleSectionCompletion = (
-    section: "personalInfo" | "educationalBackground" | "backgroundIP",
-    isCompleted: boolean,
-  ) => {
-    setCompletedSections((prev) => ({ ...prev, [section]: isCompleted }));
-  };
+  const progressSegments = Math.min(completedCount, steps.length - 1);
+  const activeIndex = Math.min(completedCount, steps.length - 1);
 
   return (
 
@@ -453,29 +482,31 @@ const GettingStartedGuide = ({
     className="absolute top-4 left-6 h-1 bg-[#1B5E20] rounded-full transition-all duration-300"
     style={{
       width: `${
-        (completedStep / (totalSteps - 1)) * 100
+        (progressSegments / (steps.length - 1)) * 100
       }%`,
     }}
   />
 
   {/* Steps */}
   <div className="relative flex justify-between">
-    {[ 
-      "Client Profile",
-      "Application Title",
-      "IP Disclosure",
-      "Substantial Use",
-      "Deed of Assignment",
-    ].map((label, index) => {
-
-      const isCompleted = index < completedStep;
-      const isActive = index === completedStep;
+    {steps.map((step, index) => {
+      const isCompleted = Boolean(formStatus?.[step.statusKey]);
+      const isActive = index === activeIndex;
+      const isClickable =
+        (isCompleted || isActive) && typeof onStepClick === "function";
 
       return (
         <div key={index} className="flex flex-col items-center w-24 text-center">
           
           {/* Circle */}
-          <div
+          <button
+            type="button"
+            onClick={() => {
+              if (isClickable) {
+                onStepClick(step.tabId);
+              }
+            }}
+            disabled={!isClickable}
             className={`h-9 w-9 rounded-full border-2 flex items-center justify-center text-xs font-semibold transition-all
               ${
                 isCompleted
@@ -483,14 +514,16 @@ const GettingStartedGuide = ({
                   : isActive
                   ? "bg-[#1B5E20] text-white border-[#1B5E20]"
                   : "bg-white text-slate-400 border-slate-300"
-              }`}
+              } ${
+              isClickable ? "cursor-pointer" : "cursor-not-allowed opacity-70"
+            }`}
           >
             {isCompleted ? "✓" : index + 1}
-          </div>
+          </button>
 
           {/* Label */}
           <span className="mt-2 text-[11px] text-slate-600">
-            {label}
+            {step.label}
           </span>
         </div>
       );
@@ -1851,7 +1884,12 @@ export function PageContent() {
     try {
       return (
         <GettingStartedGuide
-          progress={progress}
+          formStatus={
+            activeApplicationId
+              ? knownApplicationStatus[activeApplicationId]?.status
+              : undefined
+          }
+          onStepClick={(tabId) => handleTabChange(tabId)}
           isCollapsed={isGuideCollapsed}
           setIsCollapsed={(collapsed) => {
             try {

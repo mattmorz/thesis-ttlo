@@ -330,6 +330,9 @@ export function IPDisclosureForm() {
     activeTab && visibleTabComponents.some((tab) => tab.id === activeTab)
       ? activeTab
       : "applicants-information";
+  const currentTabIndex = visibleTabComponents.findIndex(
+    (tab) => tab.id === currentTab
+  );
 
   // Log current navigation state for debugging
   console.log("IP Disclosure Form - Current navigation state:", {
@@ -452,15 +455,20 @@ export function IPDisclosureForm() {
           <div className="overflow-x-auto -mx-6">
             <div className="px-6 min-w-max">
               <TabsList className="h-auto min-h-10 items-start justify-start text-muted-foreground flex flex-nowrap w-full bg-muted/10 p-1 rounded-none border-b">
-                {visibleTabComponents.map((tab) => (
+                {visibleTabComponents.map((tab, index) => {
+                  const isFutureTab =
+                    currentTabIndex !== -1 && index > currentTabIndex;
+                  return (
                   <TabsTrigger
                     key={tab.id}
                     value={tab.id}
+                    disabled={isFutureTab}
                     className="inline-flex items-center justify-center whitespace-nowrap rounded-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm relative py-2 text-sm font-medium text-muted-foreground data-[state=active]:text-[#1B5E20] data-[state=active]:bg-transparent data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[#1B5E20] hover:text-[#1B5E20]/80 transition-colors px-2 md:px-3 lg:px-4"
                   >
                     {tab.label}
                   </TabsTrigger>
-                ))}
+                );
+                })}
               </TabsList>
             </div>
           </div>

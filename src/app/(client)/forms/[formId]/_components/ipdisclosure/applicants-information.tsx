@@ -35,45 +35,68 @@ import { useFormContext } from "./context/form-context";
 const DEBUG = false;
 
 // Define the form schema here to avoid missing module errors
-const ApplicantsInfoFormSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  applicants: z
-    .array(
-      z.object({
-        firstName: z.string().min(1, "First name is required"),
-        middleInitial: z.string().optional(),
-        lastName: z.string().min(1, "Last name is required"),
-      })
-    )
-    .min(1, "At least one applicant is required"),
-  inventors: z
-    .array(
-      z.object({
-        firstName: z.string().min(1, "First name is required"),
-        middleInitial: z.string().optional(),
-        lastName: z.string().min(1, "Last name is required"),
-      })
-    )
-    .min(1, "At least one inventor is required"),
-  ipTypes: z.object({
-    copyright: z.boolean().default(false),
-    patent: z.boolean().default(false),
-    utilityModel: z.boolean().default(false),
-    industrialDesign: z.boolean().default(false),
-    trademark: z.boolean().default(false),
-    tradeSecret: z.boolean().default(false),
-    other: z.boolean().default(false),
-    notSure: z.boolean().default(false),
-  }),
-  otherIpType: z.string().optional(),
-  isRightfulOwner: z
-    .boolean()
-    .refine((value) => value === true, {
-      message: "This confirmation is required.",
+const nameSchema = z.string().trim().min(1, "This field is required");
+const ApplicantsInfoFormSchema = z
+  .object({
+    email: z.string().trim().email("Please enter a valid email address"),
+    applicants: z
+      .array(
+        z.object({
+          firstName: nameSchema,
+          middleInitial: z.string().trim().optional(),
+          lastName: nameSchema,
+        })
+      )
+      .min(1, "At least one applicant is required"),
+    inventors: z
+      .array(
+        z.object({
+          firstName: nameSchema,
+          middleInitial: z.string().trim().optional(),
+          lastName: nameSchema,
+        })
+      )
+      .min(1, "At least one inventor is required"),
+    ipTypes: z.object({
+      copyright: z.boolean().default(false),
+      patent: z.boolean().default(false),
+      utilityModel: z.boolean().default(false),
+      industrialDesign: z.boolean().default(false),
+      trademark: z.boolean().default(false),
+      tradeSecret: z.boolean().default(false),
+      other: z.boolean().default(false),
+      notSure: z.boolean().default(false),
     }),
-  isApplicantAlsoInventor: z.boolean().default(false),
-  authorizedRepresentative: z.string().optional(),
-});
+    otherIpType: z.string().trim().optional(),
+    isRightfulOwner: z
+      .boolean()
+      .refine((value) => value === true, {
+        message: "This confirmation is required.",
+      }),
+    isApplicantAlsoInventor: z.boolean().default(false),
+    authorizedRepresentative: z.string().trim().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasIpTypeSelected = Object.values(data.ipTypes).some(
+      (value) => value === true
+    );
+
+    if (!hasIpTypeSelected) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please select at least one IP type.",
+        path: ["ipTypes"],
+      });
+    }
+
+    if (data.ipTypes.other && !data.otherIpType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify the type of IP in the 'Other' field.",
+        path: ["otherIpType"],
+      });
+    }
+  });
 
 // Define type based on the schema
 type ApplicantsInfoFormType = z.infer<typeof ApplicantsInfoFormSchema>;
@@ -145,6 +168,8 @@ export function ApplicantsInformation() {
   // Initialize form with the local state
   const form = useForm<ApplicantsInfoFormType>({
     resolver: zodResolver(ApplicantsInfoFormSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: formData,
     values: formData, // Explicitly set values from our state
   });
@@ -1186,6 +1211,10 @@ export function ApplicantsInformation() {
   const isApplicantAlsoInventor = form.watch("isApplicantAlsoInventor");
   const watchedApplicants = form.watch("applicants");
   const watchedIpTypes = form.watch("ipTypes");
+  const watchedInventors = form.watch("inventors");
+  const watchedEmail = form.watch("email");
+  const watchedOtherIpType = form.watch("otherIpType");
+  const watchedIsRightfulOwner = form.watch("isRightfulOwner");
   const hasSelectedIpType = Object.values(watchedIpTypes || {}).some(
     (value) => value === true
   );
@@ -1193,6 +1222,51 @@ export function ApplicantsInformation() {
   const hasSpecificIpSelected = Object.entries(watchedIpTypes || {}).some(
     ([key, value]) => key !== "notSure" && value === true
   );
+  const ipTypesError =
+    form.formState.errors.ipTypes?.message ??
+    (
+      form.formState.errors.ipTypes as
+        | { root?: { message?: string } }
+        | undefined
+    )?.root?.message;
+  const showIpTypeError = !hasSelectedIpType || Boolean(ipTypesError);
+
+  const hasApplicantNames =
+    (watchedApplicants?.length ?? 0) > 0 &&
+    watchedApplicants.every(
+      (applicant) =>
+        Boolean(applicant?.firstName?.trim()) &&
+        Boolean(applicant?.lastName?.trim())
+    );
+
+  const hasInventorNames =
+    (watchedInventors?.length ?? 0) > 0 &&
+    watchedInventors.every(
+      (inventor) =>
+        Boolean(inventor?.firstName?.trim()) &&
+        Boolean(inventor?.lastName?.trim())
+    );
+
+  const hasEmail = Boolean(watchedEmail?.trim());
+  const hasOtherIpType =
+    !watchedIpTypes?.other || Boolean(watchedOtherIpType?.trim());
+
+  const isNextDisabled =
+    !hasEmail ||
+    !hasApplicantNames ||
+    !hasInventorNames ||
+    !hasSelectedIpType ||
+    !hasOtherIpType ||
+    !watchedIsRightfulOwner;
+
+  useEffect(() => {
+    if (!hasSelectedIpType) {
+      form.setError("ipTypes", {
+        type: "manual",
+        message: "Please select at least one IP type.",
+      });
+    }
+  }, [form, hasSelectedIpType]);
 
   const goToIpTab = (type: IpTypeKeys) => {
     switch (type) {
@@ -1396,7 +1470,6 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="First Name"
                                   {...field}
-                                  onBlur={syncApplicantsAndInventors}
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -1418,7 +1491,6 @@ export function ApplicantsInformation() {
                                   placeholder="M.I."
                                   maxLength={2}
                                   {...field}
-                                  onBlur={syncApplicantsAndInventors}
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -1439,7 +1511,6 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="Last Name"
                                   {...field}
-                                  onBlur={syncApplicantsAndInventors}
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -1524,7 +1595,6 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="First Name"
                                   {...field}
-                                  onBlur={syncApplicantsAndInventors}
                                   readOnly={isApplicantAlsoInventor}
                                   aria-readonly={isApplicantAlsoInventor}
                                   className={
@@ -1553,7 +1623,6 @@ export function ApplicantsInformation() {
                                   placeholder="M.I."
                                   maxLength={2}
                                   {...field}
-                                  onBlur={syncApplicantsAndInventors}
                                   readOnly={isApplicantAlsoInventor}
                                   aria-readonly={isApplicantAlsoInventor}
                                   className={
@@ -1581,7 +1650,6 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="Last Name"
                                   {...field}
-                                  onBlur={syncApplicantsAndInventors}
                                   readOnly={isApplicantAlsoInventor}
                                   aria-readonly={isApplicantAlsoInventor}
                                   className={
@@ -1736,9 +1804,9 @@ export function ApplicantsInformation() {
                       />
                     ))}
                   </div>
-                  {!hasSelectedIpType && (
+                  {showIpTypeError && (
                     <p className="text-sm text-red-600">
-                      Please select at least one IP type.
+                      {ipTypesError ?? "Please select at least one IP type."}
                     </p>
                   )}
 
@@ -1806,6 +1874,7 @@ export function ApplicantsInformation() {
             showNext={true}
             isSaving={isSaving}
             isSubmitting={isSubmitting}
+            isNextDisabled={isNextDisabled}
           />
 
           {/* Form Recovery Panel positioned after FormNavigation */}

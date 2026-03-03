@@ -54,9 +54,21 @@ const formSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   middleName: z.string().optional(),
   gender: z.object({
-    value: z.enum(["male", "female", "prefer_not_to_say"]),
+    value: z
+      .string()
+      .min(1, "Gender is required")
+      .refine(
+        (value) => ["male", "female", "prefer_not_to_say"].includes(value),
+        "Gender is required"
+      ),
   }),
-  age: z.number().min(1, "Age is required").max(100, "Age must be 100 or less").optional(),
+  age: z
+    .number({
+      required_error: "Age is required",
+      invalid_type_error: "Age must be a number",
+    })
+    .min(1, "Age is required")
+    .max(100, "Age must be 100 or less"),
   citizenship: z.object({
     value: z.enum(["filipino", "other"]),
     otherValue: z.string().optional().nullable(),
@@ -73,8 +85,10 @@ const formSchema = z.object({
   companyEmail: z.string().email("Invalid email address").optional(),
   collegeName: z.string().optional(),
   departmentName: z.string().optional(),
-  occupation: z.string().optional(),
-  affiliationType: z.enum(["company", "academic", "none"]).default("company"),
+  occupation: z.string().min(1, "Occupation is required"),
+  affiliationType: z.enum(["company", "academic", "none"], {
+    required_error: "Affiliation type is required",
+  }),
 });
 
 // Add these props to the component
@@ -139,11 +153,13 @@ export function ClientInformation({
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       firstName: "",
       lastName: "",
       middleName: "",
-      gender: { value: "male" },
+      gender: { value: "" },
       age: undefined,
       citizenship: { value: "filipino", otherValue: null },
       mailingAddress: "",
@@ -267,7 +283,7 @@ export function ClientInformation({
                   value:
                     typeof initialData.gender === "string"
                       ? initialData.gender
-                      : "male",
+                      : "",
                 },
           citizenship: initialData.citizenship || {
             value: "filipino",
@@ -283,7 +299,7 @@ export function ClientInformation({
           firstName: "",
           lastName: "",
           middleName: "",
-          gender: { value: "male" },
+          gender: { value: "" },
           age: undefined,
           citizenship: { value: "filipino", otherValue: null },
           mailingAddress: "",
@@ -318,8 +334,7 @@ export function ClientInformation({
 
           // Ensure specific objects are properly merged
           gender: {
-            value:
-              parsedData.gender?.value || formattedData.gender?.value || "male",
+            value: parsedData.gender?.value || formattedData.gender?.value || "",
           },
 
           citizenship: {
@@ -342,18 +357,18 @@ export function ClientInformation({
 
       // Make sure gender has a valid value
       if (!formattedData.gender || typeof formattedData.gender !== "object") {
-        formattedData.gender = { value: "male" };
+        formattedData.gender = { value: "" };
       } else if (
         !formattedData.gender.value ||
         typeof formattedData.gender.value !== "string"
       ) {
-        formattedData.gender.value = "male";
+        formattedData.gender.value = "";
       } else if (
         !["male", "female", "prefer_not_to_say"].includes(
           formattedData.gender.value,
         )
       ) {
-        formattedData.gender.value = "male";
+        formattedData.gender.value = "";
       }
 
       // Fix citizenship data
@@ -476,7 +491,7 @@ export function ClientInformation({
         const formattedValues = {
           ...values,
           gender: {
-            value: values.gender?.value || "male",
+            value: values.gender?.value || "",
           },
         };
 
@@ -502,7 +517,7 @@ export function ClientInformation({
         const formattedValues = {
           ...values,
           gender: {
-            value: values.gender?.value || "male",
+            value: values.gender?.value || "",
           },
         };
 
@@ -533,7 +548,7 @@ export function ClientInformation({
         const formattedValues = {
           ...values,
           gender: {
-            value: values.gender?.value || "male",
+            value: values.gender?.value || "",
           },
         };
 
@@ -566,7 +581,7 @@ export function ClientInformation({
           const formattedValues = {
             ...values,
             gender: {
-              value: values.gender?.value || "male",
+              value: values.gender?.value || "",
             },
             citizenship: {
               value: values.citizenship?.value || "filipino",
@@ -1870,7 +1885,7 @@ export function ClientInformation({
           formattedData.gender.value,
         )
       ) {
-        formattedData.gender.value = "male";
+        formattedData.gender.value = "";
       }
     }
 
@@ -2188,7 +2203,12 @@ export function ClientInformation({
                         Email <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter email address" {...field} />
+                        <Input
+                          type="email"
+                          autoComplete="email"
+                          placeholder="Enter email address"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -2204,7 +2224,16 @@ export function ClientInformation({
                         Contact Number <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter contact number" {...field} />
+                        <Input
+                          {...field}
+                          placeholder="Enter contact number"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(e.target.value.replace(/\D/g, ""))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

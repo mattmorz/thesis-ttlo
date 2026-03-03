@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { trpc } from "@/app/_trpc/client";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import {
@@ -30,9 +30,10 @@ import {
 } from "@/components/ui/select";
 
 const formSchema = z.object({
-  title: z.string().min(5, {
-    message: "Title must be at least 5 characters.",
-  }),
+  title: z
+    .string()
+    .min(1, "Title is required")
+    .min(5, "Title must be at least 5 characters."),
   description: z.string().optional(),
   ipType: z.enum([
     "patent",
@@ -50,6 +51,7 @@ export function ApplicationTitleForm() {
   const router = useRouter();
   const { activeApplication, refetchApplications, setApplications } =
     useActiveApplication();
+  const hasClearedTitleRef = useRef(false);
 
   const updateApplicationMutation = trpc.formIntegration.updateApplication.useMutation({
     onSuccess: (_data, variables) => {
@@ -95,7 +97,7 @@ export function ApplicationTitleForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: activeApplication?.title || "",
+      title: "",
       description: activeApplication?.description || "",
       ipType: (activeApplication?.ipType as any) || "not_sure",
     },
@@ -104,10 +106,11 @@ export function ApplicationTitleForm() {
   useEffect(() => {
     if (activeApplication) {
       form.reset({
-        title: activeApplication.title,
+        title: "",
         description: activeApplication.description || "",
         ipType: (activeApplication.ipType as any) || "not_sure",
       });
+      hasClearedTitleRef.current = false;
     }
   }, [activeApplication, form]);
 
@@ -137,7 +140,25 @@ export function ApplicationTitleForm() {
                 <FormItem>
                   <FormLabel>Application Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter a title for your application" {...field} />
+                    <Input
+                      {...field}
+                      placeholder="Enter a title for your application"
+                      onFocus={() => {
+                        if (
+                          !hasClearedTitleRef.current &&
+                          field.value === (activeApplication?.title ?? "")
+                        ) {
+                          field.onChange("");
+                          hasClearedTitleRef.current = true;
+                        }
+                      }}
+                      onChange={(e) => {
+                        if (!hasClearedTitleRef.current) {
+                          hasClearedTitleRef.current = true;
+                        }
+                        field.onChange(e);
+                      }}
+                    />
                   </FormControl>
                   <FormDescription>
                     This is the main identifier for your intellectual property application.

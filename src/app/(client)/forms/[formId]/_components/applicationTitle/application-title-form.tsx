@@ -34,17 +34,27 @@ const formSchema = z.object({
     .string()
     .min(1, "Title is required")
     .min(5, "Title must be at least 5 characters."),
-  description: z.string().optional(),
-  ipType: z.enum([
-    "patent",
-    "copyright",
-    "trademark",
-    "utility_model",
-    "industrial_design",
-    "trade_secret",
-    "not_sure",
-    "other",
-  ]),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .min(5, "Description must be at least 5 characters."),
+  ipType: z
+    .string()
+    .min(1, "IP type is required")
+    .refine(
+      (value) =>
+        [
+          "patent",
+          "copyright",
+          "trademark",
+          "utility_model",
+          "industrial_design",
+          "trade_secret",
+          "not_sure",
+          "other",
+        ].includes(value),
+      "IP type is required"
+    ),
 });
 
 export function ApplicationTitleForm() {
@@ -96,10 +106,12 @@ export function ApplicationTitleForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       title: "",
       description: activeApplication?.description || "",
-      ipType: (activeApplication?.ipType as any) || "not_sure",
+      ipType: "",
     },
   });
 
@@ -108,7 +120,7 @@ export function ApplicationTitleForm() {
       form.reset({
         title: "",
         description: activeApplication.description || "",
-        ipType: (activeApplication.ipType as any) || "not_sure",
+        ipType: "",
       });
       hasClearedTitleRef.current = false;
     }
@@ -138,7 +150,9 @@ export function ApplicationTitleForm() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Application Title</FormLabel>
+                  <FormLabel>
+                    Application Title <span className="text-red-500">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -172,7 +186,9 @@ export function ApplicationTitleForm() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>
+                    Description <span className="text-red-500">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Provide a brief summary of your application"
@@ -194,7 +210,7 @@ export function ApplicationTitleForm() {
                 <FormItem>
                   <FormLabel>IP Type</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select IP type" />
                       </SelectTrigger>
@@ -222,7 +238,12 @@ export function ApplicationTitleForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={updateApplicationMutation.isLoading}>
+            <Button
+              type="submit"
+              disabled={
+                updateApplicationMutation.isLoading || !form.formState.isValid
+              }
+            >
               {updateApplicationMutation.isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </form>

@@ -1439,7 +1439,7 @@ export function ApplicantsInformation() {
                 <CardContent className="pt-6 space-y-4">
                   <div className="flex justify-between items-center">
                     <FormLabel className="text-base">
-                      Name of Applicant(s)
+                      Name of Applicant(s)<span className="text-red-500"> *</span>
                     </FormLabel>
                     <Button
                       type="button"
@@ -1542,7 +1542,7 @@ export function ApplicantsInformation() {
                 <CardContent className="pt-6 space-y-4">
                   <div className="flex justify-between items-center">
                     <FormLabel className="text-base">
-                      Name of Author/Inventor/Creator
+                      Name of Author/Inventor/Creator<span className="text-red-500"> *</span>
                     </FormLabel>
                     <Button
                       type="button"
@@ -1694,7 +1694,7 @@ export function ApplicantsInformation() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base">
-                          Email Address
+                          Email Address<span className="text-red-500"> *</span>
                         </FormLabel>
                         <FormDescription>
                           Enter the primary contact email address
@@ -1712,7 +1712,7 @@ export function ApplicantsInformation() {
               <Card className="border-green-200">
                 <CardContent className="pt-6 space-y-4">
                   <FormLabel className="text-base">
-                    Type of Intellectual Property
+                    Type of Intellectual Property<span className="text-red-500"> *</span>
                   </FormLabel>
                   <div className="grid grid-cols-2 gap-4">
                     {[

@@ -1228,7 +1228,7 @@ export function CopyrightApplication() {
               name="workTitle"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Work Title</FormLabel>
+                  <FormLabel className="text-base">Work Title</FormLabel><span className="text-red-500"> *</span>
                   <FormControl>
                     <Input
                       {...field}
@@ -1249,7 +1249,7 @@ export function CopyrightApplication() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-base">
-                    Description of the Work
+                    Description of the Work<span className="text-red-500"> *</span>
                   </FormLabel>
                   <FormControl>
                     <Textarea
@@ -1282,7 +1282,7 @@ export function CopyrightApplication() {
                 return (
                   <FormItem>
                     <FormLabel className="text-base">
-                      Date of Creation
+                      Date of Creation<span className="text-red-500"> *</span>
                     </FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>

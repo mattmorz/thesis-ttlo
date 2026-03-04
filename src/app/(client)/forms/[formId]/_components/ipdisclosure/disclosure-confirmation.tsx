@@ -1288,7 +1288,7 @@ export function DisclosureConfirmation() {
           <Card className="border-green-200">
             <CardContent className="pt-6 space-y-6">
               <div className="space-y-4">
-                <FormLabel className="text-base">Written Disclosures</FormLabel>
+                <FormLabel className="text-base">Written Disclosures<span className="text-red-500"> *</span></FormLabel>
                 <div className="flex gap-6">
                   <FormField
                     control={form.control}
@@ -1344,7 +1344,7 @@ export function DisclosureConfirmation() {
               </div>
 
               <div className="space-y-4">
-                <FormLabel className="text-base">Oral Disclosures</FormLabel>
+                <FormLabel className="text-base">Oral Disclosures<span className="text-red-500"> *</span></FormLabel>
                 <div className="flex gap-6">
                   <FormField
                     control={form.control}
@@ -1408,7 +1408,7 @@ export function DisclosureConfirmation() {
                 name="futureWork"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Future Work</FormLabel>
+                    <FormLabel className="text-base">Future Work<span className="text-red-500"> *</span></FormLabel>
                     <FormDescription>
                       Please describe any planned future work or developments
                     </FormDescription>
@@ -1441,7 +1441,7 @@ export function DisclosureConfirmation() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Declaration</FormLabel>
+                      <FormLabel>Declaration<span className="text-red-500"> *</span></FormLabel>
                       <FormDescription>
                         I hereby declare that the information provided in this
                         application is true and accurate to the best of my

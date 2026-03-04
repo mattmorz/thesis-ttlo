@@ -132,6 +132,8 @@ export function PatentApplication({
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: {
       technologyType: {
         product: false,
@@ -154,6 +156,62 @@ export function PatentApplication({
       files: [],
     },
   });
+
+  const [
+    title,
+    problem,
+    comparison,
+    novelty,
+    usage,
+    technologyType,
+    technologyField,
+  ] = form.watch([
+    "title",
+    "problem",
+    "comparison",
+    "novelty",
+    "usage",
+    "technologyType",
+    "technologyField",
+  ]);
+
+  const isTechnologyTypeSelected =
+    technologyType && Object.values(technologyType).some(Boolean);
+  const isTechnologyFieldSelected =
+    technologyField && Object.values(technologyField).some(Boolean);
+
+  const isRequiredFilled =
+    Boolean(title?.trim()) &&
+    Boolean(problem?.trim()) &&
+    Boolean(comparison?.trim()) &&
+    Boolean(novelty?.trim()) &&
+    Boolean(usage?.trim()) &&
+    isTechnologyTypeSelected &&
+    isTechnologyFieldSelected;
+
+  const handleFieldBlur = async (
+    fieldName: "title" | "problem" | "comparison" | "novelty" | "usage"
+  ) => {
+    const isValid = await form.trigger(fieldName);
+    if (!isValid) {
+      const message =
+        form.formState.errors?.[fieldName]?.message ||
+        "This field is required";
+      toast.error(message);
+    }
+  };
+
+  const handleGroupChange = async (
+    groupName: "technologyType" | "technologyField"
+  ) => {
+    const isValid = await form.trigger(groupName);
+    if (!isValid) {
+      const message =
+        form.formState.errors?.[groupName]?.message ||
+        "Please select at least one option";
+      toast.error(message);
+    }
+  };
 
   // Load saved data on component mount - only once
   useEffect(() => {
@@ -471,7 +529,7 @@ export function PatentApplication({
             <CardContent className="pt-6 space-y-6">
               <div className="space-y-4">
                 <FormLabel className="text-base">
-                  <span className="font-bold">Type of Technology</span>
+                  <span className="font-bold">Type of Technology</span><span className="text-red-500"> *</span>
                 </FormLabel>
                 <FormDescription>
                   What type of technology are you applying for?
@@ -487,7 +545,10 @@ export function PatentApplication({
                           <FormControl>
                             <Checkbox
                               checked={field.value}
-                              onCheckedChange={field.onChange}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                handleGroupChange("technologyType");
+                              }}
                             />
                           </FormControl>
                           <FormLabel className="font-normal">
@@ -507,7 +568,7 @@ export function PatentApplication({
 
               <div className="space-y-4">
                 <FormLabel className="text-base">
-                  <span className="font-bold">Field of Technology</span>
+                  <span className="font-bold">Field of Technology</span><span className="text-red-500"> *</span>
                 </FormLabel>
                 <FormDescription>
                   Which field of technology would you classify your application?
@@ -523,7 +584,10 @@ export function PatentApplication({
                           <FormControl>
                             <Checkbox
                               checked={field.value}
-                              onCheckedChange={field.onChange}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                handleGroupChange("technologyField");
+                              }}
                             />
                           </FormControl>
                           <FormLabel className="font-normal">
@@ -557,7 +621,7 @@ export function PatentApplication({
                       <FormLabel className="text-base">
                         <span className="font-bold">
                           Title of Invention / Technology
-                        </span>
+                        </span><span className="text-red-500"> *</span>
                       </FormLabel>
                       <FormDescription>
                         Preferred format: "Type of Technology" followed by its
@@ -566,7 +630,14 @@ export function PatentApplication({
                         For example: "Ultrasonic apparatus for testing welds"
                       </FormDescription>
                       <FormControl>
-                        <Input placeholder="Enter title..." {...field} />
+                        <Input
+                          placeholder="Enter title..."
+                          {...field}
+                          onBlur={(event) => {
+                            field.onBlur();
+                            handleFieldBlur("title");
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -581,7 +652,7 @@ export function PatentApplication({
                       <FormLabel className="text-base">
                         <span className="font-bold">
                           What problem does it solve?
-                        </span>
+                        </span><span className="text-red-500"> *</span>
                       </FormLabel>
                       <FormDescription>
                         For technology that is best explained with drawings:
@@ -598,6 +669,10 @@ export function PatentApplication({
                           placeholder="Describe the problem..."
                           className="min-h-[100px]"
                           {...field}
+                          onBlur={(event) => {
+                            field.onBlur();
+                            handleFieldBlur("problem");
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -620,7 +695,7 @@ export function PatentApplication({
                       <FormLabel className="text-base">
                         <span className="font-bold">
                           Advantages and Disadvantages
-                        </span>
+                        </span><span className="text-red-500"> *</span>
                       </FormLabel>
                       <FormDescription>
                         Compare this technology to existing work
@@ -630,6 +705,10 @@ export function PatentApplication({
                           placeholder="List advantages and disadvantages..."
                           className="min-h-[100px]"
                           {...field}
+                          onBlur={(event) => {
+                            field.onBlur();
+                            handleFieldBlur("comparison");
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -643,7 +722,7 @@ export function PatentApplication({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-base">
-                        <span className="font-bold">Novelty Explanation</span>
+                        <span className="font-bold">Novelty Explanation</span><span className="text-red-500"> *</span>
                       </FormLabel>
                       <FormDescription>
                         Explain why this invention is novel over the prior art,
@@ -654,6 +733,10 @@ export function PatentApplication({
                           placeholder="Explain novelty..."
                           className="min-h-[100px]"
                           {...field}
+                          onBlur={(event) => {
+                            field.onBlur();
+                            handleFieldBlur("novelty");
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -711,7 +794,7 @@ export function PatentApplication({
                   render={({ field: formField }) => (
                     <FormItem>
                       <FormLabel className="text-base">
-                        <span className="font-bold">{field.label}</span>
+                        <span className="font-bold">{field.label}</span><span className="text-red-500"> *</span>
                         {field.required && (
                           <span className="text-destructive ml-1">*</span>
                         )}
@@ -723,7 +806,12 @@ export function PatentApplication({
                           className="min-h-[100px]"
                           value={formField.value as string}
                           onChange={formField.onChange}
-                          onBlur={formField.onBlur}
+                          onBlur={() => {
+                            formField.onBlur();
+                            if (field.name === "usage") {
+                              handleFieldBlur("usage");
+                            }
+                          }}
                           name={formField.name}
                           ref={formField.ref}
                         />
@@ -833,6 +921,7 @@ export function PatentApplication({
               type="button"
               onClick={handleNextWithoutSubmit}
               className="bg-[#1B5E20] hover:bg-[#0A3A10] text-white"
+              disabled={!isRequiredFilled || !form.formState.isValid}
             >
               Next
             </Button>

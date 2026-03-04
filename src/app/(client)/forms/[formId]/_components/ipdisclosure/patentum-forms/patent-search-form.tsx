@@ -686,7 +686,7 @@ export function PatentSearchForm({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Title<span className="text-red-500"> *</span></FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
@@ -715,7 +715,7 @@ export function PatentSearchForm({
 
                 return (
                   <FormItem>
-                    <FormLabel>Date of Search Completion</FormLabel>
+                    <FormLabel>Date of Search Completion<span className="text-red-500"> *</span></FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -862,7 +862,7 @@ export function PatentSearchForm({
               name="abstract"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Abstract</FormLabel>
+                  <FormLabel>Abstract<span className="text-red-500"> *</span></FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
@@ -889,7 +889,7 @@ export function PatentSearchForm({
               name="ipcClassification"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>International Patent Classification/CPC</FormLabel>
+                  <FormLabel>International Patent Classification/CPC<span className="text-red-500"> *</span></FormLabel>
                   <FormControl>
                     <Input
                       {...field}
@@ -906,7 +906,7 @@ export function PatentSearchForm({
               name="keywords"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Keywords</FormLabel>
+                  <FormLabel>Keywords<span className="text-red-500"> *</span></FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
@@ -925,7 +925,7 @@ export function PatentSearchForm({
         {/* Search Strings */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Search Strings</CardTitle>
+            <CardTitle>Search Strings<span className="text-red-500"> *</span></CardTitle>
             <Button
               type="button"
               variant="outline"
@@ -1075,7 +1075,7 @@ export function PatentSearchForm({
         {/* Documents Considered to Be Relevant */}
         <Card>
           <CardHeader>
-            <CardTitle>Documents Considered to Be Relevant</CardTitle>
+            <CardTitle>Documents Considered to Be Relevant<span className="text-red-500"> *</span></CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex justify-end">
@@ -1284,7 +1284,7 @@ export function PatentSearchForm({
             {/* Conclusion Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Conclusion</CardTitle>
+                <CardTitle>Conclusion<span className="text-red-500"> *</span></CardTitle>
               </CardHeader>
               <CardContent>
                 <FormField
@@ -1316,7 +1316,7 @@ export function PatentSearchForm({
         {/* Certification Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Certification</CardTitle>
+            <CardTitle>Certification<span className="text-red-500"> *</span></CardTitle>
           </CardHeader>
           <CardContent className="space-y-8">
             {/* Search Conducted By */}

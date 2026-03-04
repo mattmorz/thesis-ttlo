@@ -482,7 +482,7 @@ export function MatrixSampleForm({
               name="inventionTitle"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title of Your Invention/Technology</FormLabel>
+                  <FormLabel>Title of Your Invention/Technology<span className="text-red-500"> *</span></FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
@@ -518,7 +518,7 @@ export function MatrixSampleForm({
               <Card key={field.id}>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle className="text-base">
-                    Prior Art {index + 1}
+                    Prior Art {index + 1} <span className="text-red-500"> *</span>
                   </CardTitle>
                   {index >= 3 && (
                     <Button
@@ -555,7 +555,7 @@ export function MatrixSampleForm({
                     name={`priorArts.${index}.reference`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Reference</FormLabel>
+                        <FormLabel>Reference<span className="text-red-500"> *</span></FormLabel>
                         <FormControl>
                           <Textarea
                             {...field}
@@ -617,7 +617,7 @@ export function MatrixSampleForm({
                       name={`features.${featureIndex}.description`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel>Description<span className="text-red-500"> *</span></FormLabel>
                           <FormControl>
                             <Textarea
                               {...field}
@@ -734,7 +734,7 @@ export function MatrixSampleForm({
         {/* Supporting Documents */}
         <Card>
           <CardHeader>
-            <CardTitle>Supporting Documents</CardTitle>
+            <CardTitle>Supporting Documents<span className="text-red-500"> *</span></CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Invention Documents */}

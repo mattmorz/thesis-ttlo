@@ -75,10 +75,12 @@ const formSchema = z.object({
   problem: z.string().min(1, "Problem description is required"),
   comparison: z.string().min(1, "Comparison is required"),
   novelty: z.string().min(1, "Novelty explanation is required"),
-  variations: z.string().optional(),
+  variations: z.string().min(1, "Other implementations/variations is required"),
   usage: z.string().min(1, "Usage description is required"),
-  literature_references: z.string().optional(),
-  ownPublications: z.string().optional(),
+  literature_references: z
+    .string()
+    .min(1, "Literature references is required"),
+  ownPublications: z.string().min(1, "Your publications is required"),
   files: z.array(z.custom<File>()).optional(),
 });
 
@@ -162,7 +164,10 @@ export function PatentApplication({
     problem,
     comparison,
     novelty,
+    variations,
     usage,
+    literature_references,
+    ownPublications,
     technologyType,
     technologyField,
   ] = form.watch([
@@ -170,7 +175,10 @@ export function PatentApplication({
     "problem",
     "comparison",
     "novelty",
+    "variations",
     "usage",
+    "literature_references",
+    "ownPublications",
     "technologyType",
     "technologyField",
   ]);
@@ -185,12 +193,23 @@ export function PatentApplication({
     Boolean(problem?.trim()) &&
     Boolean(comparison?.trim()) &&
     Boolean(novelty?.trim()) &&
+    Boolean(variations?.trim()) &&
     Boolean(usage?.trim()) &&
+    Boolean(literature_references?.trim()) &&
+    Boolean(ownPublications?.trim()) &&
     isTechnologyTypeSelected &&
     isTechnologyFieldSelected;
 
   const handleFieldBlur = async (
-    fieldName: "title" | "problem" | "comparison" | "novelty" | "usage"
+    fieldName:
+      | "title"
+      | "problem"
+      | "comparison"
+      | "novelty"
+      | "variations"
+      | "usage"
+      | "literature_references"
+      | "ownPublications"
   ) => {
     const isValid = await form.trigger(fieldName);
     if (!isValid) {
@@ -760,7 +779,7 @@ export function PatentApplication({
                   placeholder: "Describe possible variations...",
                   description:
                     "What other implementations/variations of this technology would be possible?",
-                  required: false,
+                  required: true,
                 },
                 {
                   name: "usage",
@@ -776,7 +795,7 @@ export function PatentApplication({
                   placeholder: "List references...",
                   description:
                     "Include patent applications, key scientific literature and/or public oral communications",
-                  required: false,
+                  required: true,
                 },
                 {
                   name: "ownPublications",
@@ -784,7 +803,7 @@ export function PatentApplication({
                   placeholder: "List your publications...",
                   description:
                     "List your own publications in the field (articles, abstracts, posters, www)",
-                  required: false,
+                  required: true,
                 },
               ].map((field) => (
                 <FormField
@@ -795,9 +814,9 @@ export function PatentApplication({
                     <FormItem>
                       <FormLabel className="text-base">
                         <span className="font-bold">{field.label}</span><span className="text-red-500"> *</span>
-                        {field.required && (
+                        {/* {field.required && (
                           <span className="text-destructive ml-1">*</span>
-                        )}
+                        )} */}
                       </FormLabel>
                       <FormDescription>{field.description}</FormDescription>
                       <FormControl>
@@ -808,8 +827,17 @@ export function PatentApplication({
                           onChange={formField.onChange}
                           onBlur={() => {
                             formField.onBlur();
+                            if (field.name === "variations") {
+                              handleFieldBlur("variations");
+                            }
                             if (field.name === "usage") {
                               handleFieldBlur("usage");
+                            }
+                            if (field.name === "literature_references") {
+                              handleFieldBlur("literature_references");
+                            }
+                            if (field.name === "ownPublications") {
+                              handleFieldBlur("ownPublications");
                             }
                           }}
                           name={formField.name}

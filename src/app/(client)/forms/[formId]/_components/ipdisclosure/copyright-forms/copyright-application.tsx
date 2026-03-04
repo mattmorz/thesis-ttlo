@@ -120,6 +120,7 @@ export function CopyrightApplication() {
 
   // Add a ref to track if we've already started loading data
   const initialLoadAttemptedRef = useRef(false);
+  const lastActiveTabRef = useRef<string | null>(null);
 
   // Reference for tracking updates
   const isUpdatingRef = useRef(false);
@@ -133,9 +134,33 @@ export function CopyrightApplication() {
   // Initialize form with the local state
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: formData,
     values: formData, // Explicitly set values from our state
   });
+
+  const handleFieldBlur = async (
+    fieldName: "workTitle" | "workDescription" | "creationDate"
+  ) => {
+    const isValid = await form.trigger(fieldName);
+    if (!isValid) {
+      const message =
+        form.formState.errors?.[fieldName]?.message ||
+        "This field is required";
+      toast.error(message);
+    }
+  };
+
+  const [workTitle, workDescription, creationDate] = form.watch([
+    "workTitle",
+    "workDescription",
+    "creationDate",
+  ]);
+  const isRequiredFilled =
+    Boolean(workTitle?.trim()) &&
+    Boolean(workDescription?.trim()) &&
+    Boolean(creationDate?.trim());
 
   // Update the form whenever formData changes
   useEffect(() => {
@@ -363,10 +388,14 @@ export function CopyrightApplication() {
 
   // Add a new effect to handle when navigating back to the copyright tab
   useEffect(() => {
-    // This effect should run when the activeTab is 'copyright-application'
-    // and the store already has data (after navigating back from another tab)
+    const wasActive = lastActiveTabRef.current === "copyright-application";
+    const isActive = activeTab === "copyright-application";
+
+    // Only refresh when transitioning back to this tab to avoid clearing
+    // user-entered validation state during edits.
     if (
-      activeTab === "copyright-application" &&
+      isActive &&
+      !wasActive &&
       copyrightApplication &&
       isHydrated &&
       initialDataLoaded
@@ -410,6 +439,8 @@ export function CopyrightApplication() {
         );
       }, 50);
     }
+
+    lastActiveTabRef.current = activeTab;
   }, [activeTab, copyrightApplication, isHydrated, form, initialDataLoaded]);
 
   // Modify the debounced update function to use loop detection
@@ -1199,7 +1230,13 @@ export function CopyrightApplication() {
                 <FormItem>
                   <FormLabel className="text-base">Work Title</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input
+                      {...field}
+                      onBlur={(event) => {
+                        field.onBlur();
+                        handleFieldBlur("workTitle");
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -1215,7 +1252,14 @@ export function CopyrightApplication() {
                     Description of the Work
                   </FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="min-h-[100px]" />
+                    <Textarea
+                      {...field}
+                      className="min-h-[100px]"
+                      onBlur={(event) => {
+                        field.onBlur();
+                        handleFieldBlur("workDescription");
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -1249,6 +1293,10 @@ export function CopyrightApplication() {
                               "w-full pl-3 text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
+                            onBlur={() => {
+                              field.onBlur();
+                              handleFieldBlur("creationDate");
+                            }}
                           >
                             {field.value ? (
                               format(new Date(field.value), "PPP")
@@ -1361,6 +1409,7 @@ export function CopyrightApplication() {
                                 field.onChange(
                                   date ? format(date, "yyyy-MM-dd") : ""
                                 );
+                                handleFieldBlur("creationDate");
                               }}
                               month={month}
                               onMonthChange={setMonth}
@@ -1393,6 +1442,7 @@ export function CopyrightApplication() {
           showSubmit={false}
           currentTab={activeTab}
           isSaving={isLoading}
+          isNextDisabled={!isRequiredFilled || !form.formState.isValid}
         />
 
         {/* Hidden form recovery functionality - moved to a small icon in the bottom corner */}

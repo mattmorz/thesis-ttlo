@@ -72,32 +72,38 @@ const priorArtSchema = z.object({
   reference: z.string().min(1, "Reference is required"),
 });
 
-const featureSchema = z.object({
-  id: z.string(),
-  description: z.string().min(1, "Feature description is required"),
-  priorArt1: z.enum(["present", "absent"]),
-  priorArt1Remarks: z.string().optional(),
-  priorArt2: z.enum(["present", "absent"]),
-  priorArt2Remarks: z.string().optional(),
-  priorArt3: z.enum(["present", "absent"]),
-  priorArt3Remarks: z.string().optional(),
-});
+const featureSchema = z
+  .object({
+    id: z.string(),
+    description: z.string().min(1, "Feature description is required"),
+    priorArt1: z.enum(["present", "absent"]),
+    priorArt1Remarks: z.string().optional(),
+    priorArt2: z.enum(["present", "absent"]),
+    priorArt2Remarks: z.string().optional(),
+    priorArt3: z.enum(["present", "absent"]),
+    priorArt3Remarks: z.string().optional(),
+  });
 
-const formSchema = z.object({
-  inventionTitle: z.string().min(1, "Invention title is required"),
-  features: z.array(featureSchema).min(1, "At least one feature is required"),
-  priorArts: z
-    .array(priorArtSchema)
-    .min(3, "Minimum of three prior arts required")
-    .max(5, "Maximum of five prior arts allowed"),
-  inventionDocs: z.array(z.custom<File>()).optional(),
-  priorArtDocs: z.array(
-    z.object({
-      id: z.string(),
-      files: z.array(z.custom<File>()).optional(),
-    })
-  ),
-});
+const optionalFileArray = z.array(z.custom<File>()).optional().nullable();
+
+const formSchema = z
+  .object({
+    inventionTitle: z.string().min(1, "Invention title is required"),
+    features: z.array(featureSchema).min(1, "At least one feature is required"),
+    priorArts: z
+      .array(priorArtSchema)
+      .min(3, "Minimum of three prior arts required")
+      .max(5, "Maximum of five prior arts allowed"),
+    inventionDocs: optionalFileArray,
+    priorArtDocs: z
+      .array(
+        z.object({
+          id: z.string(),
+          files: optionalFileArray,
+        })
+      )
+      .optional(),
+  });
 
 interface MatrixSampleFormProps {
   onNext?: () => void;
@@ -133,6 +139,8 @@ export function MatrixSampleForm({
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: {
       inventionTitle: "",
       features: [
@@ -157,6 +165,49 @@ export function MatrixSampleForm({
         })),
     },
   });
+
+  const [inventionTitle, priorArts, features, inventionDocs, priorArtDocs] =
+    form.watch([
+      "inventionTitle",
+      "priorArts",
+      "features",
+      "inventionDocs",
+      "priorArtDocs",
+    ]);
+
+  const hasPriorArts =
+    Array.isArray(priorArts) &&
+    priorArts.length >= 3 &&
+    priorArts.every(
+      (item) => Boolean(item?.title?.trim()) && Boolean(item?.reference?.trim())
+    );
+
+  const hasFeatures =
+    Array.isArray(features) &&
+    features.length >= 1 &&
+    features.every((item) => Boolean(item?.description?.trim()));
+
+  const isRequiredFilled =
+    Boolean(inventionTitle?.trim()) &&
+    hasPriorArts &&
+    hasFeatures;
+
+  const getErrorMessage = (path: string) => {
+    return path
+      .split(".")
+      .reduce(
+        (acc: any, key) => (acc ? acc[key] : undefined),
+        form.formState.errors as any
+      )?.message;
+  };
+
+  const handleFieldBlur = async (fieldName: string) => {
+    const isValid = await form.trigger(fieldName as any);
+    if (!isValid) {
+      const message = getErrorMessage(fieldName) || "This field is required";
+      toast.error(message);
+    }
+  };
 
   // Load saved data on component mount - only once
   useEffect(() => {
@@ -206,6 +257,14 @@ export function MatrixSampleForm({
   } = useFieldArray({
     control: form.control,
     name: "priorArts",
+  });
+  const {
+    fields: priorArtDocFields,
+    append: appendPriorArtDoc,
+    remove: removePriorArtDoc,
+  } = useFieldArray({
+    control: form.control,
+    name: "priorArtDocs",
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -489,6 +548,10 @@ export function MatrixSampleForm({
                       placeholder="Enter the title of your invention"
                       className="min-h-[80px]"
                       rows={2}
+                      onBlur={() => {
+                        field.onBlur();
+                        handleFieldBlur("inventionTitle");
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -506,7 +569,11 @@ export function MatrixSampleForm({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendPriorArt({ title: "", reference: "" })}
+              onClick={() => {
+                const nextIndex = priorArtFields.length + 1;
+                appendPriorArt({ title: "", reference: "" });
+                appendPriorArtDoc({ id: nextIndex.toString(), files: [] });
+              }}
               disabled={priorArtFields.length >= 5}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -525,7 +592,10 @@ export function MatrixSampleForm({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={() => removePriorArt(index)}
+                      onClick={() => {
+                        removePriorArt(index);
+                        removePriorArtDoc(index);
+                      }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -544,6 +614,10 @@ export function MatrixSampleForm({
                             placeholder={`Enter prior art ${index + 1} title`}
                             className="min-h-[80px]"
                             rows={2}
+                            onBlur={() => {
+                              field.onBlur();
+                              handleFieldBlur(`priorArts.${index}.title`);
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
@@ -562,6 +636,10 @@ export function MatrixSampleForm({
                             placeholder="Patent/Publication number or URL"
                             className="min-h-[80px]"
                             rows={2}
+                            onBlur={() => {
+                              field.onBlur();
+                              handleFieldBlur(`priorArts.${index}.reference`);
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
@@ -624,6 +702,12 @@ export function MatrixSampleForm({
                               placeholder="Describe the feature"
                               className="min-h-[80px]"
                               rows={2}
+                              onBlur={() => {
+                                field.onBlur();
+                                handleFieldBlur(
+                                  `features.${featureIndex}.description`
+                                );
+                              }}
                             />
                           </FormControl>
                           <FormMessage />
@@ -714,6 +798,12 @@ export function MatrixSampleForm({
                                         ) === "present"
                                       }
                                       rows={2}
+                                      onBlur={() => {
+                                        field.onBlur();
+                                        handleFieldBlur(
+                                          `features.${featureIndex}.${remarksFieldName}`
+                                        );
+                                      }}
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -734,7 +824,8 @@ export function MatrixSampleForm({
         {/* Supporting Documents */}
         <Card>
           <CardHeader>
-            <CardTitle>Supporting Documents<span className="text-red-500"> *</span></CardTitle>
+            <CardTitle>Supporting Documents</CardTitle>
+            {/* <span className="text-red-500"> *</span> */}
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Invention Documents */}
@@ -754,10 +845,10 @@ export function MatrixSampleForm({
                         <FileUploader
                           value={field.value}
                           onValueChange={(files) => {
-                            field.onChange(files);
+                            field.onChange(files ?? []);
                             console.log(
                               "Invention docs updated:",
-                              files.length,
+                              (files ?? []).length,
                               "files remaining"
                             );
                           }}
@@ -810,17 +901,17 @@ export function MatrixSampleForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <FileUploader
-                            value={field.value}
-                            onValueChange={(files) => {
-                              field.onChange(files);
-                              console.log(
-                                "Prior art docs updated:",
-                                files.length,
-                                "files remaining"
-                              );
-                            }}
-                            multiple
+                        <FileUploader
+                          value={field.value}
+                          onValueChange={(files) => {
+                            field.onChange(files ?? []);
+                            console.log(
+                              "Prior art docs updated:",
+                              (files ?? []).length,
+                              "files remaining"
+                            );
+                          }}
+                          multiple
                             dropzoneOptions={{
                               accept: {
                                 "application/pdf": [".pdf"],
@@ -858,6 +949,22 @@ export function MatrixSampleForm({
         </Card>
 
         <Separator />
+{/* Debugger for the form  */}
+        {/* <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Debug Panel</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm space-y-2">
+              <div>isRequiredFilled: {String(isRequiredFilled)}</div>
+              <div>formState.isValid: {String(form.formState.isValid)}</div>
+              <div>Errors:</div>
+              <pre className="text-xs whitespace-pre-wrap bg-muted/50 p-3 rounded">
+                {JSON.stringify(form.formState.errors, null, 2)}
+              </pre>
+            </div>
+          </CardContent>
+        </Card> */}
 
         <div className="flex justify-between">
           <Button
@@ -881,6 +988,7 @@ export function MatrixSampleForm({
               type="button"
               onClick={handleNextWithoutSubmit}
               className="bg-[#1B5E20] hover:bg-[#0A3A10] text-white"
+              disabled={!isRequiredFilled}
             >
               Next
             </Button>

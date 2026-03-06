@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +47,7 @@ const formSchema = z.object({
 });
 
 export function DisclosureConfirmation() {
+  const router = useRouter();
   const {
     applicantsInfo,
     validateSection,
@@ -69,6 +71,7 @@ export function DisclosureConfirmation() {
     tradeSecretApplication,
     setTradeSecretApplication,
     disclosureId,
+    applicationId,
   } = useIpDisclosureStore();
 
   const { isHydrated } = useHydratedIpDisclosureStore();
@@ -93,6 +96,21 @@ export function DisclosureConfirmation() {
   const [isSaving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
+
+  const handleSubmissionSuccess = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("ipDisclosureFormCompleted", {
+          detail: {
+            completed: true,
+            applicationId,
+            disclosureId,
+          },
+        })
+      );
+    }
+    router.push("/forms?tab=substantial-use");
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -1086,6 +1104,7 @@ export function DisclosureConfirmation() {
         setTimeout(() => {
           // Set the state to submitted to show the success message
           submitForm();
+          handleSubmissionSuccess();
         }, 100);
       } else {
         console.error("Failed to submit IP disclosure");
@@ -1131,7 +1150,10 @@ export function DisclosureConfirmation() {
             id: confirmToastId,
           });
           resetSubmissionState();
-          setTimeout(() => submitForm(), 100);
+          setTimeout(() => {
+            submitForm();
+            handleSubmissionSuccess();
+          }, 100);
         } catch (fallbackError) {
           console.error("All submission attempts failed:", fallbackError);
           toast.error("Failed to submit complete IP disclosure form", {

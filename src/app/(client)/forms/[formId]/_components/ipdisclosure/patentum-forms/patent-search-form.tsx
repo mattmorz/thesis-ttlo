@@ -98,7 +98,10 @@ const searchStringSchema = z.object({
   database: z.string().min(1, "Database is required"),
   customDatabase: z.string().optional(),
   searchString: z.string().min(1, "Search string is required"),
-  hits: z.string().min(1, "Number of hits is required"),
+  hits: z
+    .string()
+    .min(1, "Number of hits is required")
+    .regex(/^\d+$/, "Number of hits must be a whole number"),
 });
 
 const formSchema = z.object({
@@ -118,9 +121,19 @@ const formSchema = z.object({
   files: z.array(z.custom<File>()).optional(),
   certification: z.object({
     technicalExpert: z.string().min(1, "Technical expert name is required"),
-    reviewedBy: z.string().min(1, "Reviewer name is required"),
+    reviewedBy: z
+      .string()
+      .min(1, "Reviewer name is required")
+      .refine((value) => value !== "Other", {
+        message: "Please specify the reviewer name.",
+      }),
     submittedTo: z.object({
-      name: z.string().min(1, "Name is required"),
+      name: z
+        .string()
+        .min(1, "Name is required")
+        .refine((value) => value !== "Other", {
+          message: "Please specify the director name.",
+        }),
       position: z.string().min(1, "Position is required"),
     }),
   }),
@@ -135,6 +148,9 @@ export function PatentSearchForm({
   onNext,
   onPrevious,
 }: PatentSearchFormProps) {
+  const reviewedByOptions = ["JOY LYN A. DELA CRUZ"];
+  const submittedToOptions = ["PROF. KENNETH L. CIUDAD"];
+
   // Get the store data
   const { data, setData } = usePatentSearchFormStore();
   const { selectedIpTypes } = useFormContext();
@@ -320,7 +336,9 @@ export function PatentSearchForm({
   const hasCertification =
     Boolean(certification?.technicalExpert?.trim()) &&
     Boolean(certification?.reviewedBy?.trim()) &&
-    Boolean(certification?.submittedTo?.name?.trim());
+    certification?.reviewedBy !== "Other" &&
+    Boolean(certification?.submittedTo?.name?.trim()) &&
+    certification?.submittedTo?.name !== "Other";
 
   const isRequiredFilled =
     Boolean(title?.trim()) &&
@@ -797,7 +815,19 @@ export function PatentSearchForm({
                 return (
                   <FormItem>
                     <FormLabel>Date of Search Completion<span className="text-red-500"> *</span></FormLabel>
-                    <Popover>
+                    <Popover
+                      onOpenChange={(open) => {
+                        if (open) {
+                          if (!field.value) {
+                            field.onBlur();
+                            handleFieldBlur("dateCompleted");
+                          }
+                          return;
+                        }
+                        field.onBlur();
+                        handleFieldBlur("dateCompleted");
+                      }}
+                    >
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -1159,6 +1189,11 @@ export function PatentSearchForm({
                             <FormControl>
                               <Input
                                 {...field}
+                                type="number"
+                                min="0"
+                                step="1"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 placeholder="Enter number of hits"
                                 onBlur={() => {
                                   field.onBlur();
@@ -1500,7 +1535,20 @@ export function PatentSearchForm({
                       <FormControl>
                         <select
                           {...field}
+                          value={
+                            field.value === "Other" ||
+                            (!!field.value &&
+                              !reviewedByOptions.includes(field.value))
+                              ? "Other"
+                              : field.value || ""
+                          }
                           className="w-full text-center border-0 border-b rounded-none focus-visible:ring-0 px-0 py-2 bg-transparent"
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            field.onChange(
+                              nextValue === "Other" ? "Other" : nextValue
+                            );
+                          }}
                           onBlur={() => {
                             field.onBlur();
                             handleFieldBlur("certification.reviewedBy");
@@ -1517,11 +1565,17 @@ export function PatentSearchForm({
                         Head Technical Expert
                       </FormLabel>
                       <FormMessage />
-                      {field.value === "Other" && (
+                      {(field.value === "Other" ||
+                        (!!field.value &&
+                          !reviewedByOptions.includes(field.value))) && (
                         <Input
                           placeholder="Enter name"
                           className="mt-2 text-center"
-                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value === "Other" ? "" : field.value || ""}
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            field.onChange(nextValue.length ? nextValue : "Other");
+                          }}
                           onBlur={() => {
                             field.onBlur();
                             handleFieldBlur("certification.reviewedBy");
@@ -1545,7 +1599,20 @@ export function PatentSearchForm({
                       <FormControl>
                         <select
                           {...field}
+                          value={
+                            field.value === "Other" ||
+                            (!!field.value &&
+                              !submittedToOptions.includes(field.value))
+                              ? "Other"
+                              : field.value || ""
+                          }
                           className="w-full text-center border-0 border-b rounded-none focus-visible:ring-0 px-0 py-2 bg-transparent"
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            field.onChange(
+                              nextValue === "Other" ? "Other" : nextValue
+                            );
+                          }}
                           onBlur={() => {
                             field.onBlur();
                             handleFieldBlur("certification.submittedTo.name");
@@ -1559,11 +1626,17 @@ export function PatentSearchForm({
                         </select>
                       </FormControl>
                       <FormMessage />
-                      {field.value === "Other" && (
+                      {(field.value === "Other" ||
+                        (!!field.value &&
+                          !submittedToOptions.includes(field.value))) && (
                         <Input
                           placeholder="Enter name"
                           className="mt-2 text-center"
-                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value === "Other" ? "" : field.value || ""}
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            field.onChange(nextValue.length ? nextValue : "Other");
+                          }}
                           onBlur={() => {
                             field.onBlur();
                             handleFieldBlur("certification.submittedTo.name");

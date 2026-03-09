@@ -50,9 +50,9 @@ const formSchema = z.object({
   creators: z
     .array(
       z.object({
-        firstName: z.string().default(""),
+        firstName: z.string().trim().min(1, "First name is required"),
         middleInitial: z.string().default(""),
-        lastName: z.string().default(""),
+        lastName: z.string().trim().min(1, "Last name is required"),
       })
     )
     .optional()
@@ -97,6 +97,7 @@ export function DeedAssignment({
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: initialData || {
       researchTitle: "",
       creators: [
@@ -270,6 +271,11 @@ export function DeedAssignment({
       // console.log("[DeedAssignment] Form values updated:", value);
     });
     return () => subscription.unsubscribe();
+  }, [form]);
+
+  // Show validation errors immediately on load and keep them updated as users type
+  useEffect(() => {
+    form.trigger();
   }, [form]);
 
   const {
@@ -703,6 +709,8 @@ export function DeedAssignment({
     router.push(`?tab=${mainTab}&subTab=royalty`, { scroll: false });
   };
 
+  const isFormReady = form.formState.isValid;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -744,7 +752,8 @@ export function DeedAssignment({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-bold">
-                      Title of the Research/Technology
+                      Title of the Research/Technology <span className="text-red-500"
+                      > *</span>
                     </FormLabel>
                     <FormControl>
                       <Textarea
@@ -765,7 +774,7 @@ export function DeedAssignment({
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <FormLabel className="font-bold">
-                    Name of Creator(s)/Inventor(s)
+                    Name of Creator(s)/Inventor(s) <span className="text-red-500"> *</span>
                   </FormLabel>
                   {!isDisabled && (
                     <Button
@@ -877,7 +886,7 @@ export function DeedAssignment({
                 name="creatorAddress"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-bold">Address</FormLabel>
+                    <FormLabel className="font-bold">Address <span className="text-red-500"> *</span></FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Enter address"
@@ -909,7 +918,7 @@ export function DeedAssignment({
               variant="outline"
               type="button"
               onClick={handleUpdate}
-              disabled={isDisabled || isUpdating}
+              disabled={isDisabled || isUpdating || !isFormReady}
               className="border-green-200 text-green-700 hover:bg-green-50"
             >
               {isUpdating ? "Updating..." : "Update Form"}
@@ -917,7 +926,7 @@ export function DeedAssignment({
             <Button
               type="button"
               onClick={handleNextClick}
-              disabled={isDisabled || isSubmitting}
+              disabled={isDisabled || isSubmitting || !isFormReady}
               className="bg-green-700 text-white hover:bg-green-800"
             >
               {isSubmitting ? "Saving..." : "Next"}

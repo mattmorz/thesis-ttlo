@@ -78,16 +78,16 @@ interface Creator {
 }
 
 const formSchema = z.object({
-  day: z.string().optional(),
-  month: z.string().optional(),
-  year: z.string().optional(),
-  assigneeId: z.string().default("M98 – 009"),
-  assigneeDate: z.string().optional(),
-  assigneePlace: z.string().default("Butuan City"),
+  day: z.string().trim().min(1, "Day is required"),
+  month: z.string().trim().min(1, "Month is required"),
+  year: z.string().trim().min(1, "Year is required"),
+  assigneeId: z.string().trim().min(1, "Assignee ID is required"),
+  assigneeDate: z.string().trim().min(1, "Assignee date is required"),
+  assigneePlace: z.string().trim().min(1, "Assignee place is required"),
   assignorId: z.string().optional(),
-  assignorIds: z.array(z.string()).optional(),
-  assignorDate: z.string().optional(),
-  assignorPlace: z.string().default("Butuan City"),
+  assignorIds: z.array(z.string().trim().min(1, "ID No. is required")).optional(),
+  assignorDate: z.string().trim().min(1, "Assignor date is required"),
+  assignorPlace: z.string().trim().min(1, "Assignor place is required"),
   notarizedDocumentPath: z.string().optional(),
   docNumber: z.string().optional(),
   pageNumber: z.string().optional(),
@@ -140,6 +140,7 @@ export function SignatorySection({
   // Initialize form with default values
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       day: "",
       month: "",
@@ -329,6 +330,11 @@ export function SignatorySection({
       }
     };
   }, [form, activeApplicationId]);
+
+  // Show validation errors immediately on load and keep them updated
+  useEffect(() => {
+    form.trigger();
+  }, [form]);
 
   // Update with data from the deed component when it changes
   useEffect(() => {
@@ -1806,7 +1812,7 @@ export function SignatorySection({
                 variant="outline"
                 className="border-green-200 text-green-700 hover:bg-green-50"
                 onClick={handleUpdate}
-                disabled={isSubmitting || isUpdating}
+                disabled={isSubmitting || isUpdating || !form.formState.isValid}
               >
                 {isUpdating ? (
                   <>
@@ -1822,7 +1828,7 @@ export function SignatorySection({
                 variant="default"
                 className="bg-green-700 text-white hover:bg-green-800"
                 onClick={form.handleSubmit(onSubmit)}
-                disabled={isSubmitting || isUpdating}
+                disabled={isSubmitting || isUpdating || !form.formState.isValid}
               >
                 Submit Form
               </Button>

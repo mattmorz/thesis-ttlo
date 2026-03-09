@@ -23,6 +23,8 @@ import {
   FileType,
   Phone,
   ChevronRight,
+  FolderOpenDot,
+  LucideFolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -169,12 +171,11 @@ const getStatusBadge = (status: string) => {
         <Badge variant="outline" className="text-xs">
           {status}
         </Badge>
-        
       );
   }
 };
 
-// Getting Started Guide Component
+// Getting Started Guide Component - NAA KOY CHANGES DIRI
 const GettingStartedGuide = ({
   isCollapsed,
   setIsCollapsed,
@@ -182,293 +183,332 @@ const GettingStartedGuide = ({
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
 }) => {
-  // Track main progress for all 5 forms
-const [progress, setProgress] = useState({
-  clientProfile: false,
-  applicationTitle: false,
-  ipDisclosure: false,
-  substantialUse: false,
-  deedOfAssignment: false,
-});
   // Track completion of each section
-const [completedSections, setCompletedSections] = useState({
-  personalInfo: false,
-  educationalBackground: false,
-  backgroundIP: false,
-});
+  const [completedSections, setCompletedSections] = useState({
+    personalInfo: false,
+    educationalBackground: false,
+    backgroundIP: false,
+  });
 
-const totalSteps = Object.keys(completedSections).length;
+  const totalSteps = Object.keys(completedSections).length;
 
-// Compute completed steps dynamically
-const completedStep = Object.values(completedSections).filter(Boolean).length;
-const handleSectionCompletion = (
-  section: "personalInfo" | "educationalBackground" | "backgroundIP",
-  isCompleted: boolean
-) => {
-  setCompletedSections(prev => ({ ...prev, [section]: isCompleted }));
-};
+  // Compute completed steps dynamically
+  const completedStep = Object.values(completedSections).filter(Boolean).length;
+  const handleSectionCompletion = (
+    section: "personalInfo" | "educationalBackground" | "backgroundIP",
+    isCompleted: boolean,
+  ) => {
+    setCompletedSections((prev) => ({ ...prev, [section]: isCompleted }));
+  };
 
-return (
-  
-  
+  return (
 
-  <Card className="w-full border-[#1B5E20]/20 bg-white shadow-sm">
-    <CardHeader className="pb-3 flex flex-row items-center justify-between border-b">
-      <div>
-        <CardTitle className="text-[#1B5E20] flex items-center gap-2 text-lg">
-          <BookOpen className="h-5 w-5" />
-          Getting Started with Your IP Application
-        </CardTitle>
-        <CardDescription>
-          Complete these forms in order to submit your intellectual property
-          application
-        </CardDescription>
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {isCollapsed ? (
-          <ChevronDown className="h-4 w-4" />
-        ) : (
-          <ChevronUp className="h-4 w-4" />
-        )}
-      </Button>
-    </CardHeader>
+    <Card className="w-full border-[#1B5E20]/20 bg-white shadow-sm">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between border-b">
+        <div>
+          <CardTitle className="text-[#1B5E20] flex items-center gap-2 text-lg">
+            <BookOpen className="h-5 w-5" />
+            Getting Started with Your IP Application
+          </CardTitle>
+          <CardDescription>
+            Complete these forms in order to submit your intellectual property
+            application
+          </CardDescription>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronUp className="h-4 w-4" />
+          )}
+        </Button>
+      </CardHeader>
 
-    {!isCollapsed && (
-      <>
-        <CardContent className="pt-4 pb-2">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
-                <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
-                  Step 1
+      {!isCollapsed && (
+        <>
+          <CardContent className="pt-4 pb-2">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 1
+                  </div>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <ClipboardList className="h-4 w-4" />
+                      Client Profile Form
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Provide your personal information, contact details, and
+                      affiliations. This establishes your identity as the
+                      applicant or inventor.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Personal and contact information</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Professional background</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Institutional affiliations</span>
+                    </li>
+                  </ul>
                 </div>
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
-                    <ClipboardList className="h-4 w-4" />
-                    Client Profile Form
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Provide your personal information, contact details, and
-                    affiliations. This establishes your identity as the
-                    applicant or inventor.
-                  </p>
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 2
+                  </div>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <LucideFolderOpen className="h-4 w-4" />
+                      Application Title 
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                     Provide the title of your intellectual property and a short description of its purpose, development, and potential applications.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Application Title</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Description</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Identify the application purpose</span>
+                    </li>
+                  </ul>
                 </div>
-                <ul className="text-xs space-y-1.5 text-slate-700">
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Personal and contact information</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Professional background</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Institutional affiliations</span>
-                  </li>
-                </ul>
+
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 3
+                  </div>
+                  {/* Make below disabled as they need to complete their client profile or personal information  */}
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <FileText className="h-4 w-4" />
+                      IP Disclosure Form
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Document the details of your intellectual property
+                      including description, development timeline, and potential
+                      applications.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Detailed IP description</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Development history</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Contributors and ownership</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 4
+                  </div>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <FileType className="h-4 w-4" />
+                      Substantial Use Form
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Declare and document any university resources used in
+                      creating your intellectual property.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>University facilities used</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Financial support received</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Equipment and materials</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                  <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
+                    Step 5
+                  </div>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
+                      <ClipboardCheck className="h-4 w-4" />
+                      Deed of Assignment
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Formally transfer ownership rights of your intellectual
+                      property as required by institutional policies.
+                    </p>
+                  </div>
+                  <ul className="text-xs space-y-1.5 text-slate-700">
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Legal rights transfer</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Ownership documentation</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3 w-3 text-[#1B5E20]" />
+                      <span>Signature and authorization</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
 
-              <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
-                <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
-                  Step 2
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h5 className="font-medium text-blue-800">
+                      Important Note
+                    </h5>
+                    <p className="text-xs text-blue-700 mt-0.5">
+                      All forms should be completed accurately to avoid delays
+                      in processing. You can save your progress at any time and
+                      return to complete your application later. Supporting
+                      documents may be required for each form.
+                    </p>
+                  </div>
                 </div>
-                {/* Make below disabled as they need to complete their client profile or personal information  */}
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
-                    <FileText className="h-4 w-4" />
-                    IP Disclosure Form
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Document the details of your intellectual property including
-                    description, development timeline, and potential
-                    applications.
-                  </p>
-                </div>
-                <ul className="text-xs space-y-1.5 text-slate-700">
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Detailed IP description</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Development history</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Contributors and ownership</span>
-                  </li>
-                </ul>
               </div>
 
-              <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
-                <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
-                  Step 3
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <Phone className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h5 className="font-medium text-amber-800">
+                      TTLO Staff Consultation
+                    </h5>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      Always consult with TTLO staff before finalizing your
+                      submission. They can provide valuable guidance on
+                      completing your forms correctly and ensuring your
+                      application meets all requirements. Contact the TTLO
+                      office via email at ttlo@csu.edu.ph or visit during office
+                      hours.
+                    </p>
+                  </div>
                 </div>
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
-                    <FileType className="h-4 w-4" />
-                    Substantial Use Form
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Declare and document any university resources used in
-                    creating your intellectual property.
-                  </p>
-                </div>
-                <ul className="text-xs space-y-1.5 text-slate-700">
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>University facilities used</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Financial support received</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Equipment and materials</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
-                <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
-                  Step 4
-                </div>
-                <div className="mb-3">
-                  <h4 className="font-medium text-sm text-[#1B5E20] flex items-center gap-1.5">
-                    <ClipboardCheck className="h-4 w-4" />
-                    Deed of Assignment
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Formally transfer ownership rights of your intellectual
-                    property as required by institutional policies.
-                  </p>
-                </div>
-                <ul className="text-xs space-y-1.5 text-slate-700">
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Legal rights transfer</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Ownership documentation</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Check className="h-3 w-3 text-[#1B5E20]" />
-                    <span>Signature and authorization</span>
-                  </li>
-                </ul>
               </div>
             </div>
+          </CardContent>
+          <CardFooter className="pt-0 pb-4 flex justify-between items-center">
+            <Button variant="link" className="text-[#1B5E20] p-0" asChild>
+              <Link href="/guidelines/introduction">
+                Learn more about IP protection{" "}
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-[#1B5E20]"
+              onClick={() => setIsCollapsed(true)}
+            >
+              Hide Guide
+            </Button>
+          </CardFooter>
+        </>
+      )}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h5 className="font-medium text-blue-800">Important Note</h5>
-                  <p className="text-xs text-blue-700 mt-0.5">
-                    All forms should be completed accurately to avoid delays in
-                    processing. You can save your progress at any time and
-                    return to complete your application later. Supporting
-                    documents may be required for each form.
-                  </p>
-                </div>
-              </div>
-            </div>
+      {/* Progress Tracker */}
+<div className="relative mb-10 px-4">
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
-              <div className="flex items-start gap-2">
-                <Phone className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h5 className="font-medium text-amber-800">
-                    TTLO Staff Consultation
-                  </h5>
-                  <p className="text-xs text-amber-700 mt-0.5">
-                    Always consult with TTLO staff before finalizing your
-                    submission. They can provide valuable guidance on completing
-                    your forms correctly and ensuring your application meets all
-                    requirements. Contact the TTLO office via email at
-                    ttlo@csu.edu.ph or visit during office hours.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="pt-0 pb-4 flex justify-between items-center">
-          <Button variant="link" className="text-[#1B5E20] p-0" asChild>
-            <Link href="/guidelines/introduction">
-              Learn more about IP protection{" "}
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Link>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-[#1B5E20]"
-            onClick={() => setIsCollapsed(true)}
-          >
-            Hide Guide
-          </Button>
-        </CardFooter>
-      </>
-      
-    )}
-    
-    {/* Progress Tracker */}
-<div className="relative mb-6">
   {/* Background line */}
-  <div className="absolute top-1/2 left-2 right-2 h-1 bg-slate-200 rounded-full" />
+  <div className="absolute top-4 left-12 right-12 h-1 bg-slate-200 rounded-full" />
 
   {/* Active progress line */}
   <div
-    className="absolute top-1/2 left-0 h-1 bg-[#1B5E20] rounded-full transition-all"
-  style={{
-  width: `${(completedStep / totalSteps) * 100}%`,
-}}
-
+    className="absolute top-4 left-6 h-1 bg-[#1B5E20] rounded-full transition-all duration-300"
+    style={{
+      width: `${
+        (completedStep / (totalSteps - 1)) * 100
+      }%`,
+    }}
   />
 
+  {/* Steps */}
   <div className="relative flex justify-between">
-    {[
-      "",
+    {[ 
       "Client Profile",
       "Application Title",
       "IP Disclosure",
       "Substantial Use",
       "Deed of Assignment",
-    ].map((label, index) => (
-      <div key={index} className="flex flex-col items-center">
-        <div
-          className={`h-8 w-8 rounded-full border-2 flex items-center justify-center text-xs font-semibold
-            ${
-             index < completedStep
-          ? "bg-[#1B5E20] text-white border-[#1B5E20]"
-          : index === completedStep
-                ? "bg-[#1B5E20] text-white border-[#1B5E20]"
-                : "bg-white text-slate-400 border-slate-300"
-            }`}
-        >
-         
+    ].map((label, index) => {
+
+      const isCompleted = index < completedStep;
+      const isActive = index === completedStep;
+
+      return (
+        <div key={index} className="flex flex-col items-center w-24 text-center">
+          
+          {/* Circle */}
+          <div
+            className={`h-9 w-9 rounded-full border-2 flex items-center justify-center text-xs font-semibold transition-all
+              ${
+                isCompleted
+                  ? "bg-[#1B5E20] text-white border-[#1B5E20]"
+                  : isActive
+                  ? "bg-[#1B5E20] text-white border-[#1B5E20]"
+                  : "bg-white text-slate-400 border-slate-300"
+              }`}
+          >
+            {isCompleted ? "✓" : index + 1}
+          </div>
+
+          {/* Label */}
+          <span className="mt-2 text-[11px] text-slate-600">
+            {label}
+          </span>
         </div>
-        <span className="mt-2 text-[11px] text-center text-slate-600 max-w-[80px]">
-          {label}
-        </span>
-      </div>
-    ))}
+      );
+    })}
   </div>
 </div>
-  </Card>
-);
+    </Card>
+  );
 };
 
 export function PageContent() {
+  const [progress, setProgress] = useState({
+    clientProfile: false,
+    applicationTitle: false,
+    ipDisclosure: false,
+    substantialUse: false,
+    deedOfAssignment: false,
+  });
   // Router and param hooks
   const router = useRouter();
   const params = useParams();
@@ -528,7 +568,7 @@ export function PageContent() {
         console.error("Error creating application:", error);
       },
       onSettled: () => {
-        setIsCreatingFirstApplication(false);
+        setIsCreatingFirstApplicatio(false);
       },
     });
 
@@ -580,6 +620,7 @@ export function PageContent() {
       setHasSeenGuide(guideSeen === "true");
     }
 
+    
     return () => {
       // Cleanup code here if needed
     };
@@ -1810,6 +1851,7 @@ export function PageContent() {
     try {
       return (
         <GettingStartedGuide
+          progress={progress}
           isCollapsed={isGuideCollapsed}
           setIsCollapsed={(collapsed) => {
             try {
@@ -1819,7 +1861,9 @@ export function PageContent() {
             }
           }}
         />
+        
       );
+      
     } catch (error) {
       console.error("Error rendering Getting Started Guide:", error);
       // Fall back to a simple version if there's an error

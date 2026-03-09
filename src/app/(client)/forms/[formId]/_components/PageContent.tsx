@@ -184,6 +184,14 @@ type FormStatus = {
   deedAssignment: boolean;
 };
 
+const INITIAL_FORM_STATUS: FormStatus = {
+  clientProfile: false,
+  applicationTitle: false,
+  ipDisclosure: false,
+  substantialUse: false,
+  deedAssignment: false,
+};
+
 const GettingStartedGuide = ({
   isCollapsed,
   setIsCollapsed,
@@ -568,7 +576,7 @@ export function PageContent() {
     useState(false);
   const [isCreateCooldown, setIsCreateCooldown] = useState(false);
   const [clientSideAllFormsCompleted, setClientSideAllFormsCompleted] =
-    useState(false);
+    useState<FormStatus>(INITIAL_FORM_STATUS);
   const [hasSeenGuide, setHasSeenGuide] = useState(false);
   // Commented out: help panel state (form sections hidden)
   // const [showHelpPanel, setShowHelpPanel] = useState(false);
@@ -601,7 +609,7 @@ export function PageContent() {
         console.error("Error creating application:", error);
       },
       onSettled: () => {
-        setIsCreatingFirstApplicatio(false);
+        setIsCreatingFirstApplication(false);
       },
     });
 
@@ -621,6 +629,30 @@ export function PageContent() {
       }
     >
   >({});
+  const applyStatusUpdate = useCallback(
+    (applicationId: string, updates: Partial<FormStatus>) => {
+      let mergedStatus: FormStatus = INITIAL_FORM_STATUS;
+
+      setKnownApplicationStatus((prev) => {
+        const existing = prev[applicationId]?.status || INITIAL_FORM_STATUS;
+        mergedStatus = {
+          ...INITIAL_FORM_STATUS,
+          ...existing,
+          ...updates,
+        };
+        return {
+          ...prev,
+          [applicationId]: {
+            timestamp: Date.now(),
+            status: mergedStatus,
+          },
+        };
+      });
+
+      setClientSideAllFormsCompleted(mergedStatus);
+    },
+    []
+  );
   const [isCheckingFormStatus, setIsCheckingFormStatus] = useState(false);
 
   // Safely update the guide collapsed state - defined before any useEffect hooks
@@ -808,23 +840,7 @@ export function PageContent() {
 
       // Cache the status
       if (isMounted) {
-        setKnownApplicationStatus((prev) => {
-          const newState = { ...prev };
-          newState[activeApplicationId] = {
-            timestamp: Date.now(),
-            status: formStatus,
-          };
-          return newState;
-        });
-
-        // Update the React state
-        setClientSideAllFormsCompleted(
-          formStatus.clientProfile &&
-            formStatus.applicationTitle &&
-            formStatus.ipDisclosure &&
-            formStatus.substantialUse &&
-            formStatus.deedAssignment,
-        );
+        applyStatusUpdate(activeApplicationId, formStatus);
 
         // Count completed forms and set states accordingly
         const completedCount = Object.values(formStatus).filter(Boolean).length;
@@ -886,23 +902,17 @@ export function PageContent() {
 
     // Check if we already know the status for this application and it's recent enough
     const knownStatus = knownApplicationStatus[activeApplicationId];
-    if (
-      !shouldForceCheck &&
-      knownStatus &&
-      now - knownStatus.timestamp < MIN_CHECK_INTERVAL
-    ) {
-      console.log(
-        "Using cached form status for application:",
-        activeApplicationId,
-      );
-      console.log("Cached status:", knownStatus.status);
-      setClientSideAllFormsCompleted(
-        knownStatus.status.clientProfile &&
-          knownStatus.status.applicationTitle &&
-          knownStatus.status.ipDisclosure &&
-          knownStatus.status.substantialUse &&
-          knownStatus.status.deedAssignment,
-      );
+      if (
+        !shouldForceCheck &&
+        knownStatus &&
+        now - knownStatus.timestamp < MIN_CHECK_INTERVAL
+      ) {
+        console.log(
+          "Using cached form status for application:",
+          activeApplicationId,
+        );
+        console.log("Cached status:", knownStatus.status);
+        setClientSideAllFormsCompleted(knownStatus.status);
 
       // Directly update the DOM with the cached status
       // updateFormProgressDisplay(knownStatus.status);
@@ -1046,7 +1056,7 @@ export function PageContent() {
 
     if (activeApplicationId) {
       // Reset form status data
-      setClientSideAllFormsCompleted(false);
+      setClientSideAllFormsCompleted(INITIAL_FORM_STATUS);
 
       // Clear cached status data for applications
       setKnownApplicationStatus({});
@@ -1092,8 +1102,6 @@ export function PageContent() {
   useEffect(() => {
     // Only run this effect on the client
     if (typeof window === "undefined") return;
-
-    const allCompleted = clientSideAllFormsCompleted;
 
     // Log form status data to help debug
     console.log("Current form status data:", clientSideAllFormsCompleted);
@@ -1143,7 +1151,6 @@ export function PageContent() {
       }
     }
 
-    setClientSideAllFormsCompleted(allCompleted);
   }, [clientSideAllFormsCompleted, activeApplicationId]);
 
   // Effect 6: Automatically redirect to client-profile tab if no tab is specified
@@ -1214,31 +1221,10 @@ export function PageContent() {
 
       if (applicationId === activeApplicationId) {
         // Update UI state
-        setClientSideAllFormsCompleted(completed);
+        applyStatusUpdate(applicationId, { clientProfile: completed });
         console.log(
           `Client profile form ${completed ? "completed" : "incomplete"}`,
         );
-
-        // Update cached status so the next tab enables immediately
-        setKnownApplicationStatus((prev) => {
-          const existing = prev[applicationId]?.status || {
-            clientProfile: false,
-            applicationTitle: false,
-            ipDisclosure: false,
-            substantialUse: false,
-            deedAssignment: false,
-          };
-          return {
-            ...prev,
-            [applicationId]: {
-              timestamp: Date.now(),
-              status: {
-                ...existing,
-                clientProfile: completed,
-              },
-            },
-          };
-        });
 
         // If completed, register in database
         if (completed) {
@@ -1258,7 +1244,7 @@ export function PageContent() {
 
       if (applicationId === activeApplicationId) {
         // Update UI state
-        setClientSideAllFormsCompleted(completed);
+        applyStatusUpdate(applicationId, { ipDisclosure: completed });
         console.log(
           `IP disclosure form ${completed ? "completed" : "incomplete"}`,
         );
@@ -1280,34 +1266,7 @@ export function PageContent() {
       const { completed, applicationId } = customEvent.detail;
 
       if (applicationId === activeApplicationId) {
-        const nextStatus = {
-          clientProfile: false,
-          applicationTitle: false,
-          ipDisclosure: false,
-          substantialUse: false,
-          deedAssignment: false,
-        };
-
-        const existing = knownApplicationStatus[applicationId]?.status;
-        if (existing) {
-          Object.assign(nextStatus, existing);
-        }
-
-        nextStatus.applicationTitle = completed;
-
-        setKnownApplicationStatus((prev) => {
-          return {
-            ...prev,
-            [applicationId]: {
-              timestamp: Date.now(),
-              status: {
-                ...nextStatus,
-              },
-            },
-          };
-        });
-
-        // updateFormProgressDisplay(nextStatus);
+        applyStatusUpdate(applicationId, { applicationTitle: completed });
       }
     };
 
@@ -1317,7 +1276,7 @@ export function PageContent() {
 
       if (applicationId === activeApplicationId) {
         // Update UI state
-        setClientSideAllFormsCompleted(completed);
+        applyStatusUpdate(applicationId, { substantialUse: completed });
         console.log(
           `Substantial use form ${completed ? "completed" : "incomplete"}`,
         );
@@ -1340,7 +1299,7 @@ export function PageContent() {
 
       if (applicationId === activeApplicationId) {
         // Update UI state
-        setClientSideAllFormsCompleted(completed);
+        applyStatusUpdate(applicationId, { deedAssignment: completed });
         console.log(
           `Deed assignment form ${completed ? "completed" : "incomplete"}`,
         );
@@ -1484,48 +1443,9 @@ export function PageContent() {
           }
 
           // Update cached status so the next tab enables immediately
-          let nextStatus: {
-            clientProfile: boolean;
-            applicationTitle: boolean;
-            ipDisclosure: boolean;
-            substantialUse: boolean;
-            deedAssignment: boolean;
-          } | null = null;
-
-          setKnownApplicationStatus((prev) => {
-            const existing = prev[applicationId]?.status || {
-              clientProfile: false,
-              applicationTitle: false,
-              ipDisclosure: false,
-              substantialUse: false,
-              deedAssignment: false,
-            };
-
-            nextStatus = {
-              ...existing,
-              [normalizedFormType]: completed,
-            };
-
-            return {
-              ...prev,
-              [applicationId]: {
-                timestamp: Date.now(),
-                status: nextStatus!,
-              },
-            };
-          });
-
-          if (nextStatus) {
-            // Keep UI in sync with the latest status
-            // updateFormProgressDisplay(nextStatus);
-            setClientSideAllFormsCompleted(
-              nextStatus.clientProfile &&
-                nextStatus.applicationTitle &&
-                nextStatus.ipDisclosure &&
-                nextStatus.substantialUse &&
-                nextStatus.deedAssignment,
-            );
-          }
+          applyStatusUpdate(applicationId, {
+            [normalizedFormType]: completed,
+          } as Partial<FormStatus>);
 
           console.log(
             `Form status updated: ${formType} is now ${
@@ -1545,12 +1465,6 @@ export function PageContent() {
       delete window.updateIPFormStatus;
     };
   }, [activeApplicationId]);
-
-  // Use this for rendering instead of calculating during render
-  const allFormsCompleted =
-    typeof window === "undefined"
-      ? false // Default to false on server
-      : clientSideAllFormsCompleted;
 
   // Define a function to change tabs and update URL with improved state handling
   const handleTabChange = (tabId: string) => {

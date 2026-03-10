@@ -37,6 +37,13 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 /**
  * Form schema for client information
@@ -91,6 +98,34 @@ const formSchema = z.object({
   }),
 });
 
+const getLocalDateInputValue = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const calculateAgeFromBirthDate = (
+  birthDateValue: string,
+): number | undefined => {
+  if (!birthDateValue) return undefined;
+  const [year, month, day] = birthDateValue.split("-").map(Number);
+  if (!year || !month || !day) return undefined;
+  const birthDate = new Date(year, month - 1, day);
+  if (Number.isNaN(birthDate.getTime())) return undefined;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const hasHadBirthdayThisYear =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+  if (!hasHadBirthdayThisYear) {
+    age -= 1;
+  }
+  if (age < 0) return undefined;
+  return Math.min(age, 100);
+};
+
 // Add these props to the component
 interface ClientInformationProps {
   initialData?: any;
@@ -142,6 +177,7 @@ export function ClientInformation({
   const [selectedCitizenship, setSelectedCitizenship] = useState<string | null>(
     null,
   );
+  const [birthDate, setBirthDate] = useState<string>("");
 
   // Get active application for registry integration
   const { activeApplicationId } = useActiveApplication();
@@ -2067,30 +2103,27 @@ export function ClientInformation({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Age <span className="text-red-500">*</span>
+                        Birth date <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="Enter age (ex. 25)"
-                          {...field}
-                          value={
-                            field.value === undefined ? "" : String(field.value)
-                          }
+                          type="date"
+                          max={getLocalDateInputValue(new Date())}
+                          placeholder="Select birth date"
+                          value={birthDate}
                           onChange={(e) => {
-                            const next = e.target.value.replace(/[^0-9]/g, "");
-                            if (next === "") {
-                              field.onChange(undefined);
-                              return;
-                            }
-                            const parsed = parseInt(next, 10);
-                            const clamped = Math.min(parsed, 100);
-                            field.onChange(clamped);
+                            const next = e.target.value;
+                            setBirthDate(next);
+                            const age = calculateAgeFromBirthDate(next);
+                            field.onChange(age);
                           }}
                         />
                       </FormControl>
+                      <FormDescription>
+                        {field.value !== undefined
+                          ? `Calculated age: ${field.value}`
+                          : "Age will be calculated from the birth date."}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -10,6 +10,7 @@ const publicPaths = [
   "/api/auth",
   "/test-signin", // Our test page
   "/guidelines",
+  "/track"
 ];
 
 // Routes that authenticated users should be redirected from

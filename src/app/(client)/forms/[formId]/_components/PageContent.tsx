@@ -568,7 +568,7 @@ export function PageContent() {
         console.error("Error creating application:", error);
       },
       onSettled: () => {
-        setIsCreatingFirstApplicatio(false);
+        setIsCreatingFirstApplication(false);
       },
     });
 
@@ -1822,7 +1822,7 @@ export function PageContent() {
   const handleCreateFirstApplication = () => {
     if (
       isCreatingFirstApplication ||
-      createApplicationMutation.isLoading ||
+      createApplicationMutation.isPending ||
       isCreateCooldown
     ) {
       return;
@@ -2152,14 +2152,14 @@ export function PageContent() {
                     <Button
                       onClick={handleCreateFirstApplication}
                       disabled={
-                        createApplicationMutation.isLoading ||
+                        createApplicationMutation.isPending ||
                         isCreatingFirstApplication ||
                         isCreateCooldown
                       }
                       className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
                     >
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      {createApplicationMutation.isLoading ||
+                      {createApplicationMutation.isPending ||
                       isCreatingFirstApplication ||
                       isCreateCooldown
                         ? "Creating..."

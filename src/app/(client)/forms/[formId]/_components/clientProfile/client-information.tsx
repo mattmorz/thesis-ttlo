@@ -72,7 +72,7 @@ const formSchema = z.object({
   age: z
     .number({
       required_error: "Age is required",
-      invalid_type_error: "Age must be a number",
+      invalid_type_error: "Age is required",
     })
     .min(1, "Age is required")
     .max(100, "Age must be 100 or less"),
@@ -228,6 +228,9 @@ export function ClientInformation({
   const affiliationType = form.watch("affiliationType");
   const companyName = form.watch("companyName");
   const companyStreet = form.watch("companyStreet");
+  useEffect(() => {
+    form.trigger(undefined, { shouldFocus: false });
+  }, [form]);
   const companyBarangay = form.watch("companyBarangay");
   const companyCityMunicipality = form.watch("companyCityMunicipality");
   const companyProvince = form.watch("companyProvince");
@@ -492,6 +495,7 @@ export function ClientInformation({
         setTimeout(() => {
           form.reset(formattedData);
           setFormData(formattedData);
+          form.trigger(undefined, { shouldFocus: false });
 
           // Explicitly update selectedCitizenship to match the loaded data
           if (formattedData.citizenship && formattedData.citizenship.value) {

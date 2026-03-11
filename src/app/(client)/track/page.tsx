@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,7 @@ export default function Page() {
   const [trackingCode, setTrackingCode] = useState("");
   const [channel, setChannel] = useState<"email" | "sms">("email");
   const [identifier, setIdentifier] = useState("");
+  const [smsDisplay, setSmsDisplay] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -58,9 +59,43 @@ export default function Page() {
     null
   );
 
+  const normalizePhone = (value: string) =>
+    value.replace(/\D/g, "").slice(0, 11);
+  const formatPhone = (value: string) => {
+    const digits = normalizePhone(value);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+    return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(
+      7,
+      11
+    )}`;
+  };
+
+  const handleIdentifierChange = (value: string) => {
+    if (channel === "sms") {
+      const raw = normalizePhone(value);
+      setIdentifier(raw);
+      setSmsDisplay(formatPhone(raw));
+      return;
+    }
+    setIdentifier(value);
+  };
+
+  useEffect(() => {
+    if (channel === "sms") {
+      setSmsDisplay(formatPhone(identifier));
+    } else {
+      setSmsDisplay("");
+    }
+  }, [channel, identifier]);
+
   const canSendOtp = useMemo(() => {
-    return Boolean(trackingCode.trim() && identifier.trim());
-  }, [trackingCode, identifier]);
+    const hasTracking = Boolean(trackingCode.trim());
+    if (channel === "sms") {
+      return hasTracking && identifier.length === 11;
+    }
+    return hasTracking && Boolean(identifier.trim());
+  }, [trackingCode, identifier, channel]);
 
   const canVerify = useMemo(() => {
     return Boolean(otpSent && otp.trim().length >= 4);
@@ -187,14 +222,47 @@ export default function Page() {
               {channel === "email" ? "Email Address" : "Phone Number"}
             </label>
             <Input
-              type={channel === "email" ? "email" : "number"}
+              type={channel === "email" ? "email" : "text"}
+              inputMode={channel === "email" ? "email" : "numeric"}
+              pattern={channel === "email" ? undefined : "[0-9]*"}
               placeholder={
                 channel === "email"
                   ? "you@example.com"
-                  : "+63 9XX XXX XXXX"
+                  : "0907 860 5418"
               }
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
+              value={channel === "sms" ? smsDisplay : identifier}
+              onChange={(e) => handleIdentifierChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (channel !== "sms") return;
+                const allowed =
+                  e.key >= "0" && e.key <= "9"
+                    ? true
+                    : [
+                        "Backspace",
+                        "Delete",
+                        "ArrowLeft",
+                        "ArrowRight",
+                        "Home",
+                        "End",
+                        "Tab",
+                      ].includes(e.key);
+                if (!allowed) e.preventDefault();
+              }}
+              onBeforeInput={(e) => {
+                if (channel !== "sms") return;
+                const data = e.data ?? "";
+                if (data && !/^\d+$/.test(data)) {
+                  e.preventDefault();
+                }
+              }}
+              onPaste={(e) => {
+                if (channel !== "sms") return;
+                const text = e.clipboardData.getData("text");
+                if (text && !/^\d+$/.test(text)) {
+                  e.preventDefault();
+                }
+              }}
+              maxLength={channel === "sms" ? 13 : undefined}
             />
           </div>
 

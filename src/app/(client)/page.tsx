@@ -935,9 +935,12 @@ export default function HomePage() {
                 <Button
                   variant="outline"
                   className="bg-white border-[#1B5E20] text-[#1B5E20] hover:bg-[#E8F5E9]"
+                  asChild
                 >
-                  View more news
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <Link href="/forms?tab=client-profile">
+                    View more news
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
               </div>
             </div>

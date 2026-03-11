@@ -104,6 +104,8 @@ export async function middleware(request: NextRequest) {
   const isAuthOnly = isAuthOnlyPath(pathname);
   const isAdmin = token?.role === "admin" || token?.role === "ttlo_staff";
   const AdminPath = pathname.startsWith("/admin");
+  const isProfileCompletionPath = pathname.startsWith("/auth/complete-profile");
+  const isSignOutPath = pathname.startsWith("/auth/signout");
 
   const callbackUrl = searchParams.get("callbackUrl") || pathname;
 
@@ -117,6 +119,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(
       new URL(`/auth/signin?callbackUrl=${encodedCallbackUrl}`, request.url)
     );
+  }
+
+  if (
+    isAuthenticated &&
+    !token?.phoneNumber &&
+    !isProfileCompletionPath &&
+    !isSignOutPath &&
+    !isApiPath
+  ) {
+    return NextResponse.redirect(new URL("/auth/complete-profile", request.url));
   }
 
   if (isAuthenticated && !isAdmin && AdminPath) {

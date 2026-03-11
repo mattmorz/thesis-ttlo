@@ -9,12 +9,14 @@ declare module "next-auth" {
   interface User {
     role?: string;
     id?: string;
+    phoneNumber?: string | null;
   }
 
   interface Session {
     user: User & {
       role?: string;
       id?: string;
+      phoneNumber?: string | null;
     };
   }
 }
@@ -153,12 +155,14 @@ export const {
             columns: {
               role: true,
               id: true,
+              phoneNumber: true,
             },
           });
 
           // add role to token, default to client if not found
           token.role = String(dbUser?.role || "client");
           token.id = String(dbUser?.id);
+          token.phoneNumber = dbUser?.phoneNumber || null;
         }
 
         // Add a timestamp to help with caching
@@ -172,6 +176,9 @@ export const {
       if (token.role) {
         session.user.role = String(token.role);
         session.user.id = String(token.id);
+        session.user.phoneNumber = token.phoneNumber
+          ? String(token.phoneNumber)
+          : null;
       }
       return session;
     },

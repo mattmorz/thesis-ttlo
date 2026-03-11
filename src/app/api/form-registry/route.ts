@@ -3,6 +3,7 @@ import { db } from "@/drizzle/db";
 import { formSubmissionRegistry } from "@/drizzle/migrations/schema";
 import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
+import { ensureTrackingCodeForApplication } from "@/lib/services/tracking-code-service";
 
 export const dynamic = "force-dynamic";
 
@@ -175,6 +176,26 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      if (
+        registryData.status &&
+        ["submitted", "processed", "pending_review"].includes(
+          registryData.status
+        ) &&
+        registryData.ipApplicationId
+      ) {
+        try {
+          await ensureTrackingCodeForApplication(
+            registryData.ipApplicationId,
+            userId
+          );
+        } catch (trackingError) {
+          console.error(
+            "[Form Registry API:POST] Tracking code creation failed:",
+            trackingError
+          );
+        }
+      }
+
       return NextResponse.json({
         success: true,
         data: result[0],
@@ -229,6 +250,26 @@ export async function POST(req: NextRequest) {
           },
           { status: 500 }
         );
+      }
+
+      if (
+        registryData.status &&
+        ["submitted", "processed", "pending_review"].includes(
+          registryData.status
+        ) &&
+        registryData.ipApplicationId
+      ) {
+        try {
+          await ensureTrackingCodeForApplication(
+            registryData.ipApplicationId,
+            userId
+          );
+        } catch (trackingError) {
+          console.error(
+            "[Form Registry API:POST] Tracking code creation failed:",
+            trackingError
+          );
+        }
       }
 
       return NextResponse.json({

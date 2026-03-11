@@ -3,6 +3,7 @@ declare module "@/lib/auth" {
     id: string;
     name: string;
     email: string;
+    phoneNumber?: string | null;
   }
 
   interface Session {

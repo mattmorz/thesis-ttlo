@@ -2,16 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { z } from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 export default function CompleteProfilePage() {
   const router = useRouter();
+  const { update } = useSession();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const phoneSchema = z
+    .string()
+    .regex(/^\d{11}$/, "Please enter a valid 11-digit phone number");
 
   const normalizePhone = (value: string) =>
     value.replace(/\D/g, "").slice(0, 11);
@@ -37,6 +45,15 @@ export default function CompleteProfilePage() {
     setError(null);
 
     try {
+      const validation = phoneSchema.safeParse(phoneNumber);
+      if (!validation.success) {
+        const message =
+          validation.error.issues[0]?.message || "Invalid phone number";
+        toast.error(message);
+        setError(message);
+        return;
+      }
+
       const response = await fetch("/api/account/phone", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -45,13 +62,22 @@ export default function CompleteProfilePage() {
 
       const data = await response.json();
       if (!response.ok || !data?.success) {
-        setError(data?.error || "Failed to update phone number");
+        const message = data?.error || "Failed to update phone number";
+        toast.error(message);
+        setError(message);
         return;
       }
 
+      if (update) {
+        await update({ user: { phoneNumber } } as any);
+      }
+
+      toast.success("Phone number saved");
       router.replace("/forms?tab=client-profile");
+      router.refresh();
     } catch (err) {
       console.error("[Complete Profile] Update failed:", err);
+      toast.error("Failed to update phone number");
       setError("Failed to update phone number");
     } finally {
       setSaving(false);

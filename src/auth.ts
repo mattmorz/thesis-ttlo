@@ -145,7 +145,7 @@ export const {
       }
     },
 
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, session }) {
       // Only update token if it's a sign in event or token update
       if (user || trigger === "update") {
         if (user) {
@@ -162,6 +162,21 @@ export const {
           // add role to token, default to client if not found
           token.role = String(dbUser?.role || "client");
           token.id = String(dbUser?.id);
+          token.phoneNumber = dbUser?.phoneNumber || null;
+        } else if (trigger === "update" && session?.user?.phoneNumber) {
+          token.phoneNumber = String(session.user.phoneNumber);
+        } else if (trigger === "update" && token.id) {
+          const dbUser = await db.query.userAccount.findFirst({
+            where: eq(userAccount.id, String(token.id)),
+            columns: {
+              role: true,
+              id: true,
+              phoneNumber: true,
+            },
+          });
+
+          token.role = String(dbUser?.role || token.role || "client");
+          token.id = String(dbUser?.id || token.id);
           token.phoneNumber = dbUser?.phoneNumber || null;
         }
 

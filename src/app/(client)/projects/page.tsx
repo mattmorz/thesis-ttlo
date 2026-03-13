@@ -128,6 +128,7 @@ export default function ProjectsPage() {
   const createApplicationMutation =
     trpc.formIntegration.createApplication.useMutation({
       onSuccess: (data) => {
+        toast.dismiss("creating-app-toast");
         toast.success("Application created successfully!", {
           description: "Your new IP application is ready to work on.",
         });
@@ -147,9 +148,14 @@ export default function ProjectsPage() {
         }
       },
       onError: (error) => {
+        toast.dismiss("creating-app-toast");
         toast.error("Failed to create application", {
           description: error.message,
         });
+      },
+      onSettled: () => {
+        setIsCreating(false);
+        setIsCreatingFirstApplication(false);
       },
     });
 
@@ -170,21 +176,16 @@ export default function ProjectsPage() {
     }
 
     setIsCreating(true);
-    toast.loading("Creating your application...");
+    toast.loading("Creating your application...", {
+      id: "creating-app-toast",
+    });
 
-    try {
-      await createApplicationMutation.mutateAsync({
-        userId,
-        title: newAppTitle.trim(),
-        description: newAppDescription.trim(),
-        ipType: newAppType as any,
-      });
-    } catch (error) {
-      console.error("Error creating application:", error);
-    } finally {
-      setIsCreating(false);
-      toast.dismiss();
-    }
+    createApplicationMutation.mutate({
+      userId,
+      title: newAppTitle.trim(),
+      description: newAppDescription.trim() || undefined,
+      ipType: newAppType as any,
+    });
   };
 
   const handleCreateFirstApplication = async () => {
@@ -206,20 +207,15 @@ export default function ProjectsPage() {
     setIsCreatingFirstApplication(true);
     setIsCreateCooldown(true);
     setTimeout(() => setIsCreateCooldown(false), 10000);
-    toast.loading("Creating your application...");
+    toast.loading("Creating your application...", {
+      id: "creating-app-toast",
+    });
 
-    try {
-      await createApplicationMutation.mutateAsync({
-        userId,
-        title: "Untitled Application",
-        ipType: "not_sure" as any,
-      });
-    } catch (error) {
-      console.error("Error creating application:", error);
-    } finally {
-      toast.dismiss();
-      setIsCreatingFirstApplication(false);
-    }
+    createApplicationMutation.mutate({
+      userId,
+      title: "Untitled Application",
+      ipType: "not_sure" as any,
+    });
   };
 
   // Navigate to application form view

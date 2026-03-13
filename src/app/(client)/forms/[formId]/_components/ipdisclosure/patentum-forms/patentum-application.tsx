@@ -158,6 +158,9 @@ export function PatentApplication({
       files: [],
     },
   });
+  useEffect(() => {
+  form.trigger();
+}, []);
 
   const [
     title,

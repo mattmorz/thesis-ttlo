@@ -199,7 +199,7 @@ export function PatentSearchForm({
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    mode: "onTouched",
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: {
       title: "",
@@ -232,6 +232,10 @@ export function PatentSearchForm({
       },
     },
   });
+
+  useEffect(() => {
+  form.trigger();
+}, []);
 
   // Load saved data on component mount - only once
   useEffect(() => {

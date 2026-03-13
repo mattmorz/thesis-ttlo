@@ -166,6 +166,10 @@ export function MatrixSampleForm({
     },
   });
 
+useEffect(() => {
+  form.trigger();
+}, []);
+
   const [inventionTitle, priorArts, features, inventionDocs, priorArtDocs] =
     form.watch([
       "inventionTitle",
@@ -213,6 +217,7 @@ export function MatrixSampleForm({
   useEffect(() => {
     if (data && !initialDataLoaded.current) {
       form.reset(data);
+      form.trigger();
       console.log("Loaded saved matrix form data");
       initialDataLoaded.current = true;
     }

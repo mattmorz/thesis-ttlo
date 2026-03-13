@@ -492,6 +492,7 @@ export function ClientInformation({
         setTimeout(() => {
           form.reset(formattedData);
           setFormData(formattedData);
+          form.trigger(undefined, { shouldFocus: false });
 
           // Explicitly update selectedCitizenship to match the loaded data
           if (formattedData.citizenship && formattedData.citizenship.value) {

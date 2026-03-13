@@ -161,6 +161,10 @@ export function EducationalBackground({
     },
   });
 
+  useEffect(() => {
+  form.trigger(undefined, { shouldFocus: false });
+}, [form]);
+
   // Watch highest degree field for conditional rendering
   const selectedDegree = form.watch("highestDegree.value");
 
@@ -301,6 +305,8 @@ export function EducationalBackground({
               otherValue: formattedData.highestDegree?.otherValue || null,
             },
           });
+          
+          form.trigger(undefined, { shouldFocus: false });
 
           // For "other" values, make sure the otherValue is explicitly set
           if (formattedData.highestDegree?.value === "other") {

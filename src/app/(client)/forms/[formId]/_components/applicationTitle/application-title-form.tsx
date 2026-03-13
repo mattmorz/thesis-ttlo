@@ -110,10 +110,13 @@ export function ApplicationTitleForm() {
     reValidateMode: "onChange",
     defaultValues: {
       title: "",
-      description: activeApplication?.description || "",
+      description: activeApplication?.description ?? "",
       ipType: "",
     },
   });
+  useEffect(() => {
+  form.trigger();
+}, []);
 
   useEffect(() => {
     if (activeApplication) {
@@ -123,6 +126,8 @@ export function ApplicationTitleForm() {
         ipType: "",
       });
       hasClearedTitleRef.current = false;
+      
+       form.trigger(["title", "description"]);
     }
   }, [activeApplication, form]);
 

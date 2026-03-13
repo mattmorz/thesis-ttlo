@@ -227,7 +227,7 @@ export function SubstantialUseForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    mode: "onTouched",
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: {
       applicants: [
@@ -259,6 +259,10 @@ export function SubstantialUseForm() {
       researchTitle: "",
     },
   });
+
+  useEffect(() => {
+  form.trigger();
+}, []);
 
   const {
     fields: applicantFields,
@@ -323,6 +327,9 @@ export function SubstantialUseForm() {
 
     // Reset form with default values
     form.reset(resetValues);
+    setTimeout(() => {
+  form.trigger();
+}, 300);
 
     // Update form status
     setFormStatus("draft");
@@ -593,6 +600,9 @@ export function SubstantialUseForm() {
 
           // Reset form with formatted API data
           form.reset(formattedData);
+          setTimeout(() => {
+  form.trigger();
+}, 300);
           console.log("Form reset with formatted API data");
 
           // Set form status
@@ -719,6 +729,9 @@ export function SubstantialUseForm() {
       setFormData(null);
       setFormStatus("draft");
       form.reset({});
+      setTimeout(() => {
+  form.trigger();
+}, 500);
 
       // Fetch fresh data if we have an active application
       if (activeApplicationId && isMounted.current) {
@@ -769,6 +782,9 @@ export function SubstantialUseForm() {
 
     // Clear form when application changes to prepare for new data
     form.reset({});
+    setTimeout(() => {
+  form.trigger();
+}, 300);
 
     // Create a unique key for this effect instance to prevent race conditions
     // with multiple rapid application changes

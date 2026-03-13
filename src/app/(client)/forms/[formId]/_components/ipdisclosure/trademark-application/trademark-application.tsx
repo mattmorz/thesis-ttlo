@@ -203,6 +203,8 @@ export function TrademarkApplication() {
 
   const form = useForm<TrademarkFormValues>({
     resolver: zodResolver(formSchema),
+    mode: "all",
+  reValidateMode: "onChange",
     defaultValues: trademarkApplication || {
       trademarkName: "",
       description: "",
@@ -215,6 +217,18 @@ export function TrademarkApplication() {
       legalName: "",
     },
   });
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    form.trigger([
+      "trademarkName",
+      "description",
+      "niceClassifications",
+      "legalName",
+    ]);
+  }, 300);
+
+  return () => clearTimeout(timer);
+}, []);
 
   // Fetch data when component mounts
   useEffect(() => {
@@ -331,14 +345,25 @@ export function TrademarkApplication() {
 
   // Initialize form with stored data when component mounts or when trademarkApplication changes
   useEffect(() => {
-    if (trademarkApplication) {
-      console.log(
-        "Initializing trademark form with stored data:",
-        trademarkApplication
-      );
-      form.reset(trademarkApplication);
-    }
-  }, [trademarkApplication, form]);
+  if (trademarkApplication) {
+    console.log(
+      "Initializing trademark form with stored data:",
+      trademarkApplication
+    );
+
+    form.reset(trademarkApplication);
+
+    // IMPORTANT: trigger validation after reset
+    setTimeout(() => {
+      form.trigger([
+        "trademarkName",
+        "description",
+        "niceClassifications",
+        "legalName",
+      ]);
+    }, 0);
+  }
+}, [trademarkApplication, form]);
 
   // Create a debounced save function to prevent excessive updates
   const debouncedSave = debounce((data: TrademarkFormValues) => {

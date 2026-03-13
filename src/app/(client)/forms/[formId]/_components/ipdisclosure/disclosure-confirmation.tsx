@@ -42,8 +42,13 @@ const formSchema = z.object({
     planned: z.boolean().default(false),
     notApplicable: z.boolean().default(false),
   }),
-  futureWork: z.string().optional(),
-  confirmationDeclaration: z.boolean().default(false),
+  futureWork: z.string().min(1, "Future Work is required"),
+  confirmationDeclaration: z.boolean().refine(
+  (val) => val === true,
+  {
+    message: "You must accept the declaration",
+  }
+),
 });
 
 export function DisclosureConfirmation() {
@@ -114,6 +119,8 @@ export function DisclosureConfirmation() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode : "onChange",
+  reValidateMode: "onChange",
     defaultValues: {
       writtenDisclosures: {
         past: false,
@@ -129,6 +136,11 @@ export function DisclosureConfirmation() {
       confirmationDeclaration: false,
     },
   });
+  useEffect(() => {
+  setTimeout(() => {
+    form.trigger();
+  }, 100);
+}, [form]);
 
   const [tab, setTab] = useState<"confirm" | "review" | "success">("confirm");
 

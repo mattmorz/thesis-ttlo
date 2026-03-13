@@ -168,12 +168,20 @@ export function ApplicantsInformation() {
   // Initialize form with the local state
   const form = useForm<ApplicantsInfoFormType>({
     resolver: zodResolver(ApplicantsInfoFormSchema),
-    mode: "onBlur",
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: formData,
     values: formData, // Explicitly set values from our state
   });
+  useEffect(() => {
+  if (formData) {
+    form.reset(formData);
 
+    setTimeout(() => {
+      form.trigger(); // trigger validation after reset
+    }, 100);
+  }
+}, [formData, form]);
   // Update the form whenever formData changes
   useEffect(() => {
     if (formData) {

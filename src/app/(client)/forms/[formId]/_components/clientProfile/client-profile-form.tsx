@@ -106,6 +106,17 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
   // Reference to store client profile data separately
   const activeFormDataRef = useRef<any>(null);
 
+  const getStorageKey = (baseKey: string) =>
+    activeApplicationId ? `${baseKey}-${activeApplicationId}` : baseKey;
+
+  const setStorageValue = (baseKey: string, value: unknown) => {
+    const serialized = JSON.stringify(value);
+    localStorage.setItem(baseKey, serialized);
+    if (activeApplicationId) {
+      localStorage.setItem(getStorageKey(baseKey), serialized);
+    }
+  };
+
   // Get permissions
   const permissions = getFormPermissions(session, formStatus);
   const isDevAdmin = bypassPermissions(session);
@@ -374,7 +385,34 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
       try {
         console.log("[ClientProfileForm] Initializing form...");
 
-        // Always fetch from API and ignore localStorage data
+        const loadLocalSection = (baseKey: string) => {
+          const appKey = getStorageKey(baseKey);
+          const raw =
+            localStorage.getItem(appKey) || localStorage.getItem(baseKey);
+          if (!raw) return null;
+          try {
+            return JSON.parse(raw);
+          } catch {
+            return null;
+          }
+        };
+
+        const localPersonal = loadLocalSection("clientInformationData");
+        const localEducation = loadLocalSection("educationalBackgroundData");
+        const localBackground = loadLocalSection("clientBackgroundIPData");
+
+        if (localPersonal || localEducation || localBackground) {
+          setFormState({
+            personal: localPersonal ?? initializeEmptyPersonalData(),
+            education: localEducation ?? initializeEmptyEducationData(),
+            background: localBackground ?? initializeEmptyBackgroundData(),
+          });
+          setIsLoading(false);
+          formInitializedRef.current = true;
+          return;
+        }
+
+        // Fall back to API if no local storage data exists
         await fetchDataFromAPI();
       } catch (error) {
         console.error(
@@ -599,18 +637,9 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
           });
 
           // Update localStorage with server data for consistency
-          localStorage.setItem(
-            "clientInformationData",
-            JSON.stringify(personalData)
-          );
-          localStorage.setItem(
-            "educationalBackgroundData",
-            JSON.stringify(educationData)
-          );
-          localStorage.setItem(
-            "clientBackgroundIPData",
-            JSON.stringify(backgroundData)
-          );
+          setStorageValue("clientInformationData", personalData);
+          setStorageValue("educationalBackgroundData", educationData);
+          setStorageValue("clientBackgroundIPData", backgroundData);
 
           // Set form status
           if (responseData.data.status) {

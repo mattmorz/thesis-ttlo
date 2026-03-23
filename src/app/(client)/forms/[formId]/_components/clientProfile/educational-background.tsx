@@ -61,6 +61,8 @@ interface EducationalBackgroundProps {
   initialData?: any;
   isDisabled?: boolean;
   formStatus?: string;
+  disableLocalStorage?: boolean;
+  onDraftChange?: (key: string, value: string | null) => void;
 }
 
 // Add TypeScript declaration for window global methods
@@ -95,6 +97,8 @@ export function EducationalBackground({
   initialData,
   isDisabled = false,
   formStatus = "draft",
+  disableLocalStorage = false,
+  onDraftChange,
 }: EducationalBackgroundProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -111,6 +115,25 @@ export function EducationalBackground({
 
   // Get active application for registry integration
   const { activeApplicationId } = useActiveApplication();
+
+  const canUseStorage =
+    !disableLocalStorage && typeof window !== "undefined";
+  const getStorageItem = (key: string) =>
+    canUseStorage ? localStorage.getItem(key) : null;
+  const setStorageItem = (key: string, value: string) => {
+    if (canUseStorage) {
+      localStorage.setItem(key, value);
+      return;
+    }
+    onDraftChange?.(key, value);
+  };
+  const removeStorageItem = (key: string) => {
+    if (canUseStorage) {
+      localStorage.removeItem(key);
+      return;
+    }
+    onDraftChange?.(key, null);
+  };
 
   // Initialize form submission hook for registry
   const formSubmission = useFormSubmission({
@@ -189,7 +212,7 @@ export function EducationalBackground({
   useEffect(() => {
     try {
       // First try to load from localStorage to get the most recent changes
-      const savedData = localStorage.getItem("educationalBackgroundData");
+      const savedData = getStorageItem("educationalBackgroundData");
       let formattedData;
 
       if (savedData) {
@@ -282,7 +305,7 @@ export function EducationalBackground({
         }
 
         // Also save initialData to localStorage for consistency
-        localStorage.setItem(
+        setStorageItem(
           "educationalBackgroundData",
           JSON.stringify(formattedData),
         );
@@ -342,7 +365,7 @@ export function EducationalBackground({
       }
 
       // Store form data in localStorage for persistence
-      localStorage.setItem("educationalBackgroundData", JSON.stringify(values));
+      setStorageItem("educationalBackgroundData", JSON.stringify(values));
       setFormData(values);
 
       // Show loading toast
@@ -456,7 +479,7 @@ export function EducationalBackground({
       }
 
       // Store form data in localStorage
-      localStorage.setItem(
+      setStorageItem(
         "educationalBackgroundData",
         JSON.stringify(formattedEducationalData),
       );
@@ -468,7 +491,7 @@ export function EducationalBackground({
 
       try {
         // Get personal information data
-        const personalData = localStorage.getItem("clientInformationData");
+        const personalData = getStorageItem("clientInformationData");
         if (personalData) {
           personalInfo = JSON.parse(personalData);
           console.log(
@@ -478,7 +501,7 @@ export function EducationalBackground({
         }
 
         // Get background IP data
-        const backgroundData = localStorage.getItem("clientBackgroundIPData");
+        const backgroundData = getStorageItem("clientBackgroundIPData");
         if (backgroundData) {
           backgroundIP = JSON.parse(backgroundData);
           console.log("Loaded background IP data for update:", backgroundIP);
@@ -584,7 +607,7 @@ export function EducationalBackground({
       }
 
       // Save to localStorage without making an API call
-      localStorage.setItem(
+      setStorageItem(
         "educationalBackgroundData",
         JSON.stringify(formattedValues),
       );
@@ -631,7 +654,7 @@ export function EducationalBackground({
       }
 
       // Save to localStorage without making an API call
-      localStorage.setItem(
+      setStorageItem(
         "educationalBackgroundData",
         JSON.stringify(formattedValues),
       );
@@ -661,7 +684,7 @@ export function EducationalBackground({
         // Save current form state to localStorage before unmounting
         try {
           const values = form.getValues();
-          localStorage.setItem(
+          setStorageItem(
             "educationalBackgroundData",
             JSON.stringify(values),
           );

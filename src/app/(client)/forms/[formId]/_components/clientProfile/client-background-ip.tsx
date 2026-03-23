@@ -94,6 +94,8 @@ interface ClientBackgroundIPProps {
   isDisabled?: boolean;
   formStatus?: string;
   canApprove?: boolean;
+  disableLocalStorage?: boolean;
+  onDraftChange?: (key: string, value: string | null) => void;
 }
 
 /**
@@ -121,6 +123,8 @@ export function ClientBackgroundIP({
   isDisabled = false,
   formStatus = "draft",
   canApprove = false,
+  disableLocalStorage = false,
+  onDraftChange,
 }: ClientBackgroundIPProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -156,6 +160,25 @@ export function ClientBackgroundIP({
 
   // Get active application for registry integration
   const { activeApplicationId } = useActiveApplication();
+
+  const canUseStorage =
+    !disableLocalStorage && typeof window !== "undefined";
+  const getStorageItem = (key: string) =>
+    canUseStorage ? localStorage.getItem(key) : null;
+  const setStorageItem = (key: string, value: string) => {
+    if (canUseStorage) {
+      localStorage.setItem(key, value);
+      return;
+    }
+    onDraftChange?.(key, value);
+  };
+  const removeStorageItem = (key: string) => {
+    if (canUseStorage) {
+      localStorage.removeItem(key);
+      return;
+    }
+    onDraftChange?.(key, null);
+  };
 
   // Add form submission hook for registry integration
   const formSubmission = useFormSubmission({
@@ -198,7 +221,7 @@ export function ClientBackgroundIP({
       setIsLoading(true);
 
       // First try to load from localStorage to get the most recent changes
-      const savedData = localStorage.getItem("clientBackgroundIPData");
+      const savedData = getStorageItem("clientBackgroundIPData");
       let formattedData;
 
       if (savedData) {
@@ -308,7 +331,7 @@ export function ClientBackgroundIP({
         }
 
         // Also save initialData to localStorage for consistency
-        localStorage.setItem(
+        setStorageItem(
           "clientBackgroundIPData",
           JSON.stringify(formattedData)
         );
@@ -369,7 +392,7 @@ export function ClientBackgroundIP({
         const values = form.getValues();
         const formattedValues = formatData(values);
         console.log("Tab change detected, saving form state:", formattedValues);
-        localStorage.setItem(
+        setStorageItem(
           "clientBackgroundIPData",
           JSON.stringify(formattedValues)
         );
@@ -385,7 +408,7 @@ export function ClientBackgroundIP({
           "Page unload detected, saving form state:",
           formattedValues
         );
-        localStorage.setItem(
+        setStorageItem(
           "clientBackgroundIPData",
           JSON.stringify(formattedValues)
         );
@@ -404,7 +427,7 @@ export function ClientBackgroundIP({
         const values = form.getValues();
         const formattedValues = formatData(values);
         console.log("Saving form data on component unmount:", formattedValues);
-        localStorage.setItem(
+        setStorageItem(
           "clientBackgroundIPData",
           JSON.stringify(formattedValues)
         );
@@ -551,7 +574,7 @@ export function ClientBackgroundIP({
         const values = form.getValues();
         // Use the proper formatData function
         const formattedValues = formatData(values);
-        localStorage.setItem(
+        setStorageItem(
           "clientBackgroundIPData",
           JSON.stringify(formattedValues)
         );
@@ -620,7 +643,7 @@ export function ClientBackgroundIP({
       }
 
       // Store in localStorage for form persistence
-      localStorage.setItem("clientBackgroundIPData", JSON.stringify(values));
+      setStorageItem("clientBackgroundIPData", JSON.stringify(values));
       setFormData(values);
 
       // Show loading toast
@@ -730,7 +753,7 @@ export function ClientBackgroundIP({
       const formattedBackgroundIp = formatData(currentFormValues);
 
       // Save current form data to localStorage
-      localStorage.setItem(
+      setStorageItem(
         "clientBackgroundIPData",
         JSON.stringify(formattedBackgroundIp)
       );
@@ -741,7 +764,7 @@ export function ClientBackgroundIP({
 
       try {
         // Get personal information data
-        const personalData = localStorage.getItem("clientInformationData");
+        const personalData = getStorageItem("clientInformationData");
         if (personalData) {
           personalInfo = JSON.parse(personalData);
           console.log(
@@ -751,7 +774,7 @@ export function ClientBackgroundIP({
         }
 
         // Get educational background data
-        const educationData = localStorage.getItem("educationalBackgroundData");
+        const educationData = getStorageItem("educationalBackgroundData");
         if (educationData) {
           educationalBackground = JSON.parse(educationData);
           console.log(
@@ -951,7 +974,7 @@ export function ClientBackgroundIP({
       const formattedValues = formatData(values);
 
       // Save to localStorage without making an API call
-      localStorage.setItem(
+      setStorageItem(
         "clientBackgroundIPData",
         JSON.stringify(formattedValues)
       );
@@ -1003,7 +1026,7 @@ export function ClientBackgroundIP({
       );
 
       // Double-check localStorage for consistency
-      const storedActiveAppId = localStorage.getItem("activeApplicationId");
+      const storedActiveAppId = getStorageItem("activeApplicationId");
       if (storedActiveAppId !== applicationId) {
         console.warn(
           "[ClientBackgroundIP] Application ID mismatch detected before submission:",
@@ -1015,7 +1038,7 @@ export function ClientBackgroundIP({
 
         // Force synchronization
         if (applicationId) {
-          localStorage.setItem("activeApplicationId", applicationId);
+          setStorageItem("activeApplicationId", applicationId);
           console.log(
             "[ClientBackgroundIP] Corrected application ID in localStorage to:",
             applicationId
@@ -1051,7 +1074,7 @@ export function ClientBackgroundIP({
       const formattedBackgroundIp = formatData(currentFormValues);
 
       // Save current form data to localStorage
-      localStorage.setItem(
+      setStorageItem(
         "clientBackgroundIPData",
         JSON.stringify(formattedBackgroundIp)
       );
@@ -1062,7 +1085,7 @@ export function ClientBackgroundIP({
 
       try {
         // Get personal information data
-        const personalData = localStorage.getItem("clientInformationData");
+        const personalData = getStorageItem("clientInformationData");
         if (personalData) {
           personalInfo = JSON.parse(personalData);
           console.log(
@@ -1078,7 +1101,7 @@ export function ClientBackgroundIP({
         }
 
         // Get educational background data
-        const educationData = localStorage.getItem("educationalBackgroundData");
+        const educationData = getStorageItem("educationalBackgroundData");
         if (educationData) {
           educationalBackground = JSON.parse(educationData);
           console.log(
@@ -1369,7 +1392,7 @@ export function ClientBackgroundIP({
       const formattedValues = formatData(values);
 
       // Save to localStorage without making an API call
-      localStorage.setItem(
+      setStorageItem(
         "clientBackgroundIPData",
         JSON.stringify(formattedValues)
       );

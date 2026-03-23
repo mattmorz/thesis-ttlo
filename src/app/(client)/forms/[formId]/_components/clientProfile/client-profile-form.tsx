@@ -116,6 +116,20 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
       localStorage.setItem(getStorageKey(baseKey), serialized);
     }
   };
+  const draftKeys = new Set([
+    "clientInformationData",
+    "educationalBackgroundData",
+    "clientBackgroundIPData",
+  ]);
+  const handleDraftChange = (key: string, value: string | null) => {
+    if (!value || !draftKeys.has(key)) return;
+    try {
+      const parsed = JSON.parse(value);
+      setStorageValue(key, parsed);
+    } catch (error) {
+      console.warn("[ClientProfileForm] Failed to parse draft payload:", error);
+    }
+  };
 
   // Get permissions
   const permissions = getFormPermissions(session, formStatus);
@@ -144,6 +158,7 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
 
   const [isEducationTabDisabled, setIsEducationTabDisabled] = useState(true);
   const [isBackgroundTabDisabled, setIsBackgroundTabDisabled] = useState(true);
+  const disableChildLocalStorage = true;
 
   useEffect(() => {
     const checkPersonalFormCompletion = () => {
@@ -938,6 +953,19 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
     setFormStatus("draft");
   };
 
+  useEffect(() => {
+    if (!activeApplicationId && !isAppLoading) {
+      setNoActiveApplication(true);
+      setFormState({
+        personal: initializeEmptyPersonalData(),
+        education: initializeEmptyEducationData(),
+        background: initializeEmptyBackgroundData(),
+      });
+      setFormStatus("draft");
+      setIsLoading(false);
+    }
+  }, [activeApplicationId, isAppLoading]);
+
   // Handle tab changes - Now updates URL with clientTab parameter
   const handleTabChange = (value: string) => {
     setActiveTab(value); // Set active tab in component state
@@ -1101,6 +1129,8 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
             initialData={formState.personal}
             isDisabled={isFormDisabled}
             formStatus={formStatus}
+            disableLocalStorage={disableChildLocalStorage}
+            onDraftChange={handleDraftChange}
           />
         </TabsContent>
         <TabsContent value="education" className="mt-6">
@@ -1108,6 +1138,8 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
             initialData={formState.education}
             isDisabled={isFormDisabled}
             formStatus={formStatus}
+            disableLocalStorage={disableChildLocalStorage}
+            onDraftChange={handleDraftChange}
           />
         </TabsContent>
         <TabsContent value="background" className="mt-6">
@@ -1116,6 +1148,8 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
             isDisabled={isFormDisabled}
             formStatus={formStatus}
             canApprove={canApprove}
+            disableLocalStorage={disableChildLocalStorage}
+            onDraftChange={handleDraftChange}
           />
         </TabsContent>
       </Tabs>

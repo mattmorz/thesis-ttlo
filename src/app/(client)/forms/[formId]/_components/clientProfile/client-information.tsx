@@ -129,6 +129,8 @@ const calculateAgeFromBirthDate = (
 interface ClientInformationProps {
   initialData?: any;
   isDisabled?: boolean;
+  disableLocalStorage?: boolean;
+  onDraftChange?: (key: string, value: string | null) => void;
 }
 
 // Add TypeScript declaration for window global methods
@@ -162,6 +164,8 @@ declare global {
 export function ClientInformation({
   initialData,
   isDisabled = false,
+  disableLocalStorage = false,
+  onDraftChange,
 }: ClientInformationProps) {
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "personal";
@@ -180,6 +184,25 @@ export function ClientInformation({
 
   // Get active application for registry integration
   const { activeApplicationId } = useActiveApplication();
+
+  const canUseStorage =
+    !disableLocalStorage && typeof window !== "undefined";
+  const getStorageItem = (key: string) =>
+    canUseStorage ? localStorage.getItem(key) : null;
+  const setStorageItem = (key: string, value: string) => {
+    if (canUseStorage) {
+      localStorage.setItem(key, value);
+      return;
+    }
+    onDraftChange?.(key, value);
+  };
+  const removeStorageItem = (key: string) => {
+    if (canUseStorage) {
+      localStorage.removeItem(key);
+      return;
+    }
+    onDraftChange?.(key, null);
+  };
 
   // Initialize form submission hook for registry
   const { registerForm } = useFormSubmission({
@@ -287,18 +310,18 @@ export function ClientInformation({
         : "clientInformationData";
 
       // For backward compatibility, check both keys
-      let savedData = localStorage.getItem(storageKey);
+      let savedData = getStorageItem(storageKey);
       if (!savedData && activeApplicationId) {
         // Try the legacy key
-        const legacyData = localStorage.getItem("clientInformationData");
+        const legacyData = getStorageItem("clientInformationData");
         if (legacyData) {
           console.log(
             "[ClientInformation] Found data in legacy localStorage key, migrating...",
           );
           // Migrate to new application-specific key
-          localStorage.setItem(storageKey, legacyData);
+          setStorageItem(storageKey, legacyData);
           // Remove from legacy key to prevent cross-contamination
-          localStorage.removeItem("clientInformationData");
+          removeStorageItem("clientInformationData");
           savedData = legacyData;
         }
       }
@@ -478,7 +501,7 @@ export function ClientInformation({
           }
         }
 
-        localStorage.setItem(storageKey, JSON.stringify(formattedData));
+        setStorageItem(storageKey, JSON.stringify(formattedData));
       }
 
       // If we have data from either source, use it
@@ -541,7 +564,7 @@ export function ClientInformation({
           "[ClientInformation] Tab change detected, saving form state:",
           formattedValues,
         );
-        localStorage.setItem(storageKey, JSON.stringify(formattedValues));
+        setStorageItem(storageKey, JSON.stringify(formattedValues));
       }
     };
 
@@ -566,7 +589,7 @@ export function ClientInformation({
         console.log(
           "[ClientInformation] Page unload detected, saving form state",
         );
-        localStorage.setItem(storageKey, JSON.stringify(formattedValues));
+        setStorageItem(storageKey, JSON.stringify(formattedValues));
       }
     };
 
@@ -592,7 +615,7 @@ export function ClientInformation({
         console.log(
           "[ClientInformation] Component unmounting, saving form state",
         );
-        localStorage.setItem(
+        setStorageItem(
           "clientInformationData",
           JSON.stringify(formattedValues),
         );
@@ -634,7 +657,7 @@ export function ClientInformation({
             ? `clientInformationData-${activeApplicationId}`
             : "clientInformationData";
 
-          localStorage.setItem(storageKey, JSON.stringify(formattedValues));
+          setStorageItem(storageKey, JSON.stringify(formattedValues));
           console.log(
             "[ClientInformation] Saved personal information data on tab change:",
             formattedValues,
@@ -739,7 +762,7 @@ export function ClientInformation({
         ? `clientInformationData-${activeApplicationId}`
         : "clientInformationData";
 
-      localStorage.setItem(storageKey, JSON.stringify(formattedValues));
+      setStorageItem(storageKey, JSON.stringify(formattedValues));
       setFormData(formattedValues);
 
       // Show loading toast
@@ -1409,7 +1432,7 @@ export function ClientInformation({
         ? `clientInformationData-${activeApplicationId}`
         : "clientInformationData";
 
-      localStorage.setItem(storageKey, JSON.stringify(formattedValues));
+      setStorageItem(storageKey, JSON.stringify(formattedValues));
       setFormData(formattedValues);
 
       // Load data from all tabs via localStorage
@@ -1418,7 +1441,7 @@ export function ClientInformation({
 
       try {
         // Get educational background data
-        const educationData = localStorage.getItem("educationalBackgroundData");
+        const educationData = getStorageItem("educationalBackgroundData");
         if (educationData) {
           try {
             educationalBackground = JSON.parse(educationData);
@@ -1432,7 +1455,7 @@ export function ClientInformation({
         }
 
         // Get background IP data
-        const backgroundData = localStorage.getItem("clientBackgroundIPData");
+        const backgroundData = getStorageItem("clientBackgroundIPData");
         if (backgroundData) {
           try {
             backgroundIP = JSON.parse(backgroundData);
@@ -1864,7 +1887,7 @@ export function ClientInformation({
         ? `clientInformationData-${activeApplicationId}`
         : "clientInformationData";
 
-      localStorage.setItem(storageKey, JSON.stringify(enhancedValues));
+      setStorageItem(storageKey, JSON.stringify(enhancedValues));
       console.log(
         "[ClientInformation] Personal information saved to localStorage:",
         enhancedValues,
@@ -2429,7 +2452,7 @@ export function ClientInformation({
                         if (activeApplicationId) {
                           const currentValues = form.getValues();
                           const storageKey = `clientInformationData-${activeApplicationId}`;
-                          localStorage.setItem(
+                          setStorageItem(
                             storageKey,
                             JSON.stringify({
                               ...currentValues,

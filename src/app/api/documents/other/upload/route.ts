@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { db } from "@/drizzle/db";
 import { otherDocuments } from "@/drizzle/migrations/schema";
 import { v4 as uuidv4 } from "uuid";
 import { validate as validateUuid } from "uuid";
-import { userAccount } from "@/drizzle/migrations/schema";
 import { ipApplication } from "@/drizzle/migrations/schema";
 import { eq } from "drizzle-orm";
+import {
+  DriveAuthError,
+  MAX_UPLOAD_SIZE_BYTES,
+  uploadFileToDrive,
+} from "@/lib/google-drive";
 
 export const dynamic = "force-dynamic";
 // Import schema. In production, import the actual schema with otherDocuments
@@ -16,35 +21,13 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   console.log("[API/documents/other/upload] Received upload request");
   try {
-    // Get the authenticated user from the session or database
-    // Instead of using a mock session with a non-existent user ID
-
-    // IMPORTANT: Use a userId that actually exists in your database
-    // This is just an example - you need to implement proper authentication
-    // through your auth provider (e.g., Auth.js, NextAuth, Clerk, etc.)
-
-    // Option 1: If you're using an auth provider, get the user from the session
-    // const session = await getServerSession(authOptions);
-    // if (!session || !session.user) {
-    //   console.error("[API/documents/other/upload] Unauthorized - no session");
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
-    // const userId = session.user.id;
-
-    // Option 2: For development and testing only - get an existing user from the database
-    // Query for a valid user from the user_account table
-    const existingUsers = await db.select().from(userAccount).limit(1);
-    if (!existingUsers || existingUsers.length === 0) {
-      console.error("[API/documents/other/upload] No users found in database");
-      return NextResponse.json(
-        { error: "No valid users found in database" },
-        { status: 500 }
-      );
+    const session = await auth();
+    if (!session?.user?.id) {
+      console.error("[API/documents/other/upload] Unauthorized - no session");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Take the first user for testing purposes
-    const userId = existingUsers[0].id;
-    console.log("[API/documents/other/upload] Using existing user ID:", userId);
+    const userId = session.user.id;
 
     // Parse the form data
     const formData = await req.formData();
@@ -217,8 +200,22 @@ export async function POST(req: NextRequest) {
       // In a real implementation, you would upload the file to storage
       // and get back a URL
 
-      // Mock file URL for development
-      const fileUrl = `https://example.com/uploads/${fileName}`;
+      if (fileSize > MAX_UPLOAD_SIZE_BYTES) {
+        return NextResponse.json(
+          { error: "File exceeds 100MB limit" },
+          { status: 413 }
+        );
+      }
+
+      const driveFile = await uploadFileToDrive({
+        userId,
+        file,
+        fileName,
+        mimeType: fileType,
+      });
+
+      const fileUrl =
+        driveFile.webViewLink || driveFile.webContentLink || "";
 
       // Create a document record with a generated UUID
       const documentId = uuidv4();
@@ -252,7 +249,11 @@ export async function POST(req: NextRequest) {
         uploadedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: "active",
-        metadata: {},
+        metadata: {
+          driveFileId: driveFile.fileId,
+          webViewLink: driveFile.webViewLink,
+          webContentLink: driveFile.webContentLink,
+        },
       };
 
       console.log("[API/documents/other/upload] Document record prepared:", {
@@ -445,6 +446,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("[API/documents/other/upload] Error uploading files:", error);
+    if (error instanceof DriveAuthError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 401 }
+      );
+    }
     // Log more detailed error information
     if (error instanceof Error) {
       console.error(

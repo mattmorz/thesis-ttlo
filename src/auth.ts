@@ -46,6 +46,15 @@ export const {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      authorization: {
+        params: {
+          scope:
+            "openid email profile https://www.googleapis.com/auth/drive.file",
+          access_type: "offline",
+          prompt: "consent",
+          include_granted_scopes: "true",
+        },
+      },
     }),
   ],
   pages: {
@@ -143,9 +152,10 @@ export const {
       }
     },
 
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger, session, account }) {
       // Only update token if it's a sign in event or token update
       if (user || trigger === "update") {
+        const userId = user?.id ?? (token.id ? String(token.id) : undefined);
         if (user) {
           // get the user from db
           const dbUser = await db.query.userAccount.findFirst({
@@ -170,6 +180,34 @@ export const {
 
           token.role = String(dbUser?.role || token.role || "client");
           token.id = String(dbUser?.id || token.id);
+        }
+
+        if (account?.provider === "google" && userId) {
+          const existing = await db.query.userAccount.findFirst({
+            where: eq(userAccount.id, userId),
+            columns: {
+              googleAccessToken: true,
+              googleRefreshToken: true,
+              googleTokenExpiresAt: true,
+            },
+          });
+
+          const refreshToken =
+            account.refresh_token || existing?.googleRefreshToken || null;
+          const accessToken =
+            account.access_token || existing?.googleAccessToken || null;
+          const expiresAt = account.expires_at
+            ? new Date(account.expires_at * 1000).toISOString()
+            : existing?.googleTokenExpiresAt || null;
+
+          await db
+            .update(userAccount)
+            .set({
+              googleAccessToken: accessToken,
+              googleRefreshToken: refreshToken,
+              googleTokenExpiresAt: expiresAt,
+            })
+            .where(eq(userAccount.id, userId));
         }
 
         // Add a timestamp to help with caching

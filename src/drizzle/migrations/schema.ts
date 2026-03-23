@@ -1839,6 +1839,11 @@ export const userAccount = pgTable(
     role: userRole().default("client"),
     isActive: boolean("is_active").default(true),
     image: text(),
+    googleAccessToken: text("google_access_token"),
+    googleRefreshToken: text("google_refresh_token"),
+    googleTokenExpiresAt: timestamp("google_token_expires_at", {
+      mode: "string",
+    }),
     createdAt: timestamp("created_at", { mode: "string" }).default(
       sql`CURRENT_TIMESTAMP`
     ),

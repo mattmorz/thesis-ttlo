@@ -9,7 +9,6 @@ export interface CustomUser {
   role: UserRole;
   is_active: boolean;
   email_verified: Date | null;
-  phone_number?: string | null;
 }
 
 export interface CustomSession extends Session {
@@ -19,6 +18,5 @@ export interface CustomSession extends Session {
     name: string | null;
     role: UserRole;
     image: string | null;
-    phoneNumber?: string | null;
   };
 }

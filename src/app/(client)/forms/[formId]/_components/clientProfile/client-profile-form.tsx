@@ -149,8 +149,7 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
         return !!(
           parsed.firstName?.trim() &&
           parsed.lastName?.trim() &&
-          parsed.mailingAddress?.trim() &&
-          parsed.contactNumber?.trim()
+          parsed.mailingAddress?.trim()
         );
       } catch {
         return false;

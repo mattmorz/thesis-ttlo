@@ -1123,7 +1123,7 @@ export function PageContent() {
       // Only show toast once per session after form status loads
       if (!sessionStorage.getItem(`debug-toast-${activeApplicationId}`)) {
         toast.info(
-          `Form progress loaded: ${completedCount} of 4 forms completed`,
+          `Form progress loaded: ${completedCount} of 5 forms completed`,
           {
             id: "form-progress-debug",
             duration: 3000,

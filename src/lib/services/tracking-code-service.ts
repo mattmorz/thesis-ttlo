@@ -24,7 +24,7 @@ export async function ensureTrackingCodeForApplication(
 
   const user = await db.query.userAccount.findFirst({
     where: eq(userAccount.id, userId),
-    columns: { email: true, phoneNumber: true },
+    columns: { email: true },
   });
 
   if (!user?.email) {
@@ -50,7 +50,6 @@ export async function ensureTrackingCodeForApplication(
       code: rawCode,
       codeHash,
       email: user.email,
-      phoneNumber: user.phoneNumber || null,
     });
 
     return { created: true, code: rawCode };

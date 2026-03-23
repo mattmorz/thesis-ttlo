@@ -1836,7 +1836,6 @@ export const userAccount = pgTable(
     id: uuid().defaultRandom().primaryKey().notNull(),
     name: varchar({ length: 255 }),
     email: varchar({ length: 255 }).notNull(),
-    phoneNumber: varchar("phone_number", { length: 30 }),
     role: userRole().default("client"),
     isActive: boolean("is_active").default(true),
     image: text(),
@@ -1850,7 +1849,6 @@ export const userAccount = pgTable(
   },
   (table) => [
     unique("user_account_email_key").on(table.email),
-    unique("user_account_phone_key").on(table.phoneNumber),
   ]
 );
 

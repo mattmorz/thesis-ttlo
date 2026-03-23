@@ -112,7 +112,6 @@ export function ClientProfileInventory() {
   }>({
     name: true,
     email: true,
-    contactNumber: true,
     companyName: true,
     status: true,
     createdAt: true,
@@ -303,7 +302,6 @@ export function ClientProfileInventory() {
     setVisibleColumns({
       name: true,
       email: true,
-      contactNumber: true,
       companyName: true,
       status: true,
       createdAt: true,
@@ -531,7 +529,6 @@ export function ClientProfileInventory() {
                 {Object.entries({
                   name: "Name",
                   email: "Email",
-                  contactNumber: "Contact Number",
                   companyName: "Company",
                   status: "Status",
                   createdAt: "Created Date",
@@ -824,12 +821,6 @@ export function ClientProfileInventory() {
                           </TableHead>
                         )}
 
-                        {visibleColumns.contactNumber && (
-                          <TableHead className="p-3 w-[120px] whitespace-nowrap">
-                            Contact
-                          </TableHead>
-                        )}
-
                         {visibleColumns.age && (
                           <TableHead className="p-3 w-[80px] whitespace-nowrap">
                             Age
@@ -956,12 +947,6 @@ export function ClientProfileInventory() {
                             {visibleColumns.email && (
                               <TableCell className="p-3 whitespace-nowrap">
                                 {profile.email}
-                              </TableCell>
-                            )}
-
-                            {visibleColumns.contactNumber && (
-                              <TableCell className="p-3 whitespace-nowrap">
-                                {profile.contactNumber || "—"}
                               </TableCell>
                             )}
 

@@ -81,7 +81,6 @@ const formSchema = z.object({
     otherValue: z.string().optional().nullable(),
   }),
   mailingAddress: z.string().min(1, "Mailing address is required"),
-  contactNumber: z.string().min(1, "Contact number is required"),
   email: z.string().email("Invalid email address"),
   hasCompany: z.boolean().default(true),
   companyName: z.string().optional(),
@@ -222,7 +221,6 @@ export function ClientInformation({
   const firstName = form.watch("firstName");
   const lastName = form.watch("lastName");
   const mailingAddress = form.watch("mailingAddress");
-  const contactNumber = form.watch("contactNumber");
   const email = form.watch("email");
   const occupation = form.watch("occupation");
   const affiliationType = form.watch("affiliationType");
@@ -242,7 +240,6 @@ export function ClientInformation({
     !firstName?.trim() ||
     !lastName?.trim() ||
     !mailingAddress?.trim() ||
-    !contactNumber?.trim() ||
     !email?.trim() ||
     !occupation?.trim() ||
     !affiliationType;
@@ -2257,9 +2254,7 @@ export function ClientInformation({
                   name="contactNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Contact Number <span className="text-red-500">*</span>
-                      </FormLabel>
+                      <FormLabel>Contact Number</FormLabel>
                       <FormControl>
                         <Input
                           {...field}

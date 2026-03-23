@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   PlusCircle,
   RefreshCw,
@@ -100,6 +100,7 @@ export function ApplicationManagement({
     activeApplication,
     isLoading,
     applications,
+    setApplications,
     refetchApplications,
     clearFormData,
   } = useActiveApplication();
@@ -113,6 +114,7 @@ export function ApplicationManagement({
     "newest"
   );
   const [deleteConfirmApp, setDeleteConfirmApp] = useState<string | null>(null);
+  const deleteTargetRef = useRef<string | null>(null);
   const [isGuideCollapsed, setIsGuideCollapsed] = useState(false);
   const [otherIpType, setOtherIpType] = useState("");
 
@@ -156,19 +158,29 @@ export function ApplicationManagement({
   const deleteApplicationMutation =
     trpc.formIntegration.deleteApplication.useMutation({
       onSuccess: () => {
+        const deletedId = deleteTargetRef.current;
         toast.success("Application deleted successfully");
+        if (deletedId) {
+          setApplications((prev) => prev.filter((app) => app.id !== deletedId));
+        }
         refetchApplications();
 
         // If we deleted the active application, set to the first available app or null
         setTimeout(() => {
+          const remaining = deletedId
+            ? applications.filter((app) => app.id !== deletedId)
+            : applications;
           if (
-            applications.length > 0 &&
-            applications[0].id !== activeApplicationId
+            remaining.length > 0 &&
+            remaining[0].id !== activeApplicationId
           ) {
-            handleSwitchApplication(applications[0].id);
+            handleSwitchApplication(remaining[0].id);
           } else {
             // Direct call for null since our handler is designed for valid application IDs
-            setActiveApplicationId(null);
+            setActiveApplicationId(null, {
+              clearFormData: false,
+              emitEvent: false,
+            });
           }
         }, 300);
       },
@@ -453,13 +465,14 @@ export function ApplicationManagement({
     if (typeof window === "undefined") return;
 
     if (!deleteConfirmApp) return;
+    deleteTargetRef.current = deleteConfirmApp;
 
     // Show loading toast
     toast.loading("Deleting application...", { id: "deleting-app" });
 
     // Clear form data if deleting active application
     if (deleteConfirmApp === activeApplicationId) {
-      clearFormData();
+      clearFormData({ emitEvent: false });
     }
 
     // Call the mutation to delete the application
@@ -683,6 +696,17 @@ export function ApplicationManagement({
         </div>
 
         <div className="flex gap-1">
+          {!hideCreateButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5 text-[#1B5E20] border-[#1B5E20]/30"
+              onClick={onCreateClick || (() => setIsNewAppDialogOpen(true))}
+            >
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span>New Application</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -730,9 +754,17 @@ export function ApplicationManagement({
               {getStatusBadge(application.status as string)}
             </div>
 
-            <button
+            <div
               onClick={() => handleSwitchApplication(application.id)}
               className="w-full text-left"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSwitchApplication(application.id);
+                }
+              }}
             >
               <div className="px-3 py-3 border-b bg-slate-50/50">
                 <div className="flex items-center mb-1">
@@ -792,7 +824,7 @@ export function ApplicationManagement({
                   </div>
                 </div>
               </div>
-            </button>
+            </div>
           </div>
         ))}
       </div>

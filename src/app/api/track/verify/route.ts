@@ -11,8 +11,7 @@ import {
 import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import {
   hashValue,
-  normalizePhone,
-  normalizeTrackingCode,
+  normalizeTrackingCode
 } from "@/lib/tracking-utils";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +31,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (channel !== "email" && channel !== "sms") {
+    if (channel !== "email") {
       return NextResponse.json(
         { success: false, error: "Invalid channel" },
         { status: 400 }
@@ -41,10 +40,7 @@ export async function POST(req: NextRequest) {
 
     const normalizedCode = normalizeTrackingCode(rawCode);
     const codeHash = hashValue(normalizedCode);
-    const identifier =
-      channel === "email"
-        ? identifierInput.trim().toLowerCase()
-        : normalizePhone(identifierInput);
+    const identifier = identifierInput.trim().toLowerCase();
 
     const tracking = await db.query.trackingCode.findFirst({
       where: and(eq(trackingCode.codeHash, codeHash), isNull(trackingCode.revokedAt)),
@@ -57,10 +53,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const expectedIdentifier =
-      channel === "email"
-        ? tracking.email.toLowerCase()
-        : normalizePhone(tracking.phoneNumber || "");
+    const expectedIdentifier = tracking.email.toLowerCase();
 
     if (!expectedIdentifier || expectedIdentifier !== identifier) {
       return NextResponse.json(

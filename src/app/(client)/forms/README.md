@@ -99,3 +99,7 @@ To add a new form:
 2. Create a new form component in an appropriate directory
 3. Update the `PageContent.tsx` file to include the new form
 4. Add the new form to the sidebar navigation
+
+
+
+<!-- !! Note to change or alter table use npx drizzle-kit push and if have a custom one use drizzle:generate and drizzle:migrate-->

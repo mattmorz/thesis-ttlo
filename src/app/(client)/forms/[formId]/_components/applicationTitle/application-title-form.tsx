@@ -62,6 +62,8 @@ export function ApplicationTitleForm() {
   const { activeApplication, refetchApplications, setApplications } =
     useActiveApplication();
   const hasClearedTitleRef = useRef(false);
+  const hasClearedDescriptionRef = useRef(false);
+  const hasClearedIpTypeRef = useRef(false);
 
   const updateApplicationMutation = trpc.formIntegration.updateApplication.useMutation({
     onSuccess: (_data, variables) => {
@@ -109,20 +111,22 @@ export function ApplicationTitleForm() {
     mode: "onBlur",
     reValidateMode: "onChange",
     defaultValues: {
-      title: "",
+      title: activeApplication?.title || "",
       description: activeApplication?.description || "",
-      ipType: "",
+      ipType: activeApplication?.ipType || "",
     },
   });
 
   useEffect(() => {
     if (activeApplication) {
       form.reset({
-        title: "",
+        title: activeApplication.title || "",
         description: activeApplication.description || "",
-        ipType: "",
+        ipType: activeApplication.ipType || "",
       });
       hasClearedTitleRef.current = false;
+      hasClearedDescriptionRef.current = false;
+      hasClearedIpTypeRef.current = false;
     }
   }, [activeApplication, form]);
 
@@ -194,6 +198,21 @@ export function ApplicationTitleForm() {
                       placeholder="Provide a brief summary of your application"
                       className="resize-none"
                       {...field}
+                      onFocus={() => {
+                        if (
+                          !hasClearedDescriptionRef.current &&
+                          field.value === (activeApplication?.description ?? "")
+                        ) {
+                          field.onChange("");
+                          hasClearedDescriptionRef.current = true;
+                        }
+                      }}
+                      onChange={(e) => {
+                        if (!hasClearedDescriptionRef.current) {
+                          hasClearedDescriptionRef.current = true;
+                        }
+                        field.onChange(e);
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
@@ -210,7 +229,25 @@ export function ApplicationTitleForm() {
                 <FormItem>
                   <FormLabel>IP Type</FormLabel>
                   <FormControl>
-                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={(value) => {
+                        if (!hasClearedIpTypeRef.current) {
+                          hasClearedIpTypeRef.current = true;
+                        }
+                        field.onChange(value);
+                      }}
+                      onOpenChange={(open) => {
+                        if (
+                          open &&
+                          !hasClearedIpTypeRef.current &&
+                          field.value === (activeApplication?.ipType ?? "")
+                        ) {
+                          field.onChange("");
+                          hasClearedIpTypeRef.current = true;
+                        }
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select IP type" />
                       </SelectTrigger>

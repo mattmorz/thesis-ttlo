@@ -94,6 +94,7 @@ export function DocumentValidationDialog({
       body.append("files", file);
     });
     body.append("projectId", applicationId);
+    body.append("formName", "Document Validation");
 
     const uploadPromise = new Promise(async (resolve, reject) => {
       try {

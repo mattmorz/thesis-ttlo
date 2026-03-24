@@ -881,6 +881,7 @@ export function SignatorySection({
     const formData = new FormData();
     formData.append("files", file); // Changed from 'file' to 'files' to match API
     formData.append("projectId", activeApplicationId || "default"); // Add projectId
+    formData.append("formName", "Deed of Assignment - Signatory");
 
     try {
       console.log("[SignatorySection] Uploading file...");

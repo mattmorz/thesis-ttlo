@@ -3,8 +3,12 @@ import { NextResponse } from "next/server";
 import {
   DriveAuthError,
   MAX_UPLOAD_SIZE_BYTES,
+  ensureDriveFolderPath,
   uploadFileToDrive,
 } from "@/lib/google-drive";
+import { db } from "@/drizzle/db";
+import { ipApplication } from "@/drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   try {
@@ -21,17 +25,34 @@ export async function POST(request: Request) {
     }
 
     const uploadedFiles = [];
+    const formName = (formData.get("formName") as string | null) || "";
+    const projectId = formData.get("projectId") as string;
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "Project ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const application =
+      (await db.query.ipApplication.findFirst({
+        where: eq(ipApplication.id, projectId),
+        columns: { title: true },
+      })) || null;
+
+    const applicationTitle = application?.title || projectId;
+    const folderPath = [
+      "TTLO",
+      applicationTitle,
+      formName || "General Uploads",
+    ];
+    const { folderId } = await ensureDriveFolderPath({
+      userId: session.user.id,
+      pathSegments: folderPath,
+    });
 
     for (const file of files) {
-      // Get the projectId from formData
-      const projectId = formData.get("projectId") as string;
-
-      if (!projectId) {
-        return NextResponse.json(
-          { error: "Project ID is required" },
-          { status: 400 }
-        );
-      }
 
       if (file.size > MAX_UPLOAD_SIZE_BYTES) {
         return NextResponse.json(
@@ -45,6 +66,7 @@ export async function POST(request: Request) {
         file,
         fileName: `${projectId}-${file.name}`,
         mimeType: file.type || "application/octet-stream",
+        parentId: folderId,
       });
 
       uploadedFiles.push({

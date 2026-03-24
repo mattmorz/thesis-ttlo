@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const DRIVE_UPLOAD_URL =
   "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink";
+const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files";
 
 export const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;
 
@@ -20,6 +21,10 @@ type DriveFileResult = {
   fileId: string;
   webViewLink?: string;
   webContentLink?: string;
+};
+
+type DriveFolderResult = {
+  folderId: string;
 };
 
 async function refreshAccessToken(refreshToken: string) {
@@ -126,23 +131,152 @@ function buildMultipartBody(
   };
 }
 
+function sanitizeDriveName(value: string) {
+  const cleaned = value
+    .replace(/[\\/:*?"<>|]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.length > 0 ? cleaned : "Untitled";
+}
+
+function escapeDriveQueryValue(value: string) {
+  return value.replace(/'/g, "\\'");
+}
+
+async function findFolderId({
+  accessToken,
+  name,
+  parentId,
+}: {
+  accessToken: string;
+  name: string;
+  parentId: string;
+}) {
+  const escapedName = escapeDriveQueryValue(name);
+  const query = [
+    "mimeType='application/vnd.google-apps.folder'",
+    `name='${escapedName}'`,
+    "trashed=false",
+    `'${parentId}' in parents`,
+  ].join(" and ");
+
+  const response = await fetch(
+    `${DRIVE_FILES_URL}?q=${encodeURIComponent(
+      query
+    )}&fields=files(id,name)&pageSize=1`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Drive folder lookup failed: ${text || response.status}`);
+  }
+
+  const data = (await response.json()) as {
+    files?: Array<{ id: string; name: string }>;
+  };
+
+  return data.files?.[0]?.id ?? null;
+}
+
+async function createFolder({
+  accessToken,
+  name,
+  parentId,
+}: {
+  accessToken: string;
+  name: string;
+  parentId: string;
+}) {
+  const response = await fetch(DRIVE_FILES_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name,
+      mimeType: "application/vnd.google-apps.folder",
+      parents: [parentId],
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Drive folder create failed: ${text || response.status}`);
+  }
+
+  const data = (await response.json()) as { id?: string };
+  if (!data.id) {
+    throw new Error("Drive folder create did not return a folder ID.");
+  }
+
+  return data.id;
+}
+
+async function getOrCreateFolder({
+  accessToken,
+  name,
+  parentId,
+}: {
+  accessToken: string;
+  name: string;
+  parentId: string;
+}) {
+  const existing = await findFolderId({ accessToken, name, parentId });
+  if (existing) {
+    return existing;
+  }
+
+  return createFolder({ accessToken, name, parentId });
+}
+
+export async function ensureDriveFolderPath({
+  userId,
+  pathSegments,
+}: {
+  userId: string;
+  pathSegments: string[];
+}): Promise<DriveFolderResult> {
+  const accessToken = await getDriveAccessToken(userId);
+  let parentId = "root";
+
+  for (const segment of pathSegments) {
+    const safeName = sanitizeDriveName(segment);
+    parentId = await getOrCreateFolder({
+      accessToken,
+      name: safeName,
+      parentId,
+    });
+  }
+
+  return { folderId: parentId };
+}
+
 export async function uploadFileToDrive({
   userId,
   file,
   fileName,
   mimeType,
+  parentId,
 }: {
   userId: string;
   file: File;
   fileName: string;
   mimeType: string;
+  parentId?: string;
 }): Promise<DriveFileResult> {
   const accessToken = await getDriveAccessToken(userId);
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
   const { body, contentType } = buildMultipartBody(
-    { name: fileName },
+    parentId ? { name: fileName, parents: [parentId] } : { name: fileName },
     buffer,
     mimeType || "application/octet-stream"
   );

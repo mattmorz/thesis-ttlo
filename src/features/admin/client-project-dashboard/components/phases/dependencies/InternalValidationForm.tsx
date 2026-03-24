@@ -285,6 +285,7 @@ export function InternalValidationForm({
       const formData = new FormData();
       formData.append("files", file);
       formData.append("projectId", applicationId);
+      formData.append("formName", "Internal Validation");
 
       // Upload to your API endpoint
       const response = await fetch("/api/files/upload", {

@@ -130,6 +130,7 @@ export function DocumentUploadDialog({
       body.append("files", file);
     });
     body.append("projectId", applicationId);
+    body.append("formName", `Admin Documents - ${category}`);
 
     const uploadPromise = new Promise(async (resolve, reject) => {
       try {

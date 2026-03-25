@@ -10,6 +10,7 @@ const publicPaths = [
   "/api/auth",
   "/test-signin", // Our test page
   "/guidelines",
+  "/track"
 ];
 
 // Routes that authenticated users should be redirected from
@@ -103,8 +104,6 @@ export async function middleware(request: NextRequest) {
   const isAuthOnly = isAuthOnlyPath(pathname);
   const isAdmin = token?.role === "admin" || token?.role === "ttlo_staff";
   const AdminPath = pathname.startsWith("/admin");
-
-  const callbackUrl = searchParams.get("callbackUrl") || pathname;
 
   if (isAuthenticated && isAuthOnly) {
     const redirectUrl = "/forms?tab=client-profile";

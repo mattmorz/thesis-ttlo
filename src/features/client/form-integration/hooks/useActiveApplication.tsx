@@ -16,7 +16,14 @@ interface Application {
 
 type UseActiveApplicationReturn = {
   activeApplicationId: string | null;
-  setActiveApplicationId: (id: string | null) => void;
+  setActiveApplicationId: (
+    id: string | null,
+    options?: {
+      clearFormData?: boolean;
+      emitEvent?: boolean;
+      skipReload?: boolean;
+    }
+  ) => void;
   activeApplication: Application | null;
   isLoading: boolean;
   error: Error | null;
@@ -65,8 +72,10 @@ export function useActiveApplication(): UseActiveApplicationReturn {
       if (typeof window !== "undefined") {
         if (id) {
           localStorage.setItem("activeApplicationId", id);
+          localStorage.setItem("activeApplicationIdSetAt", Date.now().toString());
         } else {
           localStorage.removeItem("activeApplicationId");
+          localStorage.removeItem("activeApplicationIdSetAt");
         }
 
         const event = new CustomEvent("application-switched", {
@@ -106,8 +115,9 @@ export function useActiveApplication(): UseActiveApplicationReturn {
     });
 
   // Function to clear form data from localStorage
-  const clearFormData = () => {
+  const clearFormData = (options?: { emitEvent?: boolean }) => {
     console.log("Clearing all form data from localStorage");
+    const emitEvent = options?.emitEvent !== false;
 
     // Only run localStorage operations on the client side
     if (typeof window !== "undefined") {
@@ -150,14 +160,16 @@ export function useActiveApplication(): UseActiveApplicationReturn {
       // Form status data
       localStorage.removeItem("formSubmissionStatus");
 
-      // Also dispatch events to notify components that form data has been cleared
-      try {
-        const event = new CustomEvent("formDataCleared", {
-          detail: { timestamp: Date.now() },
-        });
-        window.dispatchEvent(event);
-      } catch (error) {
-        console.error("Error dispatching formDataCleared event:", error);
+      if (emitEvent) {
+        // Also dispatch events to notify components that form data has been cleared
+        try {
+          const event = new CustomEvent("formDataCleared", {
+            detail: { timestamp: Date.now() },
+          });
+          window.dispatchEvent(event);
+        } catch (error) {
+          console.error("Error dispatching formDataCleared event:", error);
+        }
       }
 
       console.log("All form data cleared from localStorage");
@@ -172,7 +184,14 @@ export function useActiveApplication(): UseActiveApplicationReturn {
 
   // Function to set the active application
   const setActiveApplicationId = useCallback(
-    (id: string | null) => {
+    (
+      id: string | null,
+      options?: {
+        clearFormData?: boolean;
+        emitEvent?: boolean;
+        skipReload?: boolean;
+      }
+    ) => {
       console.log("Setting active application ID:", id);
 
       // If the ID is the same as the current one, do nothing
@@ -192,14 +211,18 @@ export function useActiveApplication(): UseActiveApplicationReturn {
         setLock("application-switching");
         console.log("Locking application switching");
 
-        // First clear any form data
-        clearFormData();
+        const shouldClearFormData = options?.clearFormData !== false;
+        if (shouldClearFormData) {
+          clearFormData({ emitEvent: options?.emitEvent });
+        }
 
-        // Force clear all client profile localStorage data to prevent stale application IDs
-        localStorage.removeItem("clientInformationData");
-        localStorage.removeItem("educationalBackgroundData");
-        localStorage.removeItem("clientBackgroundIPData");
-        console.log("Explicitly cleared all client profile form data");
+        if (shouldClearFormData) {
+          // Force clear all client profile localStorage data to prevent stale application IDs
+          localStorage.removeItem("clientInformationData");
+          localStorage.removeItem("educationalBackgroundData");
+          localStorage.removeItem("clientBackgroundIPData");
+          console.log("Explicitly cleared all client profile form data");
+        }
 
         // Clear IP disclosure store directly
         try {
@@ -249,8 +272,10 @@ export function useActiveApplication(): UseActiveApplicationReturn {
         // Then update the active application ID in localStorage
         if (id) {
           localStorage.setItem("activeApplicationId", id);
+          localStorage.setItem("activeApplicationIdSetAt", Date.now().toString());
         } else {
           localStorage.removeItem("activeApplicationId");
+          localStorage.removeItem("activeApplicationIdSetAt");
         }
 
         // Update the state
@@ -264,11 +289,13 @@ export function useActiveApplication(): UseActiveApplicationReturn {
           });
           window.dispatchEvent(event);
 
-          // Set a short timeout then reload the page for a clean state
-          setTimeout(() => {
-            // Reload the page - this ensures a clean state
-            window.location.reload();
-          }, 300); // Increased delay to ensure all events are processed
+          if (!options?.skipReload) {
+            // Set a short timeout then reload the page for a clean state
+            setTimeout(() => {
+              // Reload the page - this ensures a clean state
+              window.location.reload();
+            }, 300); // Increased delay to ensure all events are processed
+          }
         }
       } finally {
         // Set a timeout to release the lock in case something goes wrong
@@ -338,6 +365,27 @@ export function useActiveApplication(): UseActiveApplicationReturn {
       // Ensure we have a valid array of applications
       if (Array.isArray(applicationsData)) {
         setApplications(applicationsData as Application[]);
+
+        if (activeApplicationId) {
+          const exists = applicationsData.some(
+            (app) => app.id === activeApplicationId
+          );
+
+          if (!exists) {
+            const setAtRaw =
+              typeof window !== "undefined"
+                ? localStorage.getItem("activeApplicationIdSetAt")
+                : null;
+            const setAt = setAtRaw ? Number(setAtRaw) : 0;
+            const isRecent = setAt > 0 && Date.now() - setAt < 5000;
+
+            if (!isRecent) {
+              clearFormData({ emitEvent: false });
+              setActiveApplicationIdInternal(null);
+              return;
+            }
+          }
+        }
 
         // If there's no active application but there are applications, set the first one as active
         if (!activeApplicationId && applicationsData.length > 0) {

@@ -314,24 +314,53 @@ export const formIntegrationRouter = createTRPCRouter({
     .mutation(async (opts) => {
       const { ctx, input } = opts;
       try {
-        // Clean up all form registries associated with this application
-        await db
-          .delete(formSubmissionRegistry)
-          .where(
-            eq(formSubmissionRegistry.ipApplicationId, input.applicationId)
-          );
+        const userId = ctx.session?.user?.id;
+        if (!userId) {
+          throw new Error("User not authenticated");
+        }
 
-        // Then delete the application itself
-        await db
-          .delete(ipApplication)
-          .where(eq(ipApplication.id, input.applicationId));
+        const app = await db.query.ipApplication.findFirst({
+          where: and(
+            eq(ipApplication.id, input.applicationId),
+            eq(ipApplication.userId, userId)
+          ),
+          columns: { id: true },
+        });
+
+        if (!app) {
+          throw new Error("Application not found or not authorized");
+        }
+
+        await db.transaction(async (tx) => {
+          await tx
+            .delete(formSubmissionRegistry)
+            .where(
+              eq(formSubmissionRegistry.ipApplicationId, input.applicationId)
+            );
+
+          const deleted = await tx
+            .delete(ipApplication)
+            .where(
+              and(
+                eq(ipApplication.id, input.applicationId),
+                eq(ipApplication.userId, userId)
+              )
+            )
+            .returning({ id: ipApplication.id });
+
+          if (deleted.length === 0) {
+            throw new Error("Application not found or not authorized");
+          }
+        });
 
         return {
           success: true,
         };
       } catch (error) {
         console.error("Error deleting application:", error);
-        throw new Error("Failed to delete application");
+        const message =
+          error instanceof Error ? error.message : "Failed to delete application";
+        throw new Error(message);
       }
     }),
 });

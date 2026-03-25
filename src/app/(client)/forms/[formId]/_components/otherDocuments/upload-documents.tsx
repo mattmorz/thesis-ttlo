@@ -267,6 +267,7 @@ function UploadDocuments() {
         formData.append("formId", formId);
       }
 
+      formData.append("formName", "Other Documents");
       formData.append("ipApplicationId", activeApplicationId);
 
       // Check if files are valid before appending

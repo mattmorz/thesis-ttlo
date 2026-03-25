@@ -405,7 +405,8 @@ export default function Navbar() {
                     {session?.user?.name || "User"}
                   </span>
                   <span className="text-muted-foreground truncate text-xs font-normal">
-                    {session?.user?.email || "ttlo@carsu.edu.ph"}
+                    {/* {session?.user?.email || "ttlo@carsu.edu.ph"} */}
+                    {session?.user?.email}
                   </span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

@@ -158,6 +158,22 @@ The application uses NextAuth.js for authentication with three user roles:
 
 Access control is managed through permissions defined in `/src/lib/auth/permissions.ts`.
 
+## Tracking and OTP
+
+The public tracking page (`/track`) lets users check application progress using a short tracking code and OTP verification.
+
+Key tables:
+- `tracking_code`: Stores the human-readable tracking code for each application (issued after first form submission).
+- `tracking_otp`: Stores OTPs and expiry for email/SMS verification.
+- `user_account.phone_number`: Unique phone number required after login.
+
+Key API routes:
+- `POST /api/track/otp` sends OTP to email or SMS.
+- `POST /api/track/verify` verifies OTP and returns progress data.
+- `GET /api/track/code?applicationId=...` returns the tracking code for logged-in users.
+
+Note: OTP delivery currently logs to the server console in dev. Integrate email/SMS providers for production.
+
 ## Working with Forms
 
 The application manages several IP-related forms:
@@ -179,3 +195,20 @@ To start working on the project:
 4. Start the development server: `npm run dev`
 
 For more detailed information, refer to component-specific documentation.
+
+## Dev Migration Recovery (When History Is Missing)
+
+If `drizzle:migrate` fails due to missing migration files or enum-already-exists errors, follow this dev-only workflow:
+
+1. Add no-op migration files if missing:
+   - `src/drizzle/migrations/0010_tired_madame_hydra.sql`
+   - `src/drizzle/migrations/0011_puzzling_shen.sql`
+   - `src/drizzle/migrations/0014_new_husk.sql`
+
+2. Ensure the migrations table exists:
+   - Create schema/table `drizzle.__drizzle_migrations` if needed.
+
+3. If the table is empty, insert a bootstrap marker:
+   - `INSERT INTO drizzle.__drizzle_migrations ("hash", "created_at") VALUES ('manual-bootstrap-0032', 1745243746332);`
+
+4. Run `npm run drizzle:migrate` to apply the latest migration.

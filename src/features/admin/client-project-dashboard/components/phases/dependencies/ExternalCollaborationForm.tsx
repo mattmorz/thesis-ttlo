@@ -316,6 +316,7 @@ export function ExternalCollaborationForm({
       const formData = new FormData();
       formData.append("files", file);
       formData.append("projectId", applicationId);
+      formData.append("formName", "External Collaboration");
 
       // Upload to your API endpoint
       const response = await fetch("/api/files/upload", {

@@ -1,7 +1,14 @@
 import { auth } from "@/auth";
-import { writeFile } from "fs/promises";
 import { NextResponse } from "next/server";
-import { join } from "path";
+import {
+  DriveAuthError,
+  MAX_UPLOAD_SIZE_BYTES,
+  ensureDriveFolderPath,
+  uploadFileToDrive,
+} from "@/lib/google-drive";
+import { db } from "@/drizzle/db";
+import { ipApplication } from "@/drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   try {
@@ -18,51 +25,64 @@ export async function POST(request: Request) {
     }
 
     const uploadedFiles = [];
+    const formName = (formData.get("formName") as string | null) || "";
+    const projectId = formData.get("projectId") as string;
+
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "Project ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const application =
+      (await db.query.ipApplication.findFirst({
+        where: eq(ipApplication.id, projectId),
+        columns: { title: true },
+      })) || null;
+
+    const applicationTitle = application?.title || projectId;
+    const folderPath = [
+      "TTLO",
+      applicationTitle,
+      formName || "General Uploads",
+    ];
+    const { folderId } = await ensureDriveFolderPath({
+      userId: session.user.id,
+      pathSegments: folderPath,
+    });
 
     for (const file of files) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
 
-      // Get the projectId from formData
-      const projectId = formData.get("projectId") as string;
-
-      if (!projectId) {
+      if (file.size > MAX_UPLOAD_SIZE_BYTES) {
         return NextResponse.json(
-          { error: "Project ID is required" },
-          { status: 400 }
+          { error: "File exceeds 100MB limit" },
+          { status: 413 }
         );
       }
 
-      // Create project directory if it doesn't exist
-      const bucketPath = join(process.cwd(), "bucket");
-      const projectPath = join(bucketPath, projectId);
-      await ensureDir(projectPath);
-
-      const filePath = join(projectPath, file.name);
-      await writeFile(filePath, buffer);
+      const driveFile = await uploadFileToDrive({
+        userId: session.user.id,
+        file,
+        fileName: `${projectId}-${file.name}`,
+        mimeType: file.type || "application/octet-stream",
+        parentId: folderId,
+      });
 
       uploadedFiles.push({
         name: file.name,
         size: file.size,
-        path: filePath,
+        path: driveFile.webViewLink || driveFile.webContentLink || "",
+        driveFileId: driveFile.fileId,
       });
     }
 
     return NextResponse.json({ files: uploadedFiles });
   } catch (error) {
     console.error("Upload error:", error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
-  }
-}
-
-async function ensureDir(dirPath: string) {
-  try {
-    await import("fs/promises").then((fs) =>
-      fs.mkdir(dirPath, { recursive: true })
-    );
-  } catch (error) {
-    if ((error as { code?: string }).code !== "EEXIST") {
-      throw error;
+    if (error instanceof DriveAuthError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
     }
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }

@@ -106,6 +106,31 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
   // Reference to store client profile data separately
   const activeFormDataRef = useRef<any>(null);
 
+  const getStorageKey = (baseKey: string) =>
+    activeApplicationId ? `${baseKey}-${activeApplicationId}` : baseKey;
+
+  const setStorageValue = (baseKey: string, value: unknown) => {
+    const serialized = JSON.stringify(value);
+    localStorage.setItem(baseKey, serialized);
+    if (activeApplicationId) {
+      localStorage.setItem(getStorageKey(baseKey), serialized);
+    }
+  };
+  const draftKeys = new Set([
+    "clientInformationData",
+    "educationalBackgroundData",
+    "clientBackgroundIPData",
+  ]);
+  const handleDraftChange = (key: string, value: string | null) => {
+    if (!value || !draftKeys.has(key)) return;
+    try {
+      const parsed = JSON.parse(value);
+      setStorageValue(key, parsed);
+    } catch (error) {
+      console.warn("[ClientProfileForm] Failed to parse draft payload:", error);
+    }
+  };
+
   // Get permissions
   const permissions = getFormPermissions(session, formStatus);
   const isDevAdmin = bypassPermissions(session);
@@ -133,6 +158,7 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
 
   const [isEducationTabDisabled, setIsEducationTabDisabled] = useState(true);
   const [isBackgroundTabDisabled, setIsBackgroundTabDisabled] = useState(true);
+  const disableChildLocalStorage = true;
 
   useEffect(() => {
     const checkPersonalFormCompletion = () => {
@@ -149,8 +175,7 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
         return !!(
           parsed.firstName?.trim() &&
           parsed.lastName?.trim() &&
-          parsed.mailingAddress?.trim() &&
-          parsed.contactNumber?.trim()
+          parsed.mailingAddress?.trim()
         );
       } catch {
         return false;
@@ -375,7 +400,34 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
       try {
         console.log("[ClientProfileForm] Initializing form...");
 
-        // Always fetch from API and ignore localStorage data
+        const loadLocalSection = (baseKey: string) => {
+          const appKey = getStorageKey(baseKey);
+          const raw =
+            localStorage.getItem(appKey) || localStorage.getItem(baseKey);
+          if (!raw) return null;
+          try {
+            return JSON.parse(raw);
+          } catch {
+            return null;
+          }
+        };
+
+        const localPersonal = loadLocalSection("clientInformationData");
+        const localEducation = loadLocalSection("educationalBackgroundData");
+        const localBackground = loadLocalSection("clientBackgroundIPData");
+
+        if (localPersonal || localEducation || localBackground) {
+          setFormState({
+            personal: localPersonal ?? initializeEmptyPersonalData(),
+            education: localEducation ?? initializeEmptyEducationData(),
+            background: localBackground ?? initializeEmptyBackgroundData(),
+          });
+          setIsLoading(false);
+          formInitializedRef.current = true;
+          return;
+        }
+
+        // Fall back to API if no local storage data exists
         await fetchDataFromAPI();
       } catch (error) {
         console.error(
@@ -600,18 +652,9 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
           });
 
           // Update localStorage with server data for consistency
-          localStorage.setItem(
-            "clientInformationData",
-            JSON.stringify(personalData)
-          );
-          localStorage.setItem(
-            "educationalBackgroundData",
-            JSON.stringify(educationData)
-          );
-          localStorage.setItem(
-            "clientBackgroundIPData",
-            JSON.stringify(backgroundData)
-          );
+          setStorageValue("clientInformationData", personalData);
+          setStorageValue("educationalBackgroundData", educationData);
+          setStorageValue("clientBackgroundIPData", backgroundData);
 
           // Set form status
           if (responseData.data.status) {
@@ -910,6 +953,19 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
     setFormStatus("draft");
   };
 
+  useEffect(() => {
+    if (!activeApplicationId && !isAppLoading) {
+      setNoActiveApplication(true);
+      setFormState({
+        personal: initializeEmptyPersonalData(),
+        education: initializeEmptyEducationData(),
+        background: initializeEmptyBackgroundData(),
+      });
+      setFormStatus("draft");
+      setIsLoading(false);
+    }
+  }, [activeApplicationId, isAppLoading]);
+
   // Handle tab changes - Now updates URL with clientTab parameter
   const handleTabChange = (value: string) => {
     setActiveTab(value); // Set active tab in component state
@@ -1073,6 +1129,8 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
             initialData={formState.personal}
             isDisabled={isFormDisabled}
             formStatus={formStatus}
+            disableLocalStorage={disableChildLocalStorage}
+            onDraftChange={handleDraftChange}
           />
         </TabsContent>
         <TabsContent value="education" className="mt-6">
@@ -1080,6 +1138,8 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
             initialData={formState.education}
             isDisabled={isFormDisabled}
             formStatus={formStatus}
+            disableLocalStorage={disableChildLocalStorage}
+            onDraftChange={handleDraftChange}
           />
         </TabsContent>
         <TabsContent value="background" className="mt-6">
@@ -1088,6 +1148,8 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
             isDisabled={isFormDisabled}
             formStatus={formStatus}
             canApprove={canApprove}
+            disableLocalStorage={disableChildLocalStorage}
+            onDraftChange={handleDraftChange}
           />
         </TabsContent>
       </Tabs>

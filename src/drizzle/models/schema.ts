@@ -792,6 +792,11 @@ export const userAccount = pgTable(
     role: userRole().default("client"),
     isActive: boolean("is_active").default(true),
     image: text(),
+    googleAccessToken: text("google_access_token"),
+    googleRefreshToken: text("google_refresh_token"),
+    googleTokenExpiresAt: timestamp("google_token_expires_at", {
+      mode: "string",
+    }),
     createdAt: timestamp("created_at", { mode: "string" }).default(
       sql`CURRENT_TIMESTAMP`
     ),
@@ -800,7 +805,87 @@ export const userAccount = pgTable(
     ),
     emailVerified: timestamp({ mode: "string" }),
   },
-  (table) => [unique("user_account_email_key").on(table.email)]
+  (table) => [
+    unique("user_account_email_key").on(table.email),
+  ]
+);
+
+export const trackingCode = pgTable(
+  "tracking_code",
+  {
+    trackingId: uuid("tracking_id").defaultRandom().primaryKey().notNull(),
+    ipApplicationId: uuid("ip_application_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    code: varchar({ length: 20 }).notNull(),
+    codeHash: varchar("code_hash", { length: 128 }).notNull(),
+    email: varchar({ length: 255 }).notNull(),
+    phoneNumber: varchar("phone_number", { length: 30 }),
+    createdAt: timestamp("created_at", { mode: "string" }).default(
+      sql`CURRENT_TIMESTAMP`
+    ),
+    revokedAt: timestamp("revoked_at", { mode: "string" }),
+    lastUsedAt: timestamp("last_used_at", { mode: "string" }),
+  },
+  (table) => [
+    unique("tracking_code_value_key").on(table.code),
+    unique("tracking_code_hash_key").on(table.codeHash),
+    index("idx_tracking_code_application").using(
+      "btree",
+      table.ipApplicationId.asc().nullsLast().op("uuid_ops")
+    ),
+    index("idx_tracking_code_user").using(
+      "btree",
+      table.userId.asc().nullsLast().op("uuid_ops")
+    ),
+    foreignKey({
+      columns: [table.ipApplicationId],
+      foreignColumns: [ipApplication.id],
+      name: "tracking_code_application_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [userAccount.id],
+      name: "tracking_code_user_id_fkey",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const trackingOtp = pgTable(
+  "tracking_otp",
+  {
+    otpId: uuid("otp_id").defaultRandom().primaryKey().notNull(),
+    trackingId: uuid("tracking_id").notNull(),
+    channel: varchar({ length: 10 }).notNull(),
+    identifier: varchar({ length: 255 }).notNull(),
+    otpHash: varchar("otp_hash", { length: 128 }).notNull(),
+    attempts: integer().default(0),
+    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
+    lastSentAt: timestamp("last_sent_at", { mode: "string" }).default(
+      sql`CURRENT_TIMESTAMP`
+    ),
+    createdAt: timestamp("created_at", { mode: "string" }).default(
+      sql`CURRENT_TIMESTAMP`
+    ),
+  },
+  (table) => [
+    index("idx_tracking_otp_tracking").using(
+      "btree",
+      table.trackingId.asc().nullsLast().op("uuid_ops")
+    ),
+    index("idx_tracking_otp_identifier").using(
+      "btree",
+      table.identifier.asc().nullsLast().op("text_ops")
+    ),
+    foreignKey({
+      columns: [table.trackingId],
+      foreignColumns: [trackingCode.trackingId],
+      name: "tracking_otp_tracking_id_fkey",
+    }).onDelete("cascade"),
+    check(
+      "tracking_otp_channel_check",
+      sql`(channel)::text = ANY (ARRAY[('email'::character varying)::text, ('sms'::character varying)::text])`
+    ),
+  ]
 );
 
 export const account = pgTable(

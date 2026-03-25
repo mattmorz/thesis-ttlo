@@ -586,6 +586,7 @@ export function PageContent() {
     activeApplicationId,
     activeApplication,
     applications,
+    setApplications,
     setActiveApplicationId,
     refetchApplications,
     isLoading: isApplicationsLoading,
@@ -597,7 +598,13 @@ export function PageContent() {
         if (newApplication?.id) {
           toast.dismiss("creating-app-toast");
           toast.success("New application created successfully.");
-          setActiveApplicationId(newApplication.id);
+          setApplications((prev) => {
+            if (prev.some((app) => app.id === newApplication.id)) {
+              return prev;
+            }
+            return [newApplication, ...prev];
+          });
+          setActiveApplicationId(newApplication.id, { skipReload: true });
           refetchApplications();
         }
       },
@@ -688,6 +695,12 @@ export function PageContent() {
       // Cleanup code here if needed
     };
   }, []);
+
+  useEffect(() => {
+    if (applications.length === 1) {
+      setIsApplicationsExpanded(true);
+    }
+  }, [applications.length]);
 
   // Add effect to set the guide collapsed state based on form submission status
   useEffect(() => {
@@ -1121,7 +1134,7 @@ export function PageContent() {
       // Only show toast once per session after form status loads
       if (!sessionStorage.getItem(`debug-toast-${activeApplicationId}`)) {
         toast.info(
-          `Form progress loaded: ${completedCount} of 4 forms completed`,
+          `Form progress loaded: ${completedCount} of 5 forms completed`,
           {
             id: "form-progress-debug",
             duration: 3000,
@@ -1835,6 +1848,10 @@ export function PageContent() {
     }
   };
 
+  const displayedApplication = activeApplication || applications[0] || null;
+  const displayedApplicationId =
+    activeApplicationId || applications[0]?.id || null;
+
   return (
     <div className="w-full">
       <main className="container mx-auto max-w-7xl pb-12">
@@ -1899,7 +1916,7 @@ export function PageContent() {
           </div>
 
           {/* Active Application Context */}
-          {activeApplicationId && activeApplication && (
+          {applications.length > 0 && displayedApplication && (
             <div className="p-3 bg-gray-50/50 border-b">
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <div className="flex items-center gap-2 mr-1">
@@ -1907,7 +1924,7 @@ export function PageContent() {
                     Active application:
                   </span>
                   <h3 className="font-semibold text-gray-900">
-                    {activeApplication.title}
+                    {displayedApplication.title}
                   </h3>
                 </div>
 
@@ -1916,44 +1933,48 @@ export function PageContent() {
                     variant="outline"
                     className="bg-white text-xs border-gray-200"
                   >
-                    {activeApplication.ipType?.replace("_", " ")}
+                    {displayedApplication.ipType?.replace("_", " ")}
                   </Badge>
-                  {getStatusBadge(activeApplication.status)}
+                  {getStatusBadge(displayedApplication.status)}
                   <div className="flex items-center bg-gray-100/80 px-2 py-0.5 rounded border border-gray-200/80">
                     <span className="text-xs text-gray-600 mr-1.5">ID:</span>
                     <code className="text-xs font-mono text-indigo-600 font-medium">
-                      {activeApplicationId.slice(0, 8)}
+                      {displayedApplicationId
+                        ? displayedApplicationId.slice(0, 8)
+                        : "N/A"}
                     </code>
                   </div>
                 </div>
- 
-                <div className="ml-auto">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs text-gray-500"
-                    onClick={() =>
-                      setIsApplicationsExpanded(!isApplicationsExpanded)
-                    }
-                  >
-                    {isApplicationsExpanded
-                      ? "Hide Applications"
-                      : "Manage Applications"}
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 ml-1 transition-transform ${
-                        isApplicationsExpanded ? "rotate-180" : ""
-                      }`}
-                    />
-                  </Button>
-                </div>
+
+                {applications.length > 1 && (
+                  <div className="ml-auto">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-gray-500"
+                      onClick={() =>
+                        setIsApplicationsExpanded(!isApplicationsExpanded)
+                      }
+                    >
+                      {isApplicationsExpanded
+                        ? "Hide Applications"
+                        : "Manage Applications"}
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 ml-1 transition-transform ${
+                          isApplicationsExpanded ? "rotate-180" : ""
+                        }`}
+                      />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* Collapsible Application Management */}
-          {isApplicationsExpanded && (
+          {(isApplicationsExpanded || applications.length === 1) && (
             <div className="p-4 border-b bg-white">
-              <ApplicationManagement hideCreateButton={true} />
+              <ApplicationManagement hideCreateButton={false} />
             </div>
           )}
         </div>

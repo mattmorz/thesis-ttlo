@@ -116,6 +116,9 @@ export function ApplicationTitleForm() {
       ipType: activeApplication?.ipType || "",
     },
   });
+  useEffect(() => {
+  form.trigger();
+}, []);
 
   useEffect(() => {
     if (activeApplication) {

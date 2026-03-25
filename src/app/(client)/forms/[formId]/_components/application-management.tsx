@@ -70,6 +70,8 @@ import { displayStatus } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { Upload } from "lucide-react";
+import { OtherDocumentsSection } from "./otherDocuments";
 
 interface Application {
   id: string;
@@ -118,6 +120,7 @@ export function ApplicationManagement({
   const deleteTargetRef = useRef<string | null>(null);
   const [isGuideCollapsed, setIsGuideCollapsed] = useState(false);
   const [otherIpType, setOtherIpType] = useState("");
+  const [showDocuments, setShowDocuments] = useState(false);
 
   // tRPC mutation to create a new application
   const createApplicationMutation =
@@ -773,6 +776,7 @@ export function ApplicationManagement({
                 }
               }}
             >
+              <br></br>
               <div className="px-3 py-3 border-b bg-slate-50/50">
                 <div className="flex items-center mb-1">
                   <h3 className="font-medium text-sm truncate pr-16 text-gray-900">
@@ -817,6 +821,21 @@ export function ApplicationManagement({
                     <span>{displayStatus(application.status as string)}</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    
+                    {/* Additional Actions */}
+              {activeApplicationId && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDocuments(true);
+                        }}
+                      >
+                        <Upload className="h-4 w-4" />
+                      </Button>
+              )}
+                
                     <Button
                       variant="ghost"
                       size="icon"
@@ -1042,6 +1061,26 @@ export function ApplicationManagement({
           </DialogContent>
         </Dialog>
       )}
+
+       {/* Document Upload/Management Dialog */}
+      {showDocuments && activeApplicationId && (
+        <Dialog open={showDocuments} onOpenChange={setShowDocuments}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Manage Documents</DialogTitle>
+              <DialogDescription>
+                Upload and manage supporting documents for your application.
+              </DialogDescription>
+            </DialogHeader>
+
+            <OtherDocumentsSection
+              applicationId={activeApplicationId}
+              onClose={() => setShowDocuments(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
+

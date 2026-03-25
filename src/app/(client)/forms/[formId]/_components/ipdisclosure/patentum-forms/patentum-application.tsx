@@ -126,6 +126,7 @@ export function PatentApplication({
 
   // Track if initial data has been loaded
   const initialDataLoaded = React.useRef(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Log when component mounts and when onNext/onPrevious props change
   useEffect(() => {
@@ -158,6 +159,9 @@ export function PatentApplication({
       files: [],
     },
   });
+  useEffect(() => {
+  form.trigger();
+}, []);
 
   const [
     title,
@@ -945,14 +949,20 @@ export function PatentApplication({
             >
               Update Form
             </Button>
-            <Button
-              type="button"
-              onClick={handleNextWithoutSubmit}
-              className="bg-[#1B5E20] hover:bg-[#0A3A10] text-white"
-              disabled={!isRequiredFilled || !form.formState.isValid}
-            >
-              Next
-            </Button>
+           <Button
+            type="button"
+            onClick={async () => {
+              if (isSubmitting) return;
+
+              setIsSubmitting(true);
+              await handleNextWithoutSubmit();
+              setIsSubmitting(false);
+            }}
+            disabled={isSubmitting || !isRequiredFilled || !form.formState.isValid}
+            className="bg-[#1B5E20] hover:bg-[#0A3A10] text-white"
+          >
+            Next
+          </Button>
           </div>
         </div>
       </form>

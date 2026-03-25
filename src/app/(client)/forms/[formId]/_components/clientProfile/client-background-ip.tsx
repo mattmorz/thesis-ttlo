@@ -41,7 +41,7 @@ declare global {
     updateIPFormStatus?: (
       formType: string,
       completed: boolean,
-      applicationId: string
+      applicationId: string,
     ) => void;
   }
 }
@@ -57,8 +57,10 @@ declare global {
  */
 const formSchema = z.object({
   publishedResearch: z.object({
-    value: z.enum(["yes", "no", "submitted"]).nullable(),
+  value: z.enum(["yes", "no", "submitted"], {
+    required_error: "This field is required",
   }),
+}),
   developedMaterials: z.object({
     value: z.enum(["yes", "no", "ongoing"]).nullable(),
   }),
@@ -132,7 +134,7 @@ export function ClientBackgroundIP({
   const { data: session } = useSession();
   const [formStatusState, setFormStatusState] = useState(formStatus);
   const [formData, setFormData] = useState<z.infer<typeof formSchema> | null>(
-    null
+    null,
   );
   const [error, setError] = useState<Error | null>(null);
   const [isFormLoaded, setIsFormLoaded] = useState(false);
@@ -193,6 +195,7 @@ export function ClientBackgroundIP({
   // Initialize the form first before using it
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
     defaultValues: {
       publishedResearch: { value: null },
       developedMaterials: { value: null },
@@ -211,6 +214,12 @@ export function ClientBackgroundIP({
       },
     },
   });
+ useEffect(() => {
+  form.trigger();
+}, []);
+
+
+
 
   // Load initial data or saved data on component mount or when tab changes
   useEffect(() => {
@@ -228,7 +237,7 @@ export function ClientBackgroundIP({
         const parsedData = JSON.parse(savedData);
         console.log(
           "Found saved client background IP data in localStorage:",
-          parsedData
+          parsedData,
         );
 
         // Use the saved data from localStorage as primary source
@@ -282,7 +291,7 @@ export function ClientBackgroundIP({
       else if (initialData) {
         console.log(
           "No localStorage data found, using initialData:",
-          initialData
+          initialData,
         );
 
         // Format the initial data
@@ -333,7 +342,7 @@ export function ClientBackgroundIP({
         // Also save initialData to localStorage for consistency
         setStorageItem(
           "clientBackgroundIPData",
-          JSON.stringify(formattedData)
+          JSON.stringify(formattedData),
         );
       }
 
@@ -344,7 +353,9 @@ export function ClientBackgroundIP({
         // Ensure the form is reset with the correct data
         setTimeout(() => {
           form.reset({
-            publishedResearch: formattedData.publishedResearch || { value: null },
+            publishedResearch: formattedData.publishedResearch || {
+              value: null,
+            },
             developedMaterials: formattedData.developedMaterials || {
               value: null,
             },
@@ -352,8 +363,7 @@ export function ClientBackgroundIP({
               value: null,
             },
             ipExperience: {
-              hasExperience:
-                formattedData.ipExperience?.hasExperience ?? null,
+              hasExperience: formattedData.ipExperience?.hasExperience ?? null,
               types: formattedData.ipExperience?.types || {
                 patent: false,
                 copyright: false,
@@ -384,7 +394,6 @@ export function ClientBackgroundIP({
     // Skip during server-side rendering
     if (typeof window === "undefined") return;
 
-
     // Add event listener for tab changes
     const handleTabChange = () => {
       if (isFormLoaded) {
@@ -394,7 +403,7 @@ export function ClientBackgroundIP({
         console.log("Tab change detected, saving form state:", formattedValues);
         setStorageItem(
           "clientBackgroundIPData",
-          JSON.stringify(formattedValues)
+          JSON.stringify(formattedValues),
         );
       }
     };
@@ -406,11 +415,11 @@ export function ClientBackgroundIP({
         const formattedValues = formatData(values);
         console.log(
           "Page unload detected, saving form state:",
-          formattedValues
+          formattedValues,
         );
         setStorageItem(
           "clientBackgroundIPData",
-          JSON.stringify(formattedValues)
+          JSON.stringify(formattedValues),
         );
       }
     };
@@ -429,7 +438,7 @@ export function ClientBackgroundIP({
         console.log("Saving form data on component unmount:", formattedValues);
         setStorageItem(
           "clientBackgroundIPData",
-          JSON.stringify(formattedValues)
+          JSON.stringify(formattedValues),
         );
       }
       // Remove event listeners
@@ -448,7 +457,7 @@ export function ClientBackgroundIP({
       if (typeof formattedData.publishedResearch === "string") {
         formattedData.publishedResearch = {
           value: ["yes", "no", "submitted"].includes(
-            formattedData.publishedResearch
+            formattedData.publishedResearch,
           )
             ? formattedData.publishedResearch
             : null,
@@ -456,7 +465,7 @@ export function ClientBackgroundIP({
       } else if (typeof formattedData.publishedResearch === "object") {
         if (
           !["yes", "no", "submitted"].includes(
-            formattedData.publishedResearch.value
+            formattedData.publishedResearch.value,
           )
         ) {
           formattedData.publishedResearch.value = null;
@@ -471,7 +480,7 @@ export function ClientBackgroundIP({
       if (typeof formattedData.developedMaterials === "string") {
         formattedData.developedMaterials = {
           value: ["yes", "no", "ongoing"].includes(
-            formattedData.developedMaterials
+            formattedData.developedMaterials,
           )
             ? formattedData.developedMaterials
             : null,
@@ -479,7 +488,7 @@ export function ClientBackgroundIP({
       } else if (typeof formattedData.developedMaterials === "object") {
         if (
           !["yes", "no", "ongoing"].includes(
-            formattedData.developedMaterials.value
+            formattedData.developedMaterials.value,
           )
         ) {
           formattedData.developedMaterials.value = null;
@@ -576,11 +585,11 @@ export function ClientBackgroundIP({
         const formattedValues = formatData(values);
         setStorageItem(
           "clientBackgroundIPData",
-          JSON.stringify(formattedValues)
+          JSON.stringify(formattedValues),
         );
         console.log(
           "Saved current form state to localStorage:",
-          formattedValues
+          formattedValues,
         );
         setFormData(formattedValues);
         return formattedValues;
@@ -653,10 +662,10 @@ export function ClientBackgroundIP({
 
       // First, check if a profile already exists for this application
       console.log(
-        `Checking if profile exists for application: ${applicationId}`
+        `Checking if profile exists for application: ${applicationId}`,
       );
       const checkResponse = await fetch(
-        `/api/client-profile/exists/${applicationId}`
+        `/api/client-profile/exists/${applicationId}`,
       );
       const checkData = await checkResponse.json();
 
@@ -673,7 +682,7 @@ export function ClientBackgroundIP({
       // Determine whether to use POST (create) or PUT (update)
       const method = checkData.exists ? "PUT" : "POST";
       console.log(
-        `Using ${method} method for background IP submission. Profile exists: ${checkData.exists}`
+        `Using ${method} method for background IP submission. Profile exists: ${checkData.exists}`,
       );
 
       // Submit to API
@@ -688,7 +697,7 @@ export function ClientBackgroundIP({
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error || "Failed to save background IP information"
+          errorData.error || "Failed to save background IP information",
         );
       }
 
@@ -721,7 +730,7 @@ export function ClientBackgroundIP({
       toast.error(
         error instanceof Error
           ? error.message
-          : "An error occurred while saving your data"
+          : "An error occurred while saving your data",
       );
     } finally {
       setIsSubmitting(false);
@@ -755,7 +764,7 @@ export function ClientBackgroundIP({
       // Save current form data to localStorage
       setStorageItem(
         "clientBackgroundIPData",
-        JSON.stringify(formattedBackgroundIp)
+        JSON.stringify(formattedBackgroundIp),
       );
 
       // Load data from all tabs via localStorage
@@ -769,7 +778,7 @@ export function ClientBackgroundIP({
           personalInfo = JSON.parse(personalData);
           console.log(
             "Loaded personal information data for update:",
-            personalInfo
+            personalInfo,
           );
         }
 
@@ -779,7 +788,7 @@ export function ClientBackgroundIP({
           educationalBackground = JSON.parse(educationData);
           console.log(
             "Loaded educational background data for update:",
-            educationalBackground
+            educationalBackground,
           );
         }
       } catch (err) {
@@ -793,10 +802,10 @@ export function ClientBackgroundIP({
 
       // First, check if a profile already exists for this application
       console.log(
-        `Checking if profile exists for application: ${applicationId}`
+        `Checking if profile exists for application: ${applicationId}`,
       );
       const checkResponse = await fetch(
-        `/api/client-profile/exists/${applicationId}`
+        `/api/client-profile/exists/${applicationId}`,
       );
       const checkData = await checkResponse.json();
 
@@ -812,7 +821,7 @@ export function ClientBackgroundIP({
       // Determine whether to use POST (create) or PUT (update)
       const method = checkData.exists ? "PUT" : "POST";
       console.log(
-        `Using ${method} method for complete profile update. Profile exists: ${checkData.exists}`
+        `Using ${method} method for complete profile update. Profile exists: ${checkData.exists}`,
       );
 
       // Submit to API for update
@@ -887,18 +896,18 @@ export function ClientBackgroundIP({
         `${newStatus === "approved" ? "Approving" : "Rejecting"} Form`,
         {
           description: "Please wait while we process your request...",
-        }
+        },
       );
 
       // First, check if a profile already exists for this application
       const checkResponse = await fetch(
-        `/api/client-profile/exists/${applicationId}`
+        `/api/client-profile/exists/${applicationId}`,
       );
       const checkData = await checkResponse.json();
 
       if (!checkData.exists) {
         throw new Error(
-          "Cannot approve/reject: No profile found for this application"
+          "Cannot approve/reject: No profile found for this application",
         );
       }
 
@@ -954,7 +963,7 @@ export function ClientBackgroundIP({
         `Error ${newStatus === "approved" ? "Approving" : "Rejecting"} Form`,
         {
           description: error.message || "An unexpected error occurred",
-        }
+        },
       );
     } finally {
       setIsApproving(false);
@@ -976,7 +985,7 @@ export function ClientBackgroundIP({
       // Save to localStorage without making an API call
       setStorageItem(
         "clientBackgroundIPData",
-        JSON.stringify(formattedValues)
+        JSON.stringify(formattedValues),
       );
       console.log("Background IP data saved to localStorage:", formattedValues);
 
@@ -1024,7 +1033,7 @@ export function ClientBackgroundIP({
       const applicationId = activeApplicationId;
       console.log(
         "[ClientBackgroundIP] Preparing to submit form with application ID:",
-        applicationId
+        applicationId,
       );
 
       // Double-check localStorage for consistency
@@ -1035,7 +1044,7 @@ export function ClientBackgroundIP({
           {
             hookAppId: applicationId,
             storedAppId: storedActiveAppId,
-          }
+          },
         );
 
         // Force synchronization
@@ -1043,13 +1052,13 @@ export function ClientBackgroundIP({
           setStorageItem("activeApplicationId", applicationId);
           console.log(
             "[ClientBackgroundIP] Corrected application ID in localStorage to:",
-            applicationId
+            applicationId,
           );
         } else if (storedActiveAppId) {
           // If hook has no application ID but localStorage does, use the localStorage value
           console.log(
             "[ClientBackgroundIP] Using localStorage application ID:",
-            storedActiveAppId
+            storedActiveAppId,
           );
         }
       }
@@ -1066,7 +1075,7 @@ export function ClientBackgroundIP({
 
       console.log(
         "[ClientBackgroundIP] Final application ID for submission:",
-        finalApplicationId
+        finalApplicationId,
       );
 
       // Get form values from the current tab
@@ -1078,7 +1087,7 @@ export function ClientBackgroundIP({
       // Save current form data to localStorage
       setStorageItem(
         "clientBackgroundIPData",
-        JSON.stringify(formattedBackgroundIp)
+        JSON.stringify(formattedBackgroundIp),
       );
 
       // Load data from all tabs via localStorage
@@ -1092,7 +1101,7 @@ export function ClientBackgroundIP({
           personalInfo = JSON.parse(personalData);
           console.log(
             "Loaded personal information data for submission:",
-            personalInfo
+            personalInfo,
           );
         } else {
           toast.dismiss(toastId);
@@ -1108,7 +1117,7 @@ export function ClientBackgroundIP({
           educationalBackground = JSON.parse(educationData);
           console.log(
             "Loaded educational background data for submission:",
-            educationalBackground
+            educationalBackground,
           );
         } else {
           toast.dismiss(toastId);
@@ -1129,13 +1138,13 @@ export function ClientBackgroundIP({
 
       // First, check if a profile already exists for this application
       console.log(
-        `Checking if profile exists for application: ${finalApplicationId}`
+        `Checking if profile exists for application: ${finalApplicationId}`,
       );
 
       const checkResponse = await safeFetch(
         `/api/client-profile/exists/${finalApplicationId}`,
         {},
-        `client-profile-exists-check-${finalApplicationId}`
+        `client-profile-exists-check-${finalApplicationId}`,
       );
       const checkData = await checkResponse.json();
 
@@ -1151,7 +1160,7 @@ export function ClientBackgroundIP({
       // Determine whether to use POST (create) or PUT (update)
       const method = checkData.exists ? "PUT" : "POST";
       console.log(
-        `Using ${method} method for complete profile submission. Profile exists: ${checkData.exists}`
+        `Using ${method} method for complete profile submission. Profile exists: ${checkData.exists}`,
       );
 
       // Submit to API with safeFetch
@@ -1164,7 +1173,7 @@ export function ClientBackgroundIP({
           },
           body: JSON.stringify(apiData),
         },
-        `client-profile-submit-${finalApplicationId}-${method}`
+        `client-profile-submit-${finalApplicationId}-${method}`,
       );
 
       if (!response.ok) {
@@ -1188,7 +1197,7 @@ export function ClientBackgroundIP({
       // Now explicitly ensure form registry entry exists
       try {
         console.log(
-          "[ClientBackgroundIP] Ensuring form is registered in the submission registry..."
+          "[ClientBackgroundIP] Ensuring form is registered in the submission registry...",
         );
 
         // Use direct fetch instead of the hook function
@@ -1197,7 +1206,7 @@ export function ClientBackgroundIP({
         try {
           const checkUrl = new URL(
             "/api/form-registry/check",
-            window.location.origin
+            window.location.origin,
           );
           checkUrl.searchParams.append("sourceType", "client_profile");
           checkUrl.searchParams.append("ipApplicationId", finalApplicationId);
@@ -1205,7 +1214,7 @@ export function ClientBackgroundIP({
 
           console.log(
             "[ClientBackgroundIP] Checking registry with URL:",
-            checkUrl.toString()
+            checkUrl.toString(),
           );
 
           const checkRegistryResponse = await fetch(checkUrl.toString(), {
@@ -1221,13 +1230,13 @@ export function ClientBackgroundIP({
             registryExists = checkData.exists;
             console.log(
               "[ClientBackgroundIP] Registry check result:",
-              checkData
+              checkData,
             );
           } else {
             console.error(
               "[ClientBackgroundIP] Error checking registry:",
               checkRegistryResponse.status,
-              checkRegistryResponse.statusText
+              checkRegistryResponse.statusText,
             );
 
             // Try to log response body for more details
@@ -1235,12 +1244,12 @@ export function ClientBackgroundIP({
               const errorText = await checkRegistryResponse.text();
               console.error(
                 "[ClientBackgroundIP] Registry check error details:",
-                errorText
+                errorText,
               );
             } catch (parseError) {
               console.error(
                 "[ClientBackgroundIP] Could not parse registry error response:",
-                parseError
+                parseError,
               );
             }
 
@@ -1250,7 +1259,7 @@ export function ClientBackgroundIP({
         } catch (checkError) {
           console.error(
             "[ClientBackgroundIP] Exception checking registry:",
-            checkError
+            checkError,
           );
           // Proceed with registry creation as fallback
           registryExists = false;
@@ -1306,13 +1315,13 @@ export function ClientBackgroundIP({
             const registryResult = await registryResponse.json();
             console.log(
               "[ClientBackgroundIP] Registry API response:",
-              registryResult
+              registryResult,
             );
 
             if (registryResult?.data?.registryId) {
               console.log(
                 "[ClientBackgroundIP] Registry creation successful:",
-                registryResult.data
+                registryResult.data,
               );
 
               // Also trigger a client profile form completion event with the registry ID
@@ -1325,30 +1334,30 @@ export function ClientBackgroundIP({
                     clientProfileId: result.data.clientId,
                     registryId: registryResult.data.registryId,
                   },
-                }
+                },
               );
               window.dispatchEvent(registryCompletedEvent);
             } else {
               console.error(
                 "[ClientBackgroundIP] Error creating registry: Registry result is undefined or missing registryId",
-                registryResult
+                registryResult,
               );
             }
           } catch (createRegistryError) {
             console.error(
               "[ClientBackgroundIP] Exception creating registry:",
-              createRegistryError
+              createRegistryError,
             );
           }
         } else {
           console.log(
-            "[ClientBackgroundIP] Registry already exists, no need to create"
+            "[ClientBackgroundIP] Registry already exists, no need to create",
           );
         }
       } catch (registryError) {
         console.error(
           "[ClientBackgroundIP] Error ensuring registry submission:",
-          registryError
+          registryError,
         );
         // Continue with form submission flow - don't let registry issues block submission
         console.log("[ClientBackgroundIP] Continuing despite registry error");
@@ -1377,7 +1386,7 @@ export function ClientBackgroundIP({
       toast.error(
         error instanceof Error
           ? error.message
-          : "An error occurred while saving your data"
+          : "An error occurred while saving your data",
       );
     } finally {
       if (toastId) {
@@ -1402,11 +1411,11 @@ export function ClientBackgroundIP({
       // Save to localStorage without making an API call
       setStorageItem(
         "clientBackgroundIPData",
-        JSON.stringify(formattedValues)
+        JSON.stringify(formattedValues),
       );
       console.log(
         "Background IP data saved to localStorage before finishing:",
-        formattedValues
+        formattedValues,
       );
 
       // If we have an active application, update the form status silently
@@ -1460,7 +1469,8 @@ export function ClientBackgroundIP({
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">
-                      Have you published any research output? <span className="text-red-500">*</span>
+                      Have you published any research output?{" "}
+                      <span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex items-center space-x-2">
@@ -1518,7 +1528,8 @@ export function ClientBackgroundIP({
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">
                       Have you developed instructional materials (IMs) (e.g.
-                      Books, Manuals, Journals, etc.)? <span className="text-red-500">*</span>
+                      Books, Manuals, Journals, etc.)?{" "}
+                      <span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="flex items-center space-x-2">
@@ -1619,7 +1630,8 @@ export function ClientBackgroundIP({
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel className="font-semibold">
-                      Do you have any experience in applying for IP protection? <span className="text-red-500">*</span>
+                      Do you have any experience in applying for IP protection?{" "}
+                      <span className="text-red-500">*</span>
                     </FormLabel>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="flex items-center space-x-2">

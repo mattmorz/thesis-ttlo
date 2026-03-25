@@ -134,11 +134,14 @@ export function CopyrightApplication() {
   // Initialize form with the local state
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    mode: "onTouched",
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: formData,
     values: formData, // Explicitly set values from our state
   });
+  useEffect(() => {
+  form.trigger();
+}, [form]);
 
   const handleFieldBlur = async (
     fieldName: "workTitle" | "workDescription" | "creationDate"
@@ -166,6 +169,9 @@ export function CopyrightApplication() {
   useEffect(() => {
     if (formData) {
       form.reset(formData);
+      setTimeout(() => {
+      form.trigger();
+    }, 0);
       console.log("Copyright form reset with data:", formData);
     }
   }, [formData, form]);

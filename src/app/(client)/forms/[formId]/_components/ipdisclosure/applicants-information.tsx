@@ -1022,6 +1022,8 @@ export function ApplicantsInformation() {
       e.preventDefault();
     }
 
+    setIsSubmitting(true); // 🔥 START loading
+
     // Validate the form
     const isValid = await form.trigger();
     if (!isValid) {
@@ -1036,6 +1038,43 @@ export function ApplicantsInformation() {
       });
       return;
     }
+    setIsSubmitting(true); // 🔥 START loading
+
+  try {
+    const isValid = await form.trigger();
+    if (!isValid) {
+      toast("Please fill in all required fields");
+      return;
+    }
+
+    const values = form.getValues();
+
+    const success = await saveApplicantsInfo(values, false);
+
+    if (!success) {
+      toast("Failed to save applicants information");
+      return;
+    }
+
+    // navigation
+    let nextTab = "";
+    if (values.ipTypes.patent || values.ipTypes.utilityModel) {
+      nextTab = "patent-application";
+    } else if (values.ipTypes.copyright) {
+      nextTab = "copyright-application";
+    } else if (values.ipTypes.trademark) {
+      nextTab = "trademark";
+    } else if (values.ipTypes.tradeSecret) {
+      nextTab = "trade-secret";
+    } else {
+      nextTab = "confirmation";
+    }
+
+    setActiveTab(nextTab);
+
+  } finally {
+    setIsSubmitting(false); // 🔥 STOP loading
+  }
 
     // Get form values
     const values = form.getValues();

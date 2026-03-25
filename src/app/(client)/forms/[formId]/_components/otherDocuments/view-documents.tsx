@@ -198,7 +198,7 @@ function ViewDocuments() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       <FormItem className="space-y-2">
         <FormLabel className="text-base font-medium">
           Document Library
@@ -234,6 +234,8 @@ function ViewDocuments() {
               <SelectItem value="publication">Publications</SelectItem>
               <SelectItem value="thesis">Thesis</SelectItem>
               <SelectItem value="research">Research</SelectItem>
+              <SelectItem value="patent">Patent/UM Application</SelectItem>
+              <SelectItem value="matrix"> Matrix Sample</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
@@ -251,12 +253,12 @@ function ViewDocuments() {
       ) : (
         <>
           <Separator />
-          <ScrollArea className="h-[500px] pr-4">
+          <ScrollArea className="max-h-[60vh]  pr-4">
             <div className="space-y-4">
               {filteredDocuments.map((doc) => (
                 <div
                   key={doc.documentId}
-                  className="flex flex-col space-y-2 bg-white rounded-lg border p-4 hover:border-gray-300 transition-colors"
+                  className="flex flex-col space-y-2 bg-white rounded-lg border p-4 hover:border-gray-300 transition-colors break-words"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3">

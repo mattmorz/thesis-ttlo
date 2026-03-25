@@ -150,7 +150,7 @@ export function PatentSearchForm({
 }: PatentSearchFormProps) {
   const reviewedByOptions = ["JOY LYN A. DELA CRUZ"];
   const submittedToOptions = ["PROF. KENNETH L. CIUDAD"];
-
+const [isSubmitting, setIsSubmitting] = useState(false);
   // Get the store data
   const { data, setData } = usePatentSearchFormStore();
   const { selectedIpTypes } = useFormContext();
@@ -550,128 +550,57 @@ export function PatentSearchForm({
 
   // Function to handle navigation without form submission
   const handleNextWithoutSubmit = async () => {
-    try {
-      // Save current form data
-      const values = form.getValues();
-      setData(values);
+  if (isSubmitting) return; // prevent double click
 
-      console.log("Patent search data prepared for saving before navigation:", {
-        title: values.title,
-        dateCompleted: values.dateCompleted,
-        abstract: values.abstract,
-        ipcClassification: values.ipcClassification,
-        keywords: values.keywords,
-        searchStrings: values.searchStrings.length,
-        documents: values.documents.length,
-        conclusion: values.conclusion,
-        certification: values.certification,
-        files: values.files?.length || 0,
-      });
+  setIsSubmitting(true);
 
-      // Try to save data, but don't block navigation if it fails
-      if (disclosureId) {
-        console.log(
-          "Saving patent search report to database with disclosure ID:",
-          disclosureId
-        );
+  try {
+    const values = form.getValues();
+    setData(values);
 
-        // Update the patentUtilityModelApplication with search data
-        if (patentUtilityModelApplication) {
-          // First, get the current state to ensure we have the latest data
-          const currentPatentData = { ...patentUtilityModelApplication };
-          console.log(
-            "Current patent data ID:",
-            currentPatentData.patent_id || "No ID"
-          );
+    if (disclosureId) {
+      if (patentUtilityModelApplication) {
+        const currentPatentData = { ...patentUtilityModelApplication };
 
-          // Create a proper additionalData structure
-          const searchReportData = {
-            title: values.title,
-            dateCompleted: values.dateCompleted,
-            abstract: values.abstract,
-            ipcClassification: values.ipcClassification,
-            keywords: values.keywords,
-            searchStrings: values.searchStrings,
-            documents: values.documents,
-            conclusion: values.conclusion || "No conclusion provided",
-            certification: values.certification || {
-              technicalExpert: "",
-              reviewedBy: "",
-              submittedTo: {
-                name: "",
-                position: "Director, TILO Manager, ITSO",
-              },
-            },
-            files: values.files || [],
-          };
+        const searchReportData = {
+          title: values.title,
+          dateCompleted: values.dateCompleted,
+          abstract: values.abstract,
+          ipcClassification: values.ipcClassification,
+          keywords: values.keywords,
+          searchStrings: values.searchStrings,
+          documents: values.documents,
+          conclusion: values.conclusion || "No conclusion provided",
+          certification: values.certification,
+          files: values.files || [],
+        };
 
-          console.log(
-            "Search report data prepared:",
-            JSON.stringify(searchReportData).substring(0, 200) + "..."
-          );
-
-          const additionalData = {
+        const updatedPatentData = {
+          ...currentPatentData,
+          additionalData: {
             ...(currentPatentData.additionalData || {}),
             searchReport: searchReportData,
-          };
+          },
+        };
 
-          // Create the updated patent data with the new additionalData
-          const updatedPatentData = {
-            ...currentPatentData,
-            additionalData: additionalData,
-          };
+        updatePatentUtilityModelInStore(updatedPatentData);
 
-          console.log(
-            "Updated patent data with search report:",
-            JSON.stringify(updatedPatentData).substring(0, 200) + "..."
-          );
-
-          // Update the store with the new data
-          updatePatentUtilityModelInStore(updatedPatentData);
-
-          try {
-            // Save to database using the existing patent utility model mutation
-            console.log("Saving updated patent data to database...");
-            const result = await savePatentUtilityModelApplication();
-
-            if (result && result.success) {
-              console.log(
-                "Patent search report saved successfully to database"
-              );
-              toast.success("Patent search report saved to database");
-            } else {
-              console.error("Failed to save patent search report to database");
-              toast.error("Failed to save patent search report to database");
-            }
-          } catch (error) {
-            console.error("Error saving patent search report:", error);
-            toast.error(
-              "Error saving patent search report, but continuing navigation"
-            );
-          }
-        } else {
-          console.error(
-            "No patent application data found to update with search report"
-          );
-          toast.error("Please complete the Patent Application tab first");
+        try {
+          await savePatentUtilityModelApplication();
+        } catch (error) {
+          console.error(error);
         }
-      } else {
-        console.error(
-          "No disclosure ID available for saving patent search report"
-        );
-        toast.error("Please complete the Applicant's Information tab first");
       }
-
-      // Always navigate to the next tab, even if saving fails
-      navigateToNext();
-    } catch (error) {
-      console.error("Error during navigation:", error);
-      toast.error("There was an error, but continuing with navigation");
-
-      // Still try to navigate even if there was an error
-      navigateToNext();
     }
-  };
+
+    navigateToNext();
+  } catch (error) {
+    console.error(error);
+    navigateToNext();
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // Function to handle direct navigation to previous tab
   const navigateToPrevious = () => {
@@ -1697,7 +1626,7 @@ export function PatentSearchForm({
               type="button"
               onClick={handleNextWithoutSubmit}
               className="bg-[#1B5E20] hover:bg-[#0A3A10] text-white"
-              disabled={!isRequiredFilled}
+              disabled={!isRequiredFilled || isSubmitting}
             >
               Next
             </Button>

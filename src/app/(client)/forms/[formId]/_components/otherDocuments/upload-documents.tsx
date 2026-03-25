@@ -558,7 +558,7 @@ function UploadDocuments() {
   };
 
   return (
-    <div className="space-y-6">
+  <div className="space-y-6 max-h-[50vh] overflow-y-auto pr-2">
       <FormItem className="space-y-2">
         <FormLabel className="text-base font-medium">Document Upload</FormLabel>
         <FormDescription>

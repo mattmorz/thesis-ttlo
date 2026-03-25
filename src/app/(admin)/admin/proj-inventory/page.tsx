@@ -297,7 +297,7 @@ export default function ProjectInventoryPage() {
                 <Collapsible open={openMenus.forms} className="w-full">
                   <CollapsibleTrigger
                     onClick={toggleFormsMenu}
-                    className={`flex items-center justify-between text-sm w-full px-3 py-2 rounded-md ${
+                    className={` justify-between text-sm w-full px-3 py-2 rounded-md ${
                       openMenus.forms ? "bg-muted" : "hover:bg-muted"
                     }`}
                   >

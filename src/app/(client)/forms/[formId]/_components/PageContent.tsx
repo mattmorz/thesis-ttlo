@@ -487,13 +487,11 @@ const GettingStartedGuide = ({
 
   {/* Active progress line */}
   <div
-    className="absolute top-4 left-6 h-1 bg-[#1B5E20] rounded-full transition-all duration-300"
-    style={{
-      width: `${
-        (progressSegments / (steps.length - 1)) * 100
-      }%`,
-    }}
-  />
+  className="absolute top-4 left-12 h-1 bg-[#1B5E20] rounded-full transition-all duration-300"
+  style={{
+    width: `calc((100% - 6rem) * ${progressSegments / (steps.length - 1)})`,
+  }}
+/>
 
   {/* Steps */}
   <div className="relative flex justify-between">
@@ -1928,7 +1926,7 @@ export function PageContent() {
                     </code>
                   </div>
                 </div>
-
+ 
                 <div className="ml-auto">
                   <Button
                     variant="ghost"
@@ -1966,9 +1964,9 @@ export function PageContent() {
         )}
 
         {/* Main Content Area with Sidebar and Form */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="w-full">
           {/* Left Sidebar - Form Navigation */}
-          <div className="col-span-12 md:col-span-3 lg:col-span-3">
+          <div className=" w-full">
             <div className="sticky top-6 space-y-5">
               {/* Forms Navigation (commented out to hide form sections) */}
               {/* <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
@@ -2061,7 +2059,7 @@ export function PageContent() {
                 </Card>
               )} */}
 
-              {/* Additional Actions */}
+              {/* Additional Actions  
               {activeApplicationId && (
                 <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
                   <div className="bg-gray-50 p-3 border-b">
@@ -2076,13 +2074,15 @@ export function PageContent() {
                       onClick={() => setShowDocuments(true)}
                     >
                       <Upload className="h-3.5 w-3.5" />
-                      <span>Manage Documents</span>
                     </Button>
                   </div>
                 </div>
               )}
+                */}
+                
             </div>
           </div>
+          
 
           {/* Right Content Area - Form Content */}
           <div className="col-span-12 md:col-span-9 lg:col-span-9">
@@ -2123,14 +2123,14 @@ export function PageContent() {
             ) : (
               <>
                 {/* Main Form Content Area */}
-                <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                  <div className="border-b bg-gray-50 py-3 px-4">
+                <div className=" w-full bg-white rounded-lg border shadow-sm overflow-hidden">
+                  <div className=" border-b bg-gray-50 py-3 px-4">
                     <h2 className="font-medium text-[#1B5E20]">
                       {sidebarItems.find((item) => item.id === activeForm)
                         ?.label || "Form Content"}
                     </h2>
                   </div>
-                  <div className="p-5">
+                  <div className=" w-full p-5">
                     <ClientOnlyContent activeForm={activeForm} />
                   </div>
                 </div>

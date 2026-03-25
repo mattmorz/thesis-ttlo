@@ -93,6 +93,7 @@ export function ApplicationManagement({
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const router = useRouter();
+  const trpcUtils = trpc.useUtils();
 
   const {
     activeApplicationId,
@@ -160,29 +161,35 @@ export function ApplicationManagement({
       onSuccess: () => {
         const deletedId = deleteTargetRef.current;
         toast.success("Application deleted successfully");
-        if (deletedId) {
-          setApplications((prev) => prev.filter((app) => app.id !== deletedId));
-        }
+        deleteTargetRef.current = null;
+        let remainingApps: Application[] = [];
+        setApplications((prev) => {
+          remainingApps = deletedId
+            ? prev.filter((app) => app.id !== deletedId)
+            : prev;
+          return remainingApps;
+        });
+
+        trpcUtils.formIntegration.getUserApplications.invalidate();
         refetchApplications();
 
-        // If we deleted the active application, set to the first available app or null
-        setTimeout(() => {
-          const remaining = deletedId
-            ? applications.filter((app) => app.id !== deletedId)
-            : applications;
-          if (
-            remaining.length > 0 &&
-            remaining[0].id !== activeApplicationId
-          ) {
-            handleSwitchApplication(remaining[0].id);
+        // If we deleted the active application, switch to the next or clear to show the welcome screen
+        if (deletedId === activeApplicationId) {
+          if (remainingApps.length > 0) {
+            handleSwitchApplication(remainingApps[0].id);
           } else {
-            // Direct call for null since our handler is designed for valid application IDs
-            setActiveApplicationId(null, {
-              clearFormData: false,
-              emitEvent: false,
-            });
+            if (typeof window !== "undefined") {
+              clearFormData({ emitEvent: false });
+              localStorage.removeItem("activeApplicationId");
+              localStorage.removeItem("activeApplicationIdSetAt");
+              const event = new CustomEvent("application-switched", {
+                detail: { applicationId: null },
+              });
+              window.dispatchEvent(event);
+              setTimeout(() => window.location.reload(), 200);
+            }
           }
-        }, 300);
+        }
       },
       onError: (error) => {
         toast.error(`Failed to delete application: ${error.message}`);

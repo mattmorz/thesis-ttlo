@@ -588,6 +588,7 @@ export function PageContent() {
     activeApplicationId,
     activeApplication,
     applications,
+    setApplications,
     setActiveApplicationId,
     refetchApplications,
     isLoading: isApplicationsLoading,
@@ -599,7 +600,13 @@ export function PageContent() {
         if (newApplication?.id) {
           toast.dismiss("creating-app-toast");
           toast.success("New application created successfully.");
-          setActiveApplicationId(newApplication.id);
+          setApplications((prev) => {
+            if (prev.some((app) => app.id === newApplication.id)) {
+              return prev;
+            }
+            return [newApplication, ...prev];
+          });
+          setActiveApplicationId(newApplication.id, { skipReload: true });
           refetchApplications();
         }
       },
@@ -690,6 +697,12 @@ export function PageContent() {
       // Cleanup code here if needed
     };
   }, []);
+
+  useEffect(() => {
+    if (applications.length === 1) {
+      setIsApplicationsExpanded(true);
+    }
+  }, [applications.length]);
 
   // Add effect to set the guide collapsed state based on form submission status
   useEffect(() => {
@@ -1935,31 +1948,33 @@ export function PageContent() {
                   </div>
                 </div>
 
-                <div className="ml-auto">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs text-gray-500"
-                    onClick={() =>
-                      setIsApplicationsExpanded(!isApplicationsExpanded)
-                    }
-                  >
-                    {isApplicationsExpanded
-                      ? "Hide Applications"
-                      : "Manage Applications"}
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 ml-1 transition-transform ${
-                        isApplicationsExpanded ? "rotate-180" : ""
-                      }`}
-                    />
-                  </Button>
-                </div>
+                {applications.length > 1 && (
+                  <div className="ml-auto">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-gray-500"
+                      onClick={() =>
+                        setIsApplicationsExpanded(!isApplicationsExpanded)
+                      }
+                    >
+                      {isApplicationsExpanded
+                        ? "Hide Applications"
+                        : "Manage Applications"}
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 ml-1 transition-transform ${
+                          isApplicationsExpanded ? "rotate-180" : ""
+                        }`}
+                      />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* Collapsible Application Management */}
-          {isApplicationsExpanded && (
+          {(isApplicationsExpanded || applications.length === 1) && (
             <div className="p-4 border-b bg-white">
               <ApplicationManagement hideCreateButton={false} />
             </div>

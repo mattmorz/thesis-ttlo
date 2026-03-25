@@ -18,7 +18,11 @@ type UseActiveApplicationReturn = {
   activeApplicationId: string | null;
   setActiveApplicationId: (
     id: string | null,
-    options?: { clearFormData?: boolean; emitEvent?: boolean }
+    options?: {
+      clearFormData?: boolean;
+      emitEvent?: boolean;
+      skipReload?: boolean;
+    }
   ) => void;
   activeApplication: Application | null;
   isLoading: boolean;
@@ -68,8 +72,10 @@ export function useActiveApplication(): UseActiveApplicationReturn {
       if (typeof window !== "undefined") {
         if (id) {
           localStorage.setItem("activeApplicationId", id);
+          localStorage.setItem("activeApplicationIdSetAt", Date.now().toString());
         } else {
           localStorage.removeItem("activeApplicationId");
+          localStorage.removeItem("activeApplicationIdSetAt");
         }
 
         const event = new CustomEvent("application-switched", {
@@ -180,7 +186,11 @@ export function useActiveApplication(): UseActiveApplicationReturn {
   const setActiveApplicationId = useCallback(
     (
       id: string | null,
-      options?: { clearFormData?: boolean; emitEvent?: boolean }
+      options?: {
+        clearFormData?: boolean;
+        emitEvent?: boolean;
+        skipReload?: boolean;
+      }
     ) => {
       console.log("Setting active application ID:", id);
 
@@ -262,8 +272,10 @@ export function useActiveApplication(): UseActiveApplicationReturn {
         // Then update the active application ID in localStorage
         if (id) {
           localStorage.setItem("activeApplicationId", id);
+          localStorage.setItem("activeApplicationIdSetAt", Date.now().toString());
         } else {
           localStorage.removeItem("activeApplicationId");
+          localStorage.removeItem("activeApplicationIdSetAt");
         }
 
         // Update the state
@@ -277,11 +289,13 @@ export function useActiveApplication(): UseActiveApplicationReturn {
           });
           window.dispatchEvent(event);
 
-          // Set a short timeout then reload the page for a clean state
-          setTimeout(() => {
-            // Reload the page - this ensures a clean state
-            window.location.reload();
-          }, 300); // Increased delay to ensure all events are processed
+          if (!options?.skipReload) {
+            // Set a short timeout then reload the page for a clean state
+            setTimeout(() => {
+              // Reload the page - this ensures a clean state
+              window.location.reload();
+            }, 300); // Increased delay to ensure all events are processed
+          }
         }
       } finally {
         // Set a timeout to release the lock in case something goes wrong
@@ -351,6 +365,27 @@ export function useActiveApplication(): UseActiveApplicationReturn {
       // Ensure we have a valid array of applications
       if (Array.isArray(applicationsData)) {
         setApplications(applicationsData as Application[]);
+
+        if (activeApplicationId) {
+          const exists = applicationsData.some(
+            (app) => app.id === activeApplicationId
+          );
+
+          if (!exists) {
+            const setAtRaw =
+              typeof window !== "undefined"
+                ? localStorage.getItem("activeApplicationIdSetAt")
+                : null;
+            const setAt = setAtRaw ? Number(setAtRaw) : 0;
+            const isRecent = setAt > 0 && Date.now() - setAt < 5000;
+
+            if (!isRecent) {
+              clearFormData({ emitEvent: false });
+              setActiveApplicationIdInternal(null);
+              return;
+            }
+          }
+        }
 
         // If there's no active application but there are applications, set the first one as active
         if (!activeApplicationId && applicationsData.length > 0) {

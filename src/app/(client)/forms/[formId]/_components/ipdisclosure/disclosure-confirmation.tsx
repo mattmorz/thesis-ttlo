@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -41,11 +42,17 @@ const formSchema = z.object({
     planned: z.boolean().default(false),
     notApplicable: z.boolean().default(false),
   }),
-  futureWork: z.string().optional(),
-  confirmationDeclaration: z.boolean().default(false),
+  futureWork: z.string().min(1, "Future Work is required"),
+  confirmationDeclaration: z.boolean().refine(
+  (val) => val === true,
+  {
+    message: "You must accept the declaration",
+  }
+),
 });
 
 export function DisclosureConfirmation() {
+  const router = useRouter();
   const {
     applicantsInfo,
     validateSection,
@@ -69,6 +76,7 @@ export function DisclosureConfirmation() {
     tradeSecretApplication,
     setTradeSecretApplication,
     disclosureId,
+    applicationId,
   } = useIpDisclosureStore();
 
   const { isHydrated } = useHydratedIpDisclosureStore();
@@ -94,8 +102,25 @@ export function DisclosureConfirmation() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
 
+  const handleSubmissionSuccess = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("ipDisclosureFormCompleted", {
+          detail: {
+            completed: true,
+            applicationId,
+            disclosureId,
+          },
+        })
+      );
+    }
+    router.push("/forms?tab=substantial-use");
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode : "onChange",
+  reValidateMode: "onChange",
     defaultValues: {
       writtenDisclosures: {
         past: false,
@@ -111,6 +136,11 @@ export function DisclosureConfirmation() {
       confirmationDeclaration: false,
     },
   });
+  useEffect(() => {
+  setTimeout(() => {
+    form.trigger();
+  }, 100);
+}, [form]);
 
   const [tab, setTab] = useState<"confirm" | "review" | "success">("confirm");
 
@@ -1086,6 +1116,7 @@ export function DisclosureConfirmation() {
         setTimeout(() => {
           // Set the state to submitted to show the success message
           submitForm();
+          handleSubmissionSuccess();
         }, 100);
       } else {
         console.error("Failed to submit IP disclosure");
@@ -1131,7 +1162,10 @@ export function DisclosureConfirmation() {
             id: confirmToastId,
           });
           resetSubmissionState();
-          setTimeout(() => submitForm(), 100);
+          setTimeout(() => {
+            submitForm();
+            handleSubmissionSuccess();
+          }, 100);
         } catch (fallbackError) {
           console.error("All submission attempts failed:", fallbackError);
           toast.error("Failed to submit complete IP disclosure form", {
@@ -1288,7 +1322,7 @@ export function DisclosureConfirmation() {
           <Card className="border-green-200">
             <CardContent className="pt-6 space-y-6">
               <div className="space-y-4">
-                <FormLabel className="text-base">Written Disclosures</FormLabel>
+                <FormLabel className="text-base">Written Disclosures<span className="text-red-500"> *</span></FormLabel>
                 <div className="flex gap-6">
                   <FormField
                     control={form.control}
@@ -1344,7 +1378,7 @@ export function DisclosureConfirmation() {
               </div>
 
               <div className="space-y-4">
-                <FormLabel className="text-base">Oral Disclosures</FormLabel>
+                <FormLabel className="text-base">Oral Disclosures<span className="text-red-500"> *</span></FormLabel>
                 <div className="flex gap-6">
                   <FormField
                     control={form.control}
@@ -1408,7 +1442,7 @@ export function DisclosureConfirmation() {
                 name="futureWork"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Future Work</FormLabel>
+                    <FormLabel className="text-base">Future Work<span className="text-red-500"> *</span></FormLabel>
                     <FormDescription>
                       Please describe any planned future work or developments
                     </FormDescription>
@@ -1441,7 +1475,7 @@ export function DisclosureConfirmation() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Declaration</FormLabel>
+                      <FormLabel>Declaration<span className="text-red-500"> *</span></FormLabel>
                       <FormDescription>
                         I hereby declare that the information provided in this
                         application is true and accurate to the best of my

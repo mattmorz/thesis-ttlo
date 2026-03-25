@@ -71,7 +71,7 @@ export const PhaseCard = memo(function PhaseCard({
             </div>
             <Progress value={completionPercentage} className="h-2" />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
+F              <div className="flex items-center gap-1">
                 <CheckCircle2 className="h-3 w-3" />
                 <span>
                   {completedTasks}/{totalTasks} tasks

@@ -88,7 +88,7 @@ export const usePatentSearchFormStore = create<PatentSearchFormState>()(
 
 const documentSchema = z.object({
   id: z.string(),
-  category: z.string(),
+  category: z.string().min(1, "Category is required"),
   citation: z.string().min(1, "Citation is required"),
   relevantClaims: z.string(),
 });
@@ -98,7 +98,10 @@ const searchStringSchema = z.object({
   database: z.string().min(1, "Database is required"),
   customDatabase: z.string().optional(),
   searchString: z.string().min(1, "Search string is required"),
-  hits: z.string().min(1, "Number of hits is required"),
+  hits: z
+    .string()
+    .min(1, "Number of hits is required")
+    .regex(/^\d+$/, "Number of hits must be a whole number"),
 });
 
 const formSchema = z.object({
@@ -118,9 +121,19 @@ const formSchema = z.object({
   files: z.array(z.custom<File>()).optional(),
   certification: z.object({
     technicalExpert: z.string().min(1, "Technical expert name is required"),
-    reviewedBy: z.string().min(1, "Reviewer name is required"),
+    reviewedBy: z
+      .string()
+      .min(1, "Reviewer name is required")
+      .refine((value) => value !== "Other", {
+        message: "Please specify the reviewer name.",
+      }),
     submittedTo: z.object({
-      name: z.string().min(1, "Name is required"),
+      name: z
+        .string()
+        .min(1, "Name is required")
+        .refine((value) => value !== "Other", {
+          message: "Please specify the director name.",
+        }),
       position: z.string().min(1, "Position is required"),
     }),
   }),
@@ -135,6 +148,9 @@ export function PatentSearchForm({
   onNext,
   onPrevious,
 }: PatentSearchFormProps) {
+  const reviewedByOptions = ["JOY LYN A. DELA CRUZ"];
+  const submittedToOptions = ["PROF. KENNETH L. CIUDAD"];
+const [isSubmitting, setIsSubmitting] = useState(false);
   // Get the store data
   const { data, setData } = usePatentSearchFormStore();
   const { selectedIpTypes } = useFormContext();
@@ -183,6 +199,8 @@ export function PatentSearchForm({
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: {
       title: "",
       dateCompleted: "",
@@ -214,6 +232,10 @@ export function PatentSearchForm({
       },
     },
   });
+
+  useEffect(() => {
+  form.trigger();
+}, []);
 
   // Load saved data on component mount - only once
   useEffect(() => {
@@ -272,6 +294,83 @@ export function PatentSearchForm({
     control: form.control,
     name: "documents",
   });
+
+  const [
+    title,
+    dateCompleted,
+    abstract,
+    ipcClassification,
+    keywords,
+    searchStrings,
+    documents,
+    conclusion,
+    certification,
+  ] = form.watch([
+    "title",
+    "dateCompleted",
+    "abstract",
+    "ipcClassification",
+    "keywords",
+    "searchStrings",
+    "documents",
+    "conclusion",
+    "certification",
+  ]);
+
+  const hasSearchStrings =
+    Array.isArray(searchStrings) &&
+    searchStrings.length >= 1 &&
+    searchStrings.every((item) => {
+      if (!item) return false;
+      if (!item.database?.trim()) return false;
+      if (item.database === "other" && !item.customDatabase?.trim()) {
+        return false;
+      }
+      return Boolean(item.searchString?.trim()) && Boolean(item.hits?.trim());
+    });
+
+  const hasDocuments =
+    Array.isArray(documents) &&
+    documents.length >= 1 &&
+    documents.every(
+      (item) =>
+        Boolean(item?.category?.trim()) && Boolean(item?.citation?.trim())
+    );
+
+  const hasCertification =
+    Boolean(certification?.technicalExpert?.trim()) &&
+    Boolean(certification?.reviewedBy?.trim()) &&
+    certification?.reviewedBy !== "Other" &&
+    Boolean(certification?.submittedTo?.name?.trim()) &&
+    certification?.submittedTo?.name !== "Other";
+
+  const isRequiredFilled =
+    Boolean(title?.trim()) &&
+    Boolean(dateCompleted?.trim()) &&
+    Boolean(abstract?.trim()) &&
+    Boolean(ipcClassification?.trim()) &&
+    Boolean(keywords?.trim()) &&
+    hasSearchStrings &&
+    hasDocuments &&
+    Boolean(conclusion?.trim()) &&
+    hasCertification;
+
+  const getErrorMessage = (path: string) => {
+    return path
+      .split(".")
+      .reduce(
+        (acc: any, key) => (acc ? acc[key] : undefined),
+        form.formState.errors as any
+      )?.message;
+  };
+
+  const handleFieldBlur = async (fieldName: string) => {
+    const isValid = await form.trigger(fieldName as any);
+    if (!isValid) {
+      const message = getErrorMessage(fieldName) || "This field is required";
+      toast.error(message);
+    }
+  };
 
   // Function to update the patentUtilityModelApplication in the store
   const updatePatentUtilityModelInStore = (updatedData: any) => {
@@ -451,128 +550,57 @@ export function PatentSearchForm({
 
   // Function to handle navigation without form submission
   const handleNextWithoutSubmit = async () => {
-    try {
-      // Save current form data
-      const values = form.getValues();
-      setData(values);
+  if (isSubmitting) return; // prevent double click
 
-      console.log("Patent search data prepared for saving before navigation:", {
-        title: values.title,
-        dateCompleted: values.dateCompleted,
-        abstract: values.abstract,
-        ipcClassification: values.ipcClassification,
-        keywords: values.keywords,
-        searchStrings: values.searchStrings.length,
-        documents: values.documents.length,
-        conclusion: values.conclusion,
-        certification: values.certification,
-        files: values.files?.length || 0,
-      });
+  setIsSubmitting(true);
 
-      // Try to save data, but don't block navigation if it fails
-      if (disclosureId) {
-        console.log(
-          "Saving patent search report to database with disclosure ID:",
-          disclosureId
-        );
+  try {
+    const values = form.getValues();
+    setData(values);
 
-        // Update the patentUtilityModelApplication with search data
-        if (patentUtilityModelApplication) {
-          // First, get the current state to ensure we have the latest data
-          const currentPatentData = { ...patentUtilityModelApplication };
-          console.log(
-            "Current patent data ID:",
-            currentPatentData.patent_id || "No ID"
-          );
+    if (disclosureId) {
+      if (patentUtilityModelApplication) {
+        const currentPatentData = { ...patentUtilityModelApplication };
 
-          // Create a proper additionalData structure
-          const searchReportData = {
-            title: values.title,
-            dateCompleted: values.dateCompleted,
-            abstract: values.abstract,
-            ipcClassification: values.ipcClassification,
-            keywords: values.keywords,
-            searchStrings: values.searchStrings,
-            documents: values.documents,
-            conclusion: values.conclusion || "No conclusion provided",
-            certification: values.certification || {
-              technicalExpert: "",
-              reviewedBy: "",
-              submittedTo: {
-                name: "",
-                position: "Director, TILO Manager, ITSO",
-              },
-            },
-            files: values.files || [],
-          };
+        const searchReportData = {
+          title: values.title,
+          dateCompleted: values.dateCompleted,
+          abstract: values.abstract,
+          ipcClassification: values.ipcClassification,
+          keywords: values.keywords,
+          searchStrings: values.searchStrings,
+          documents: values.documents,
+          conclusion: values.conclusion || "No conclusion provided",
+          certification: values.certification,
+          files: values.files || [],
+        };
 
-          console.log(
-            "Search report data prepared:",
-            JSON.stringify(searchReportData).substring(0, 200) + "..."
-          );
-
-          const additionalData = {
+        const updatedPatentData = {
+          ...currentPatentData,
+          additionalData: {
             ...(currentPatentData.additionalData || {}),
             searchReport: searchReportData,
-          };
+          },
+        };
 
-          // Create the updated patent data with the new additionalData
-          const updatedPatentData = {
-            ...currentPatentData,
-            additionalData: additionalData,
-          };
+        updatePatentUtilityModelInStore(updatedPatentData);
 
-          console.log(
-            "Updated patent data with search report:",
-            JSON.stringify(updatedPatentData).substring(0, 200) + "..."
-          );
-
-          // Update the store with the new data
-          updatePatentUtilityModelInStore(updatedPatentData);
-
-          try {
-            // Save to database using the existing patent utility model mutation
-            console.log("Saving updated patent data to database...");
-            const result = await savePatentUtilityModelApplication();
-
-            if (result && result.success) {
-              console.log(
-                "Patent search report saved successfully to database"
-              );
-              toast.success("Patent search report saved to database");
-            } else {
-              console.error("Failed to save patent search report to database");
-              toast.error("Failed to save patent search report to database");
-            }
-          } catch (error) {
-            console.error("Error saving patent search report:", error);
-            toast.error(
-              "Error saving patent search report, but continuing navigation"
-            );
-          }
-        } else {
-          console.error(
-            "No patent application data found to update with search report"
-          );
-          toast.error("Please complete the Patent Application tab first");
+        try {
+          await savePatentUtilityModelApplication();
+        } catch (error) {
+          console.error(error);
         }
-      } else {
-        console.error(
-          "No disclosure ID available for saving patent search report"
-        );
-        toast.error("Please complete the Applicant's Information tab first");
       }
-
-      // Always navigate to the next tab, even if saving fails
-      navigateToNext();
-    } catch (error) {
-      console.error("Error during navigation:", error);
-      toast.error("There was an error, but continuing with navigation");
-
-      // Still try to navigate even if there was an error
-      navigateToNext();
     }
-  };
+
+    navigateToNext();
+  } catch (error) {
+    console.error(error);
+    navigateToNext();
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // Function to handle direct navigation to previous tab
   const navigateToPrevious = () => {
@@ -686,13 +714,17 @@ export function PatentSearchForm({
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Title<span className="text-red-500"> *</span></FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
                       placeholder="Enter the title of your invention/technology"
                       className="min-h-[80px]"
                       rows={2}
+                      onBlur={() => {
+                        field.onBlur();
+                        handleFieldBlur("title");
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -715,8 +747,20 @@ export function PatentSearchForm({
 
                 return (
                   <FormItem>
-                    <FormLabel>Date of Search Completion</FormLabel>
-                    <Popover>
+                    <FormLabel>Date of Search Completion<span className="text-red-500"> *</span></FormLabel>
+                    <Popover
+                      onOpenChange={(open) => {
+                        if (open) {
+                          if (!field.value) {
+                            field.onBlur();
+                            handleFieldBlur("dateCompleted");
+                          }
+                          return;
+                        }
+                        field.onBlur();
+                        handleFieldBlur("dateCompleted");
+                      }}
+                    >
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -837,6 +881,9 @@ export function PatentSearchForm({
                                 field.onChange(
                                   date ? format(date, "yyyy-MM-dd") : ""
                                 );
+                                if (date) {
+                                  handleFieldBlur("dateCompleted");
+                                }
                               }}
                               month={month}
                               onMonthChange={setMonth}
@@ -862,13 +909,17 @@ export function PatentSearchForm({
               name="abstract"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Abstract</FormLabel>
+                  <FormLabel>Abstract<span className="text-red-500"> *</span></FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
                       placeholder="Enter a brief summary of your search findings"
                       className="min-h-[120px]"
                       rows={4}
+                      onBlur={() => {
+                        field.onBlur();
+                        handleFieldBlur("abstract");
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -889,11 +940,15 @@ export function PatentSearchForm({
               name="ipcClassification"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>International Patent Classification/CPC</FormLabel>
+                  <FormLabel>International Patent Classification/CPC<span className="text-red-500"> *</span></FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       placeholder="Enter IPC/CPC classification"
+                      onBlur={() => {
+                        field.onBlur();
+                        handleFieldBlur("ipcClassification");
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -906,13 +961,17 @@ export function PatentSearchForm({
               name="keywords"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Keywords</FormLabel>
+                  <FormLabel>Keywords<span className="text-red-500"> *</span></FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
                       placeholder="Enter search keywords (comma separated)"
                       className="min-h-[80px]"
                       rows={2}
+                      onBlur={() => {
+                        field.onBlur();
+                        handleFieldBlur("keywords");
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -925,7 +984,7 @@ export function PatentSearchForm({
         {/* Search Strings */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Search Strings</CardTitle>
+            <CardTitle>Search Strings<span className="text-red-500"> *</span></CardTitle>
             <Button
               type="button"
               variant="outline"
@@ -970,6 +1029,12 @@ export function PatentSearchForm({
                                       );
                                     }
                                   }}
+                                  onBlur={() => {
+                                    field.onBlur();
+                                    handleFieldBlur(
+                                      `searchStrings.${index}.database`
+                                    );
+                                  }}
                                 >
                                   <option value="">Select Database</option>
                                   <option value="patentscope">
@@ -997,11 +1062,11 @@ export function PatentSearchForm({
                         render={({ field }) => (
                           <FormItem>
                             <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Enter database name"
-                                className={`w-full transition-all duration-200 ${
-                                  form.watch(
+                                <Input
+                                  {...field}
+                                  placeholder="Enter database name"
+                                  className={`w-full transition-all duration-200 ${
+                                    form.watch(
                                     `searchStrings.${index}.database`
                                   ) !== "other"
                                     ? "opacity-50 bg-muted cursor-not-allowed"
@@ -1012,6 +1077,12 @@ export function PatentSearchForm({
                                     `searchStrings.${index}.database`
                                   ) !== "other"
                                 }
+                                onBlur={() => {
+                                  field.onBlur();
+                                  handleFieldBlur(
+                                    `searchStrings.${index}.customDatabase`
+                                  );
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -1029,6 +1100,12 @@ export function PatentSearchForm({
                               <Input
                                 {...field}
                                 placeholder="Enter search string"
+                                onBlur={() => {
+                                  field.onBlur();
+                                  handleFieldBlur(
+                                    `searchStrings.${index}.searchString`
+                                  );
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -1045,7 +1122,18 @@ export function PatentSearchForm({
                             <FormControl>
                               <Input
                                 {...field}
+                                type="number"
+                                min="0"
+                                step="1"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 placeholder="Enter number of hits"
+                                onBlur={() => {
+                                  field.onBlur();
+                                  handleFieldBlur(
+                                    `searchStrings.${index}.hits`
+                                  );
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -1075,7 +1163,7 @@ export function PatentSearchForm({
         {/* Documents Considered to Be Relevant */}
         <Card>
           <CardHeader>
-            <CardTitle>Documents Considered to Be Relevant</CardTitle>
+            <CardTitle>Documents Considered to Be Relevant<span className="text-red-500"> *</span></CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex justify-end">
@@ -1128,6 +1216,12 @@ export function PatentSearchForm({
                               <select
                                 {...field}
                                 className="w-full p-2 border rounded-md bg-background"
+                                onBlur={() => {
+                                  field.onBlur();
+                                  handleFieldBlur(
+                                    `documents.${index}.category`
+                                  );
+                                }}
                               >
                                 <option value="">Select</option>
                                 <option value="A">A</option>
@@ -1159,6 +1253,12 @@ export function PatentSearchForm({
                                 placeholder="Enter document citation and relevant pages"
                                 className="min-h-[80px]"
                                 rows={2}
+                                onBlur={() => {
+                                  field.onBlur();
+                                  handleFieldBlur(
+                                    `documents.${index}.citation`
+                                  );
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -1284,7 +1384,7 @@ export function PatentSearchForm({
             {/* Conclusion Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Conclusion</CardTitle>
+                <CardTitle>Conclusion<span className="text-red-500"> *</span></CardTitle>
               </CardHeader>
               <CardContent>
                 <FormField
@@ -1298,6 +1398,10 @@ export function PatentSearchForm({
                           placeholder="Enter your conclusion and recommendations"
                           className="min-h-[120px]"
                           rows={4}
+                          onBlur={() => {
+                            field.onBlur();
+                            handleFieldBlur("conclusion");
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -1316,7 +1420,7 @@ export function PatentSearchForm({
         {/* Certification Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Certification</CardTitle>
+            <CardTitle>Certification<span className="text-red-500"> *</span></CardTitle>
           </CardHeader>
           <CardContent className="space-y-8">
             {/* Search Conducted By */}
@@ -1336,6 +1440,10 @@ export function PatentSearchForm({
                             field.onChange(e);
                             // Sync with the technicalExpert field
                             form.setValue("technicalExpert", e.target.value);
+                          }}
+                          onBlur={() => {
+                            field.onBlur();
+                            handleFieldBlur("certification.technicalExpert");
                           }}
                         />
                       </FormControl>
@@ -1360,7 +1468,24 @@ export function PatentSearchForm({
                       <FormControl>
                         <select
                           {...field}
+                          value={
+                            field.value === "Other" ||
+                            (!!field.value &&
+                              !reviewedByOptions.includes(field.value))
+                              ? "Other"
+                              : field.value || ""
+                          }
                           className="w-full text-center border-0 border-b rounded-none focus-visible:ring-0 px-0 py-2 bg-transparent"
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            field.onChange(
+                              nextValue === "Other" ? "Other" : nextValue
+                            );
+                          }}
+                          onBlur={() => {
+                            field.onBlur();
+                            handleFieldBlur("certification.reviewedBy");
+                          }}
                         >
                           <option value="">Select Head Technical Expert</option>
                           <option value="JOY LYN A. DELA CRUZ">
@@ -1373,11 +1498,21 @@ export function PatentSearchForm({
                         Head Technical Expert
                       </FormLabel>
                       <FormMessage />
-                      {field.value === "Other" && (
+                      {(field.value === "Other" ||
+                        (!!field.value &&
+                          !reviewedByOptions.includes(field.value))) && (
                         <Input
                           placeholder="Enter name"
                           className="mt-2 text-center"
-                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value === "Other" ? "" : field.value || ""}
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            field.onChange(nextValue.length ? nextValue : "Other");
+                          }}
+                          onBlur={() => {
+                            field.onBlur();
+                            handleFieldBlur("certification.reviewedBy");
+                          }}
                         />
                       )}
                     </FormItem>
@@ -1397,7 +1532,24 @@ export function PatentSearchForm({
                       <FormControl>
                         <select
                           {...field}
+                          value={
+                            field.value === "Other" ||
+                            (!!field.value &&
+                              !submittedToOptions.includes(field.value))
+                              ? "Other"
+                              : field.value || ""
+                          }
                           className="w-full text-center border-0 border-b rounded-none focus-visible:ring-0 px-0 py-2 bg-transparent"
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            field.onChange(
+                              nextValue === "Other" ? "Other" : nextValue
+                            );
+                          }}
+                          onBlur={() => {
+                            field.onBlur();
+                            handleFieldBlur("certification.submittedTo.name");
+                          }}
                         >
                           <option value="">Select Director</option>
                           <option value="PROF. KENNETH L. CIUDAD">
@@ -1407,11 +1559,21 @@ export function PatentSearchForm({
                         </select>
                       </FormControl>
                       <FormMessage />
-                      {field.value === "Other" && (
+                      {(field.value === "Other" ||
+                        (!!field.value &&
+                          !submittedToOptions.includes(field.value))) && (
                         <Input
                           placeholder="Enter name"
                           className="mt-2 text-center"
-                          onChange={(e) => field.onChange(e.target.value)}
+                          value={field.value === "Other" ? "" : field.value || ""}
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            field.onChange(nextValue.length ? nextValue : "Other");
+                          }}
+                          onBlur={() => {
+                            field.onBlur();
+                            handleFieldBlur("certification.submittedTo.name");
+                          }}
                         />
                       )}
                     </FormItem>
@@ -1464,6 +1626,7 @@ export function PatentSearchForm({
               type="button"
               onClick={handleNextWithoutSubmit}
               className="bg-[#1B5E20] hover:bg-[#0A3A10] text-white"
+              disabled={!isRequiredFilled || isSubmitting}
             >
               Next
             </Button>

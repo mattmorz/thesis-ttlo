@@ -203,6 +203,8 @@ export function TrademarkApplication() {
 
   const form = useForm<TrademarkFormValues>({
     resolver: zodResolver(formSchema),
+    mode: "all",
+  reValidateMode: "onChange",
     defaultValues: trademarkApplication || {
       trademarkName: "",
       description: "",
@@ -215,6 +217,18 @@ export function TrademarkApplication() {
       legalName: "",
     },
   });
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    form.trigger([
+      "trademarkName",
+      "description",
+      "niceClassifications",
+      "legalName",
+    ]);
+  }, 300);
+
+  return () => clearTimeout(timer);
+}, []);
 
   // Fetch data when component mounts
   useEffect(() => {
@@ -331,14 +345,25 @@ export function TrademarkApplication() {
 
   // Initialize form with stored data when component mounts or when trademarkApplication changes
   useEffect(() => {
-    if (trademarkApplication) {
-      console.log(
-        "Initializing trademark form with stored data:",
-        trademarkApplication
-      );
-      form.reset(trademarkApplication);
-    }
-  }, [trademarkApplication, form]);
+  if (trademarkApplication) {
+    console.log(
+      "Initializing trademark form with stored data:",
+      trademarkApplication
+    );
+
+    form.reset(trademarkApplication);
+
+    // IMPORTANT: trigger validation after reset
+    setTimeout(() => {
+      form.trigger([
+        "trademarkName",
+        "description",
+        "niceClassifications",
+        "legalName",
+      ]);
+    }, 0);
+  }
+}, [trademarkApplication, form]);
 
   // Create a debounced save function to prevent excessive updates
   const debouncedSave = debounce((data: TrademarkFormValues) => {
@@ -545,7 +570,7 @@ export function TrademarkApplication() {
                 name="trademarkName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Trademark Name</FormLabel>
+                    <FormLabel>Trademark Name<span className="text-red-500"> *</span></FormLabel>
                     <FormDescription>
                       Enter the exact name or mark you wish to register
                     </FormDescription>
@@ -569,7 +594,7 @@ export function TrademarkApplication() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description of Goods/Services</FormLabel>
+                    <FormLabel>Description of Goods/Services<span className="text-red-500"> *</span></FormLabel>
                     <FormDescription>
                       If there is a claim of color/s specify the principal parts
                       of the mark that are in the color/s identified.
@@ -605,7 +630,7 @@ export function TrademarkApplication() {
                 name="translation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Translation/Transliteration</FormLabel>
+                    <FormLabel>Translation/Transliteration<span className="text-red-500"> *</span></FormLabel>
                     <FormDescription>
                       If applicable, provide translation or transliteration for
                       non-English words
@@ -630,7 +655,7 @@ export function TrademarkApplication() {
                 name="niceClassifications"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>NICE Classifications</FormLabel>
+                    <FormLabel>NICE Classifications<span className="text-red-500"> *</span></FormLabel>
                     <FormDescription>
                       Select the appropriate classification for your trademark
                       from the{" "}
@@ -727,7 +752,7 @@ export function TrademarkApplication() {
               </div>
 
               <div className="space-y-4">
-                <FormLabel>Business Type</FormLabel>
+                <FormLabel>Business Type<span className="text-red-500"> *</span></FormLabel>
                 <div className="flex gap-6">
                   {[
                     {
@@ -779,9 +804,9 @@ export function TrademarkApplication() {
                 name="legalName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Legal Name of Business/Individual</FormLabel>
+                    <FormLabel>Legal Name of Business/Individual<span className="text-red-500"> *</span></FormLabel>
                     <FormDescription>
-                      Enter the official registered name of the business or
+                  Enter the official registered name of the business or
                       individual owner
                     </FormDescription>
                     <div className="relative">

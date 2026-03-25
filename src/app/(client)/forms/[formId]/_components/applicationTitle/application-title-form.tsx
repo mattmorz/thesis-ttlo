@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { trpc } from "@/app/_trpc/client";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import {
@@ -30,26 +30,38 @@ import {
 } from "@/components/ui/select";
 
 const formSchema = z.object({
-  title: z.string().min(5, {
-    message: "Title must be at least 5 characters.",
-  }),
-  description: z.string().optional(),
-  ipType: z.enum([
-    "patent",
-    "copyright",
-    "trademark",
-    "utility_model",
-    "industrial_design",
-    "trade_secret",
-    "not_sure",
-    "other",
-  ]),
+  title: z
+    .string()
+    .min(1, "Title is required")
+    .min(5, "Title must be at least 5 characters."),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .min(5, "Description must be at least 5 characters."),
+  ipType: z
+    .string()
+    .min(1, "IP type is required")
+    .refine(
+      (value) =>
+        [
+          "patent",
+          "copyright",
+          "trademark",
+          "utility_model",
+          "industrial_design",
+          "trade_secret",
+          "not_sure",
+          "other",
+        ].includes(value),
+      "IP type is required"
+    ),
 });
 
 export function ApplicationTitleForm() {
   const router = useRouter();
   const { activeApplication, refetchApplications, setApplications } =
     useActiveApplication();
+  const hasClearedTitleRef = useRef(false);
 
   const updateApplicationMutation = trpc.formIntegration.updateApplication.useMutation({
     onSuccess: (_data, variables) => {
@@ -94,20 +106,28 @@ export function ApplicationTitleForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
-      title: activeApplication?.title || "",
-      description: activeApplication?.description || "",
-      ipType: (activeApplication?.ipType as any) || "not_sure",
+      title: "",
+      description: activeApplication?.description ?? "",
+      ipType: "",
     },
   });
+  useEffect(() => {
+  form.trigger();
+}, []);
 
   useEffect(() => {
     if (activeApplication) {
       form.reset({
-        title: activeApplication.title,
+        title: "",
         description: activeApplication.description || "",
-        ipType: (activeApplication.ipType as any) || "not_sure",
+        ipType: "",
       });
+      hasClearedTitleRef.current = false;
+      
+       form.trigger(["title", "description"]);
     }
   }, [activeApplication, form]);
 
@@ -135,9 +155,29 @@ export function ApplicationTitleForm() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Application Title</FormLabel>
+                  <FormLabel>
+                    Application Title <span className="text-red-500">*</span>
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter a title for your application" {...field} />
+                    <Input
+                      {...field}
+                      placeholder="Enter a title for your application"
+                      onFocus={() => {
+                        if (
+                          !hasClearedTitleRef.current &&
+                          field.value === (activeApplication?.title ?? "")
+                        ) {
+                          field.onChange("");
+                          hasClearedTitleRef.current = true;
+                        }
+                      }}
+                      onChange={(e) => {
+                        if (!hasClearedTitleRef.current) {
+                          hasClearedTitleRef.current = true;
+                        }
+                        field.onChange(e);
+                      }}
+                    />
                   </FormControl>
                   <FormDescription>
                     This is the main identifier for your intellectual property application.
@@ -151,7 +191,9 @@ export function ApplicationTitleForm() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>
+                    Description <span className="text-red-500">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Provide a brief summary of your application"
@@ -173,7 +215,7 @@ export function ApplicationTitleForm() {
                 <FormItem>
                   <FormLabel>IP Type</FormLabel>
                   <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select IP type" />
                       </SelectTrigger>
@@ -201,7 +243,12 @@ export function ApplicationTitleForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={updateApplicationMutation.isLoading}>
+            <Button
+              type="submit"
+              disabled={
+                updateApplicationMutation.isLoading || !form.formState.isValid
+              }
+            >
               {updateApplicationMutation.isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </form>

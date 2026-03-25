@@ -63,29 +63,8 @@ declare global {
   }
 }
 
-const formSchema = z.object({
-  applicants: z
-    .array(
-      z.object({
-        firstName: z
-          .string()
-          .min(1, { message: "First name is required" })
-          .transform((val) => val.toUpperCase()),
-        middleInitial: z
-          .string()
-          .optional()
-          .transform((val) => (val ? val.toUpperCase() : val)),
-        lastName: z
-          .string()
-          .min(1, { message: "Last name is required" })
-          .transform((val) => val.toUpperCase()),
-        date: z.date({
-          required_error: "Certification date is required",
-        }),
-      })
-    )
-    .min(1, { message: "At least one applicant is required" }),
-  laboratoryFacilities: z.object({
+const laboratoryFacilitiesSchema = z
+  .object({
     experimentalApparatus: z.boolean().default(false),
     labInstruments: z.boolean().default(false),
     dataAnalysisTools: z.boolean().default(false),
@@ -99,8 +78,46 @@ const formSchema = z.object({
       checked: z.boolean().default(false),
       specification: z.string().optional(),
     }),
-  }),
-  fundingResources: z.object({
+  })
+  .superRefine((value, ctx) => {
+    const anySelected =
+      value.experimentalApparatus ||
+      value.labInstruments ||
+      value.dataAnalysisTools ||
+      value.technicalSupport ||
+      value.farmMachineShop ||
+      value.specializedSoftware.checked ||
+      value.other.checked;
+
+    if (!anySelected) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Select at least one laboratory facility.",
+      });
+    }
+
+    if (
+      value.specializedSoftware.checked &&
+      !value.specializedSoftware.specification?.trim()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify the specialized software.",
+        path: ["specializedSoftware", "specification"],
+      });
+    }
+
+    if (value.other.checked && !value.other.specification?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify the other laboratory facility.",
+        path: ["other", "specification"],
+      });
+    }
+  });
+
+const fundingResourcesSchema = z
+  .object({
     personalFunds: z.boolean().default(false),
     grantsAndWages: z.boolean().default(false),
     scholarships: z.boolean().default(false),
@@ -110,8 +127,63 @@ const formSchema = z.object({
       checked: z.boolean().default(false),
       specification: z.string().optional(),
     }),
-  }),
-  remarks: z.string().optional(),
+  })
+  .superRefine((value, ctx) => {
+    const anySelected =
+      value.personalFunds ||
+      value.grantsAndWages ||
+      value.scholarships ||
+      value.industryPartnerships ||
+      value.collaboration ||
+      value.other.checked;
+
+    if (!anySelected) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Select at least one funding resource.",
+      });
+    }
+
+    if (value.other.checked && !value.other.specification?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify the other funding resource.",
+        path: ["other", "specification"],
+      });
+    }
+  });
+
+const formSchema = z.object({
+  applicants: z
+    .array(
+      z.object({
+        firstName: z
+          .string()
+          .trim()
+          .min(1, { message: "First name is required" })
+          .transform((val) => val.toUpperCase()),
+        middleInitial: z
+          .string()
+          .trim()
+          .optional()
+          .transform((val) => (val ? val.toUpperCase() : val)),
+        lastName: z
+          .string()
+          .trim()
+          .min(1, { message: "Last name is required" })
+          .transform((val) => val.toUpperCase()),
+        date: z.date({
+          required_error: "Certification date is required",
+        }),
+      })
+    )
+    .min(1, { message: "At least one applicant is required" }),
+  laboratoryFacilities: laboratoryFacilitiesSchema,
+  fundingResources: fundingResourcesSchema,
+  remarks: z
+    .string()
+    .trim()
+    .min(1, { message: "Remarks are required" }),
   researchTitle: z.string().min(1, { message: "Research title is required" }),
 });
 
@@ -155,6 +227,8 @@ export function SubstantialUseForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: {
       applicants: [
         {
@@ -185,6 +259,10 @@ export function SubstantialUseForm() {
       researchTitle: "",
     },
   });
+
+  useEffect(() => {
+  form.trigger();
+}, []);
 
   const {
     fields: applicantFields,
@@ -249,6 +327,9 @@ export function SubstantialUseForm() {
 
     // Reset form with default values
     form.reset(resetValues);
+    setTimeout(() => {
+  form.trigger();
+}, 300);
 
     // Update form status
     setFormStatus("draft");
@@ -519,6 +600,9 @@ export function SubstantialUseForm() {
 
           // Reset form with formatted API data
           form.reset(formattedData);
+          setTimeout(() => {
+  form.trigger();
+}, 300);
           console.log("Form reset with formatted API data");
 
           // Set form status
@@ -645,6 +729,9 @@ export function SubstantialUseForm() {
       setFormData(null);
       setFormStatus("draft");
       form.reset({});
+      setTimeout(() => {
+  form.trigger();
+}, 500);
 
       // Fetch fresh data if we have an active application
       if (activeApplicationId && isMounted.current) {
@@ -695,6 +782,9 @@ export function SubstantialUseForm() {
 
     // Clear form when application changes to prepare for new data
     form.reset({});
+    setTimeout(() => {
+  form.trigger();
+}, 300);
 
     // Create a unique key for this effect instance to prevent race conditions
     // with multiple rapid application changes
@@ -864,6 +954,7 @@ export function SubstantialUseForm() {
   // Handle form submission
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      form.clearErrors();
       setIsSubmitting(true);
       console.log("Starting form submission process...");
       console.log("Form values:", JSON.stringify(values, null, 2));
@@ -1014,7 +1105,7 @@ export function SubstantialUseForm() {
 
           // Navigate back to forms page after a short delay
           setTimeout(() => {
-            router.push(`/forms?tab=substantial-use`);
+            router.push(`/forms?tab=deed-assignment`);
           }, 1000);
         } else if (response.status === 404) {
           toast.error("Endpoint Not Found", {
@@ -1208,6 +1299,104 @@ export function SubstantialUseForm() {
   // - Add role check: isAdmin || (isOwner && !isSubmitted)
   const isFormDisabled = false; // Temporarily disabled for testing
 
+  const researchTitle = form.watch("researchTitle");
+  const remarks = form.watch("remarks");
+  const applicants = form.watch("applicants");
+  const laboratoryFacilities = form.watch("laboratoryFacilities");
+  const fundingResources = form.watch("fundingResources");
+
+  const hasValidApplicants =
+    Array.isArray(applicants) &&
+    applicants.length > 0 &&
+    applicants.every((applicant) => {
+      const firstNameOk = applicant?.firstName?.trim();
+      const lastNameOk = applicant?.lastName?.trim();
+      const dateValue = applicant?.date;
+      const dateOk =
+        !!dateValue && !Number.isNaN(new Date(dateValue).getTime());
+      return firstNameOk && lastNameOk && dateOk;
+    });
+
+  const hasLabFacilitiesSelection = Boolean(
+    laboratoryFacilities?.experimentalApparatus ||
+      laboratoryFacilities?.labInstruments ||
+      laboratoryFacilities?.dataAnalysisTools ||
+      laboratoryFacilities?.technicalSupport ||
+      laboratoryFacilities?.farmMachineShop ||
+      laboratoryFacilities?.specializedSoftware?.checked ||
+      laboratoryFacilities?.other?.checked
+  );
+
+  const labFacilitiesValid =
+    hasLabFacilitiesSelection &&
+    (!laboratoryFacilities?.specializedSoftware?.checked ||
+      laboratoryFacilities?.specializedSoftware?.specification?.trim()) &&
+    (!laboratoryFacilities?.other?.checked ||
+      laboratoryFacilities?.other?.specification?.trim());
+
+  const hasFundingSelection = Boolean(
+    fundingResources?.personalFunds ||
+      fundingResources?.grantsAndWages ||
+      fundingResources?.scholarships ||
+      fundingResources?.industryPartnerships ||
+      fundingResources?.collaboration ||
+      fundingResources?.other?.checked
+  );
+
+  const fundingResourcesValid =
+    hasFundingSelection &&
+    (!fundingResources?.other?.checked ||
+      fundingResources?.other?.specification?.trim());
+
+  const isNextDisabled =
+    !researchTitle?.trim() ||
+    !remarks?.trim() ||
+    !hasValidApplicants ||
+    !labFacilitiesValid ||
+    !fundingResourcesValid;
+
+  const laboratoryFacilitiesError = form.formState.errors.laboratoryFacilities
+    ?.message as string | undefined;
+  const fundingResourcesError = form.formState.errors.fundingResources
+    ?.message as string | undefined;
+  const remarksError = form.formState.errors.remarks?.message as
+    | string
+    | undefined;
+
+  useEffect(() => {
+    if (isLoading || isSubmitting) return;
+    void form.trigger(["laboratoryFacilities", "fundingResources"]);
+  }, [form, isLoading, isSubmitting, formData, activeApplicationId]);
+
+  useEffect(() => {
+    if (isLoading || isSubmitting) return;
+    void form.trigger("laboratoryFacilities");
+  }, [form, isLoading, isSubmitting, laboratoryFacilities]);
+
+  useEffect(() => {
+    if (isLoading || isSubmitting) return;
+    void form.trigger("fundingResources");
+  }, [form, isLoading, isSubmitting, fundingResources]);
+
+  useEffect(() => {
+    if (isLoading || isSubmitting) return;
+    if (labFacilitiesValid) {
+      form.clearErrors("laboratoryFacilities");
+    }
+  }, [form, isLoading, isSubmitting, labFacilitiesValid]);
+
+  useEffect(() => {
+    if (isLoading || isSubmitting) return;
+    if (fundingResourcesValid) {
+      form.clearErrors("fundingResources");
+    }
+  }, [form, isLoading, isSubmitting, fundingResourcesValid]);
+
+  useEffect(() => {
+    if (isLoading || isSubmitting) return;
+    void form.trigger(["remarks", "applicants"]);
+  }, [form, isLoading, isSubmitting, formData, activeApplicationId]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -1252,7 +1441,7 @@ export function SubstantialUseForm() {
               name="researchTitle"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Research Title</FormLabel>
+                  <FormLabel className="text-base">Research Title<span className="text-red-500"> *</span></FormLabel>
                   <FormDescription>
                     This is to certify that aside from the ordinarily available
                     resources of the University such as office, library,
@@ -1411,6 +1600,11 @@ export function SubstantialUseForm() {
                   )}
                 />
               </div>
+              {laboratoryFacilitiesError && (
+                <p className="text-sm font-medium text-destructive">
+                  {laboratoryFacilitiesError}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -1513,6 +1707,11 @@ export function SubstantialUseForm() {
                   )}
                 />
               </div>
+              {fundingResourcesError && (
+                <p className="text-sm font-medium text-destructive">
+                  {fundingResourcesError}
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -1533,7 +1732,9 @@ export function SubstantialUseForm() {
               name="remarks"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Remarks</FormLabel>
+                  <FormLabel className="text-base">
+                    Remarks<span className="text-red-500"> *</span>
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Enter any additional remarks..."
@@ -1542,7 +1743,11 @@ export function SubstantialUseForm() {
                       disabled={!canEdit}
                     />
                   </FormControl>
-                  <FormMessage />
+                  {remarksError && (
+                    <p className="text-sm font-medium text-destructive">
+                      {remarksError}
+                    </p>
+                  )}
                 </FormItem>
               )}
             />
@@ -1666,6 +1871,9 @@ export function SubstantialUseForm() {
                         const [isYearView, setIsYearView] = useState(false);
                         const startDate = new Date(1980, 0);
                         const endDate = new Date(2030, 11);
+                        const dateError =
+                          form.formState.errors.applicants?.[index]?.date
+                            ?.message;
 
                         const years = eachYearOfInterval({
                           start: startOfYear(startDate),
@@ -1674,7 +1882,10 @@ export function SubstantialUseForm() {
 
                         return (
                           <FormItem className="flex flex-col">
-                            <FormLabel>Certification Date</FormLabel>
+                            <FormLabel>
+                              Certification Date
+                              <span className="text-red-500"> *</span>
+                            </FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
                                 <FormControl>
@@ -1807,7 +2018,11 @@ export function SubstantialUseForm() {
                                 </div>
                               </PopoverContent>
                             </Popover>
-                            <FormMessage />
+                            {dateError && (
+                              <p className="text-sm font-medium text-destructive">
+                                {dateError}
+                              </p>
+                            )}
                           </FormItem>
                         );
                       }}
@@ -1838,7 +2053,7 @@ export function SubstantialUseForm() {
               <Button
                 type="submit"
                 className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
-                disabled={!canSubmit}
+                disabled={!canSubmit || isNextDisabled}
               >
                 {isSubmitting ? "Submitting..." : "Submit Form"}
               </Button>
@@ -1868,7 +2083,7 @@ export function SubstantialUseForm() {
               type="button"
               className="text-[#1B5E20] border-[#1B5E20] hover:bg-[#1B5E20]/10"
               onClick={handleUpdate}
-              disabled={isUpdating}
+              disabled={isUpdating || isNextDisabled}
             >
               {isUpdating ? "Updating..." : "Update Form"}
             </Button>

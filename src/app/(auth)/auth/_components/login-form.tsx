@@ -23,11 +23,17 @@ function LoginFormComponent({
         "use server";
         // Use a short-term cookie to prevent multiple sign-in attempts
         // This helps reduce duplicate session checks
-        await signIn("google", {
-          callbackUrl,
-          // Allow redirects so we don't trigger duplicate session checks
-          redirect: true,
-        });
+        try {
+          console.log("[login] starting google sign-in", { callbackUrl });
+          await signIn("google", {
+            callbackUrl,
+            // Allow redirects so we don't trigger duplicate session checks
+            redirect: true,
+          });
+        } catch (error) {
+          console.error("[login] google sign-in failed", error);
+          throw error;
+        }
       }}
     >
       <div className="flex flex-col items-center gap-2 text-center">

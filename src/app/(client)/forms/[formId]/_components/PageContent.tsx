@@ -176,30 +176,67 @@ const getStatusBadge = (status: string) => {
 };
 
 // Getting Started Guide Component - NAA KOY CHANGES DIRI
+type FormStatus = {
+  clientProfile: boolean;
+  applicationTitle: boolean;
+  ipDisclosure: boolean;
+  substantialUse: boolean;
+  deedAssignment: boolean;
+};
+
+const INITIAL_FORM_STATUS: FormStatus = {
+  clientProfile: false,
+  applicationTitle: false,
+  ipDisclosure: false,
+  substantialUse: false,
+  deedAssignment: false,
+};
+
 const GettingStartedGuide = ({
   isCollapsed,
   setIsCollapsed,
+  formStatus,
+  onStepClick,
 }: {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
+  formStatus?: FormStatus;
+  onStepClick?: (tabId: FormTabId) => void;
 }) => {
-  // Track completion of each section
-  const [completedSections, setCompletedSections] = useState({
-    personalInfo: false,
-    educationalBackground: false,
-    backgroundIP: false,
-  });
+  const steps = [
+    {
+      label: "Client Profile",
+      tabId: FormTabs.CLIENT_PROFILE,
+      statusKey: "clientProfile",
+    },
+    {
+      label: "Application Title",
+      tabId: FormTabs.Application_Title,
+      statusKey: "applicationTitle",
+    },
+    {
+      label: "IP Disclosure",
+      tabId: FormTabs.IP_DISCLOSURE,
+      statusKey: "ipDisclosure",
+    },
+    {
+      label: "Substantial Use",
+      tabId: FormTabs.SUBSTANTIAL_USE,
+      statusKey: "substantialUse",
+    },
+    {
+      label: "Deed of Assignment",
+      tabId: FormTabs.DEED_ASSIGNMENT,
+      statusKey: "deedAssignment",
+    },
+  ] as const;
 
-  const totalSteps = Object.keys(completedSections).length;
+  const completedCount = steps.reduce((count, step) => {
+    return count + (formStatus?.[step.statusKey] ? 1 : 0);
+  }, 0);
 
-  // Compute completed steps dynamically
-  const completedStep = Object.values(completedSections).filter(Boolean).length;
-  const handleSectionCompletion = (
-    section: "personalInfo" | "educationalBackground" | "backgroundIP",
-    isCompleted: boolean,
-  ) => {
-    setCompletedSections((prev) => ({ ...prev, [section]: isCompleted }));
-  };
+  const progressSegments = Math.min(completedCount, steps.length - 1);
+  const activeIndex = Math.min(completedCount, steps.length - 1);
 
   return (
 
@@ -450,32 +487,32 @@ const GettingStartedGuide = ({
 
   {/* Active progress line */}
   <div
-    className="absolute top-4 left-6 h-1 bg-[#1B5E20] rounded-full transition-all duration-300"
-    style={{
-      width: `${
-        (completedStep / (totalSteps - 1)) * 100
-      }%`,
-    }}
-  />
+  className="absolute top-4 left-12 h-1 bg-[#1B5E20] rounded-full transition-all duration-300"
+  style={{
+    width: `calc((100% - 6rem) * ${progressSegments / (steps.length - 1)})`,
+  }}
+/>
 
   {/* Steps */}
   <div className="relative flex justify-between">
-    {[ 
-      "Client Profile",
-      "Application Title",
-      "IP Disclosure",
-      "Substantial Use",
-      "Deed of Assignment",
-    ].map((label, index) => {
-
-      const isCompleted = index < completedStep;
-      const isActive = index === completedStep;
+    {steps.map((step, index) => {
+      const isCompleted = Boolean(formStatus?.[step.statusKey]);
+      const isActive = index === activeIndex;
+      const isClickable =
+        (isCompleted || isActive) && typeof onStepClick === "function";
 
       return (
         <div key={index} className="flex flex-col items-center w-24 text-center">
           
           {/* Circle */}
-          <div
+          <button
+            type="button"
+            onClick={() => {
+              if (isClickable) {
+                onStepClick(step.tabId);
+              }
+            }}
+            disabled={!isClickable}
             className={`h-9 w-9 rounded-full border-2 flex items-center justify-center text-xs font-semibold transition-all
               ${
                 isCompleted
@@ -483,14 +520,16 @@ const GettingStartedGuide = ({
                   : isActive
                   ? "bg-[#1B5E20] text-white border-[#1B5E20]"
                   : "bg-white text-slate-400 border-slate-300"
-              }`}
+              } ${
+              isClickable ? "cursor-pointer" : "cursor-not-allowed opacity-70"
+            }`}
           >
             {isCompleted ? "✓" : index + 1}
-          </div>
+          </button>
 
           {/* Label */}
           <span className="mt-2 text-[11px] text-slate-600">
-            {label}
+            {step.label}
           </span>
         </div>
       );
@@ -535,7 +574,7 @@ export function PageContent() {
     useState(false);
   const [isCreateCooldown, setIsCreateCooldown] = useState(false);
   const [clientSideAllFormsCompleted, setClientSideAllFormsCompleted] =
-    useState(false);
+    useState<FormStatus>(INITIAL_FORM_STATUS);
   const [hasSeenGuide, setHasSeenGuide] = useState(false);
   // Commented out: help panel state (form sections hidden)
   // const [showHelpPanel, setShowHelpPanel] = useState(false);
@@ -568,7 +607,7 @@ export function PageContent() {
         console.error("Error creating application:", error);
       },
       onSettled: () => {
-        setIsCreatingFirstApplicatio(false);
+        setIsCreatingFirstApplication(false);
       },
     });
 
@@ -588,6 +627,30 @@ export function PageContent() {
       }
     >
   >({});
+  const applyStatusUpdate = useCallback(
+    (applicationId: string, updates: Partial<FormStatus>) => {
+      let mergedStatus: FormStatus = INITIAL_FORM_STATUS;
+
+      setKnownApplicationStatus((prev) => {
+        const existing = prev[applicationId]?.status || INITIAL_FORM_STATUS;
+        mergedStatus = {
+          ...INITIAL_FORM_STATUS,
+          ...existing,
+          ...updates,
+        };
+        return {
+          ...prev,
+          [applicationId]: {
+            timestamp: Date.now(),
+            status: mergedStatus,
+          },
+        };
+      });
+
+      setClientSideAllFormsCompleted(mergedStatus);
+    },
+    []
+  );
   const [isCheckingFormStatus, setIsCheckingFormStatus] = useState(false);
 
   // Safely update the guide collapsed state - defined before any useEffect hooks
@@ -775,23 +838,7 @@ export function PageContent() {
 
       // Cache the status
       if (isMounted) {
-        setKnownApplicationStatus((prev) => {
-          const newState = { ...prev };
-          newState[activeApplicationId] = {
-            timestamp: Date.now(),
-            status: formStatus,
-          };
-          return newState;
-        });
-
-        // Update the React state
-        setClientSideAllFormsCompleted(
-          formStatus.clientProfile &&
-            formStatus.applicationTitle &&
-            formStatus.ipDisclosure &&
-            formStatus.substantialUse &&
-            formStatus.deedAssignment,
-        );
+        applyStatusUpdate(activeApplicationId, formStatus);
 
         // Count completed forms and set states accordingly
         const completedCount = Object.values(formStatus).filter(Boolean).length;
@@ -853,23 +900,17 @@ export function PageContent() {
 
     // Check if we already know the status for this application and it's recent enough
     const knownStatus = knownApplicationStatus[activeApplicationId];
-    if (
-      !shouldForceCheck &&
-      knownStatus &&
-      now - knownStatus.timestamp < MIN_CHECK_INTERVAL
-    ) {
-      console.log(
-        "Using cached form status for application:",
-        activeApplicationId,
-      );
-      console.log("Cached status:", knownStatus.status);
-      setClientSideAllFormsCompleted(
-        knownStatus.status.clientProfile &&
-          knownStatus.status.applicationTitle &&
-          knownStatus.status.ipDisclosure &&
-          knownStatus.status.substantialUse &&
-          knownStatus.status.deedAssignment,
-      );
+      if (
+        !shouldForceCheck &&
+        knownStatus &&
+        now - knownStatus.timestamp < MIN_CHECK_INTERVAL
+      ) {
+        console.log(
+          "Using cached form status for application:",
+          activeApplicationId,
+        );
+        console.log("Cached status:", knownStatus.status);
+        setClientSideAllFormsCompleted(knownStatus.status);
 
       // Directly update the DOM with the cached status
       // updateFormProgressDisplay(knownStatus.status);
@@ -1013,7 +1054,7 @@ export function PageContent() {
 
     if (activeApplicationId) {
       // Reset form status data
-      setClientSideAllFormsCompleted(false);
+      setClientSideAllFormsCompleted(INITIAL_FORM_STATUS);
 
       // Clear cached status data for applications
       setKnownApplicationStatus({});
@@ -1059,8 +1100,6 @@ export function PageContent() {
   useEffect(() => {
     // Only run this effect on the client
     if (typeof window === "undefined") return;
-
-    const allCompleted = clientSideAllFormsCompleted;
 
     // Log form status data to help debug
     console.log("Current form status data:", clientSideAllFormsCompleted);
@@ -1110,7 +1149,6 @@ export function PageContent() {
       }
     }
 
-    setClientSideAllFormsCompleted(allCompleted);
   }, [clientSideAllFormsCompleted, activeApplicationId]);
 
   // Effect 6: Automatically redirect to client-profile tab if no tab is specified
@@ -1181,31 +1219,10 @@ export function PageContent() {
 
       if (applicationId === activeApplicationId) {
         // Update UI state
-        setClientSideAllFormsCompleted(completed);
+        applyStatusUpdate(applicationId, { clientProfile: completed });
         console.log(
           `Client profile form ${completed ? "completed" : "incomplete"}`,
         );
-
-        // Update cached status so the next tab enables immediately
-        setKnownApplicationStatus((prev) => {
-          const existing = prev[applicationId]?.status || {
-            clientProfile: false,
-            applicationTitle: false,
-            ipDisclosure: false,
-            substantialUse: false,
-            deedAssignment: false,
-          };
-          return {
-            ...prev,
-            [applicationId]: {
-              timestamp: Date.now(),
-              status: {
-                ...existing,
-                clientProfile: completed,
-              },
-            },
-          };
-        });
 
         // If completed, register in database
         if (completed) {
@@ -1225,7 +1242,7 @@ export function PageContent() {
 
       if (applicationId === activeApplicationId) {
         // Update UI state
-        setClientSideAllFormsCompleted(completed);
+        applyStatusUpdate(applicationId, { ipDisclosure: completed });
         console.log(
           `IP disclosure form ${completed ? "completed" : "incomplete"}`,
         );
@@ -1247,34 +1264,7 @@ export function PageContent() {
       const { completed, applicationId } = customEvent.detail;
 
       if (applicationId === activeApplicationId) {
-        const nextStatus = {
-          clientProfile: false,
-          applicationTitle: false,
-          ipDisclosure: false,
-          substantialUse: false,
-          deedAssignment: false,
-        };
-
-        const existing = knownApplicationStatus[applicationId]?.status;
-        if (existing) {
-          Object.assign(nextStatus, existing);
-        }
-
-        nextStatus.applicationTitle = completed;
-
-        setKnownApplicationStatus((prev) => {
-          return {
-            ...prev,
-            [applicationId]: {
-              timestamp: Date.now(),
-              status: {
-                ...nextStatus,
-              },
-            },
-          };
-        });
-
-        // updateFormProgressDisplay(nextStatus);
+        applyStatusUpdate(applicationId, { applicationTitle: completed });
       }
     };
 
@@ -1284,7 +1274,7 @@ export function PageContent() {
 
       if (applicationId === activeApplicationId) {
         // Update UI state
-        setClientSideAllFormsCompleted(completed);
+        applyStatusUpdate(applicationId, { substantialUse: completed });
         console.log(
           `Substantial use form ${completed ? "completed" : "incomplete"}`,
         );
@@ -1307,7 +1297,7 @@ export function PageContent() {
 
       if (applicationId === activeApplicationId) {
         // Update UI state
-        setClientSideAllFormsCompleted(completed);
+        applyStatusUpdate(applicationId, { deedAssignment: completed });
         console.log(
           `Deed assignment form ${completed ? "completed" : "incomplete"}`,
         );
@@ -1451,48 +1441,9 @@ export function PageContent() {
           }
 
           // Update cached status so the next tab enables immediately
-          let nextStatus: {
-            clientProfile: boolean;
-            applicationTitle: boolean;
-            ipDisclosure: boolean;
-            substantialUse: boolean;
-            deedAssignment: boolean;
-          } | null = null;
-
-          setKnownApplicationStatus((prev) => {
-            const existing = prev[applicationId]?.status || {
-              clientProfile: false,
-              applicationTitle: false,
-              ipDisclosure: false,
-              substantialUse: false,
-              deedAssignment: false,
-            };
-
-            nextStatus = {
-              ...existing,
-              [normalizedFormType]: completed,
-            };
-
-            return {
-              ...prev,
-              [applicationId]: {
-                timestamp: Date.now(),
-                status: nextStatus!,
-              },
-            };
-          });
-
-          if (nextStatus) {
-            // Keep UI in sync with the latest status
-            // updateFormProgressDisplay(nextStatus);
-            setClientSideAllFormsCompleted(
-              nextStatus.clientProfile &&
-                nextStatus.applicationTitle &&
-                nextStatus.ipDisclosure &&
-                nextStatus.substantialUse &&
-                nextStatus.deedAssignment,
-            );
-          }
+          applyStatusUpdate(applicationId, {
+            [normalizedFormType]: completed,
+          } as Partial<FormStatus>);
 
           console.log(
             `Form status updated: ${formType} is now ${
@@ -1512,12 +1463,6 @@ export function PageContent() {
       delete window.updateIPFormStatus;
     };
   }, [activeApplicationId]);
-
-  // Use this for rendering instead of calculating during render
-  const allFormsCompleted =
-    typeof window === "undefined"
-      ? false // Default to false on server
-      : clientSideAllFormsCompleted;
 
   // Define a function to change tabs and update URL with improved state handling
   const handleTabChange = (tabId: string) => {
@@ -1851,7 +1796,12 @@ export function PageContent() {
     try {
       return (
         <GettingStartedGuide
-          progress={progress}
+          formStatus={
+            activeApplicationId
+              ? knownApplicationStatus[activeApplicationId]?.status
+              : undefined
+          }
+          onStepClick={(tabId) => handleTabChange(tabId)}
           isCollapsed={isGuideCollapsed}
           setIsCollapsed={(collapsed) => {
             try {
@@ -1976,7 +1926,7 @@ export function PageContent() {
                     </code>
                   </div>
                 </div>
-
+ 
                 <div className="ml-auto">
                   <Button
                     variant="ghost"
@@ -2014,9 +1964,9 @@ export function PageContent() {
         )}
 
         {/* Main Content Area with Sidebar and Form */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="w-full">
           {/* Left Sidebar - Form Navigation */}
-          <div className="col-span-12 md:col-span-3 lg:col-span-3">
+          <div className=" w-full">
             <div className="sticky top-6 space-y-5">
               {/* Forms Navigation (commented out to hide form sections) */}
               {/* <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
@@ -2109,7 +2059,7 @@ export function PageContent() {
                 </Card>
               )} */}
 
-              {/* Additional Actions */}
+              {/* Additional Actions  
               {activeApplicationId && (
                 <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
                   <div className="bg-gray-50 p-3 border-b">
@@ -2124,13 +2074,15 @@ export function PageContent() {
                       onClick={() => setShowDocuments(true)}
                     >
                       <Upload className="h-3.5 w-3.5" />
-                      <span>Manage Documents</span>
                     </Button>
                   </div>
                 </div>
               )}
+                */}
+                
             </div>
           </div>
+          
 
           {/* Right Content Area - Form Content */}
           <div className="col-span-12 md:col-span-9 lg:col-span-9">
@@ -2171,14 +2123,14 @@ export function PageContent() {
             ) : (
               <>
                 {/* Main Form Content Area */}
-                <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                  <div className="border-b bg-gray-50 py-3 px-4">
+                <div className=" w-full bg-white rounded-lg border shadow-sm overflow-hidden">
+                  <div className=" border-b bg-gray-50 py-3 px-4">
                     <h2 className="font-medium text-[#1B5E20]">
                       {sidebarItems.find((item) => item.id === activeForm)
                         ?.label || "Form Content"}
                     </h2>
                   </div>
-                  <div className="p-5">
+                  <div className=" w-full p-5">
                     <ClientOnlyContent activeForm={activeForm} />
                   </div>
                 </div>

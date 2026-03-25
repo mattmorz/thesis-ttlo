@@ -37,6 +37,13 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 /**
  * Form schema for client information
@@ -54,9 +61,21 @@ const formSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   middleName: z.string().optional(),
   gender: z.object({
-    value: z.enum(["male", "female", "prefer_not_to_say"]),
+    value: z
+      .string()
+      .min(1, "Gender is required")
+      .refine(
+        (value) => ["male", "female", "prefer_not_to_say"].includes(value),
+        "Gender is required"
+      ),
   }),
-  age: z.number().min(1, "Age is required").max(100, "Age must be 100 or less").optional(),
+  age: z
+    .number({
+      required_error: "Age is required",
+      invalid_type_error: "Age must be a number",
+    })
+    .min(1, "Age is required")
+    .max(100, "Age must be 100 or less"),
   citizenship: z.object({
     value: z.enum(["filipino", "other"]),
     otherValue: z.string().optional().nullable(),
@@ -73,9 +92,39 @@ const formSchema = z.object({
   companyEmail: z.string().email("Invalid email address").optional(),
   collegeName: z.string().optional(),
   departmentName: z.string().optional(),
-  occupation: z.string().optional(),
-  affiliationType: z.enum(["company", "academic", "none"]).default("company"),
+  occupation: z.string().min(1, "Occupation is required"),
+  affiliationType: z.enum(["company", "academic", "none"], {
+    required_error: "Affiliation type is required",
+  }),
 });
+
+const getLocalDateInputValue = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const calculateAgeFromBirthDate = (
+  birthDateValue: string,
+): number | undefined => {
+  if (!birthDateValue) return undefined;
+  const [year, month, day] = birthDateValue.split("-").map(Number);
+  if (!year || !month || !day) return undefined;
+  const birthDate = new Date(year, month - 1, day);
+  if (Number.isNaN(birthDate.getTime())) return undefined;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const hasHadBirthdayThisYear =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+  if (!hasHadBirthdayThisYear) {
+    age -= 1;
+  }
+  if (age < 0) return undefined;
+  return Math.min(age, 100);
+};
 
 // Add these props to the component
 interface ClientInformationProps {
@@ -128,6 +177,7 @@ export function ClientInformation({
   const [selectedCitizenship, setSelectedCitizenship] = useState<string | null>(
     null,
   );
+  const [birthDate, setBirthDate] = useState<string>("");
 
   // Get active application for registry integration
   const { activeApplicationId } = useActiveApplication();
@@ -139,11 +189,13 @@ export function ClientInformation({
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       firstName: "",
       lastName: "",
       middleName: "",
-      gender: { value: "male" },
+      gender: { value: "" },
       age: undefined,
       citizenship: { value: "filipino", otherValue: null },
       mailingAddress: "",
@@ -267,7 +319,7 @@ export function ClientInformation({
                   value:
                     typeof initialData.gender === "string"
                       ? initialData.gender
-                      : "male",
+                      : "",
                 },
           citizenship: initialData.citizenship || {
             value: "filipino",
@@ -283,7 +335,7 @@ export function ClientInformation({
           firstName: "",
           lastName: "",
           middleName: "",
-          gender: { value: "male" },
+          gender: { value: "" },
           age: undefined,
           citizenship: { value: "filipino", otherValue: null },
           mailingAddress: "",
@@ -318,8 +370,7 @@ export function ClientInformation({
 
           // Ensure specific objects are properly merged
           gender: {
-            value:
-              parsedData.gender?.value || formattedData.gender?.value || "male",
+            value: parsedData.gender?.value || formattedData.gender?.value || "",
           },
 
           citizenship: {
@@ -342,18 +393,18 @@ export function ClientInformation({
 
       // Make sure gender has a valid value
       if (!formattedData.gender || typeof formattedData.gender !== "object") {
-        formattedData.gender = { value: "male" };
+        formattedData.gender = { value: "" };
       } else if (
         !formattedData.gender.value ||
         typeof formattedData.gender.value !== "string"
       ) {
-        formattedData.gender.value = "male";
+        formattedData.gender.value = "";
       } else if (
         !["male", "female", "prefer_not_to_say"].includes(
           formattedData.gender.value,
         )
       ) {
-        formattedData.gender.value = "male";
+        formattedData.gender.value = "";
       }
 
       // Fix citizenship data
@@ -441,6 +492,7 @@ export function ClientInformation({
         setTimeout(() => {
           form.reset(formattedData);
           setFormData(formattedData);
+          form.trigger(undefined, { shouldFocus: false });
 
           // Explicitly update selectedCitizenship to match the loaded data
           if (formattedData.citizenship && formattedData.citizenship.value) {
@@ -476,7 +528,7 @@ export function ClientInformation({
         const formattedValues = {
           ...values,
           gender: {
-            value: values.gender?.value || "male",
+            value: values.gender?.value || "",
           },
         };
 
@@ -502,7 +554,7 @@ export function ClientInformation({
         const formattedValues = {
           ...values,
           gender: {
-            value: values.gender?.value || "male",
+            value: values.gender?.value || "",
           },
         };
 
@@ -533,7 +585,7 @@ export function ClientInformation({
         const formattedValues = {
           ...values,
           gender: {
-            value: values.gender?.value || "male",
+            value: values.gender?.value || "",
           },
         };
 
@@ -566,7 +618,7 @@ export function ClientInformation({
           const formattedValues = {
             ...values,
             gender: {
-              value: values.gender?.value || "male",
+              value: values.gender?.value || "",
             },
             citizenship: {
               value: values.citizenship?.value || "filipino",
@@ -1870,7 +1922,7 @@ export function ClientInformation({
           formattedData.gender.value,
         )
       ) {
-        formattedData.gender.value = "male";
+        formattedData.gender.value = "";
       }
     }
 
@@ -2052,30 +2104,27 @@ export function ClientInformation({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Age <span className="text-red-500">*</span>
+                        Birth date <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="Enter age (ex. 25)"
-                          {...field}
-                          value={
-                            field.value === undefined ? "" : String(field.value)
-                          }
+                          type="date"
+                          max={getLocalDateInputValue(new Date())}
+                          placeholder="Select birth date"
+                          value={birthDate}
                           onChange={(e) => {
-                            const next = e.target.value.replace(/[^0-9]/g, "");
-                            if (next === "") {
-                              field.onChange(undefined);
-                              return;
-                            }
-                            const parsed = parseInt(next, 10);
-                            const clamped = Math.min(parsed, 100);
-                            field.onChange(clamped);
+                            const next = e.target.value;
+                            setBirthDate(next);
+                            const age = calculateAgeFromBirthDate(next);
+                            field.onChange(age);
                           }}
                         />
                       </FormControl>
+                      <FormDescription>
+                        {field.value !== undefined
+                          ? `Calculated age: ${field.value}`
+                          : "Age will be calculated from the birth date."}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -2188,7 +2237,12 @@ export function ClientInformation({
                         Email <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter email address" {...field} />
+                        <Input
+                          type="email"
+                          autoComplete="email"
+                          placeholder="Enter email address"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -2204,7 +2258,16 @@ export function ClientInformation({
                         Contact Number <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter contact number" {...field} />
+                        <Input
+                          {...field}
+                          placeholder="Enter contact number"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(e.target.value.replace(/\D/g, ""))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -2250,90 +2313,87 @@ export function ClientInformation({
                 name="occupation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Occupation</FormLabel>
-
-  control={form.control}
-  name="occupation"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Occupation <span className="text-red-500">*</span></FormLabel>
-
-      <FormControl>
-        <select
-          {...field}
-          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">-- Select one --</option>
-
-          <optgroup label="Healthcare Practitioners and Technical Occupations">
-            <option value="Chiropractor">Chiropractor</option>
-            <option value="Dentist">Dentist</option>
-            <option value="Dietitian or Nutritionist">Dietitian or Nutritionist</option>
-            <option value="Optometrist">Optometrist</option>
-            <option value="Pharmacist">Pharmacist</option>
-            <option value="Physician">Physician</option>
-            <option value="Physician Assistant">Physician Assistant</option>
-            <option value="Podiatrist">Podiatrist</option>
-            <option value="Registered Nurse">Registered Nurse</option>
-            <option value="Therapist">Therapist</option>
-            <option value="Veterinarian">Veterinarian</option>
-            <option value="Health Technologist or Technician">
-              Health Technologist or Technician
-            </option>
-            <option value="Other Healthcare Practitioner">
-              Other Healthcare Practitioner
-            </option>
-          </optgroup>
-
-          <optgroup label="Healthcare Support Occupations">
-            <option value="Nursing Aide">Nursing / Home Health Aide</option>
-            <option value="Therapy Assistant">Occupational / Physical Therapy Assistant</option>
-            <option value="Other Healthcare Support">
-              Other Healthcare Support Occupation
-            </option>
-          </optgroup>
-
-          <optgroup label="Business and Management Occupations">
-            <option value="Chief Executive">Chief Executive</option>
-            <option value="Operations Manager">General / Operations Manager</option>
-            <option value="Marketing Manager">Marketing / Sales Manager</option>
-            <option value="IT Manager">IT / HR Manager</option>
-            <option value="Accountant">Accountant / Auditor</option>
-            <option value="Business Owner">Business Owner</option>
-            <option value="Other Business Occupation">
-              Other Business Occupation
-            </option>
-          </optgroup>
-
-          <optgroup label="Education Occupations">
-            <option value="College Professor">College Professor</option>
-            <option value="School Teacher">Primary / Secondary Teacher</option>
-            <option value="Other Teacher">Other Teacher</option>
-          </optgroup>
-
-          <optgroup label="Other Occupations">
-            <option value="Military">Military</option>
-            <option value="Homemaker">Homemaker</option>
-            <option value="Student">Student</option>
-            <option value="Dont Know">Don't Know</option>
-            <option value="Not Applicable">Not Applicable</option>
-          </optgroup>
-        </select>
-      </FormControl>
-
-      <FormDescription>
-        Select your occupation. Scroll to see more options.
-      </FormDescription>
-
-      <FormMessage />
-    </FormItem>
-  )}
-/>
-
+                    <FormLabel>
+                      Occupation <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <select
+                        {...field}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="">-- Select one --</option>
+                        <optgroup label="Healthcare Practitioners and Technical Occupations">
+                          <option value="Chiropractor">Chiropractor</option>
+                          <option value="Dentist">Dentist</option>
+                          <option value="Dietitian or Nutritionist">
+                            Dietitian or Nutritionist
+                          </option>
+                          <option value="Optometrist">Optometrist</option>
+                          <option value="Pharmacist">Pharmacist</option>
+                          <option value="Physician">Physician</option>
+                          <option value="Physician Assistant">
+                            Physician Assistant
+                          </option>
+                          <option value="Podiatrist">Podiatrist</option>
+                          <option value="Registered Nurse">
+                            Registered Nurse
+                          </option>
+                          <option value="Therapist">Therapist</option>
+                          <option value="Veterinarian">Veterinarian</option>
+                          <option value="Health Technologist or Technician">
+                            Health Technologist or Technician
+                          </option>
+                          <option value="Other Healthcare Practitioner">
+                            Other Healthcare Practitioner
+                          </option>
+                        </optgroup>
+                        <optgroup label="Healthcare Support Occupations">
+                          <option value="Nursing Aide">
+                            Nursing / Home Health Aide
+                          </option>
+                          <option value="Therapy Assistant">
+                            Occupational / Physical Therapy Assistant
+                          </option>
+                          <option value="Other Healthcare Support">
+                            Other Healthcare Support Occupation
+                          </option>
+                        </optgroup>
+                        <optgroup label="Business and Management Occupations">
+                          <option value="Chief Executive">Chief Executive</option>
+                          <option value="Operations Manager">
+                            General / Operations Manager
+                          </option>
+                          <option value="Marketing Manager">
+                            Marketing / Sales Manager
+                          </option>
+                          <option value="IT Manager">IT / HR Manager</option>
+                          <option value="Accountant">Accountant / Auditor</option>
+                          <option value="Business Owner">Business Owner</option>
+                          <option value="Other Business Occupation">
+                            Other Business Occupation
+                          </option>
+                        </optgroup>
+                        <optgroup label="Education Occupations">
+                          <option value="College Professor">
+                            College Professor
+                          </option>
+                          <option value="School Teacher">
+                            Primary / Secondary Teacher
+                          </option>
+                          <option value="Other Teacher">Other Teacher</option>
+                        </optgroup>
+                        <optgroup label="Other Occupations">
+                          <option value="Military">Military</option>
+                          <option value="Homemaker">Homemaker</option>
+                          <option value="Student">Student</option>
+                          <option value="Dont Know">Don't Know</option>
+                          <option value="Not Applicable">Not Applicable</option>
+                        </optgroup>
+                      </select>
+                    </FormControl>
                     <FormDescription>
                       Select your occupation. Scroll to see more options.
                     </FormDescription>
-
                     <FormMessage />
                   </FormItem>
                 )}

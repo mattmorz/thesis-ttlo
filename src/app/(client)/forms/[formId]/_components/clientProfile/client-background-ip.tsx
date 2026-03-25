@@ -1002,6 +1002,8 @@ export function ClientBackgroundIP({
     // Skip during server-side rendering
     if (typeof window === "undefined") return;
 
+    let toastId: string | number | undefined;
+
     try {
       setIsSubmitting(true);
 
@@ -1013,7 +1015,7 @@ export function ClientBackgroundIP({
       }
 
       // Show loading toast immediately
-      const toastId = toast.loading("Submitting Form", {
+      toastId = toast.loading("Submitting Form", {
         description: "Please wait while we save all your information...",
       });
 
@@ -1369,12 +1371,18 @@ export function ClientBackgroundIP({
       }, 300);
     } catch (error) {
       console.error("Error submitting form:", error);
+      if (toastId) {
+        toast.dismiss(toastId);
+      }
       toast.error(
         error instanceof Error
           ? error.message
           : "An error occurred while saving your data"
       );
     } finally {
+      if (toastId) {
+        toast.dismiss(toastId);
+      }
       setIsSubmitting(false);
     }
   };

@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import {
   DriveAuthError,
   MAX_UPLOAD_SIZE_BYTES,
+  ensureDriveFolderPath,
   uploadFileToDrive,
 } from "@/lib/google-drive";
 
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest) {
 
     // Verify that the IP application actually exists in the database
     const ipApplicationExists = await db
-      .select({ id: ipApplication.id })
+      .select({ id: ipApplication.id, title: ipApplication.title })
       .from(ipApplication)
       .where(eq(ipApplication.id, ipApplicationId))
       .limit(1);
@@ -159,6 +160,16 @@ export async function POST(req: NextRequest) {
       "[API/documents/other/upload] IP Application exists:",
       ipApplicationId
     );
+
+    const applicationTitle = ipApplicationExists?.[0]?.title || ipApplicationId;
+    const formName =
+      (formData.get("formName") as string | null) ||
+      (formId ? `Form ${formId}` : "Other Documents");
+    const folderPath = ["TTLO", applicationTitle, formName];
+    const { folderId } = await ensureDriveFolderPath({
+      userId,
+      pathSegments: folderPath,
+    });
 
     // Process each file
     const uploadedFiles = [];
@@ -210,8 +221,9 @@ export async function POST(req: NextRequest) {
       const driveFile = await uploadFileToDrive({
         userId,
         file,
-        fileName,
+        fileName: `${ipApplicationId}-${fileName}`,
         mimeType: fileType,
+        parentId: folderId,
       });
 
       const fileUrl =

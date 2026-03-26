@@ -120,19 +120,45 @@ export function EducationalBackground({
     !disableLocalStorage && typeof window !== "undefined";
   const getStorageItem = (key: string) =>
     canUseStorage ? localStorage.getItem(key) : null;
+  const getSharedStorageItem = (baseKey: string) => {
+    if (typeof window === "undefined") return null;
+    if (activeApplicationId) {
+      const appValue = localStorage.getItem(
+        `${baseKey}-${activeApplicationId}`,
+      );
+      if (appValue) return appValue;
+    }
+    return localStorage.getItem(baseKey);
+  };
+  const getAppStorageItem = (baseKey: string) => {
+    if (!canUseStorage) return null;
+    if (activeApplicationId) {
+      const appValue = localStorage.getItem(
+        `${baseKey}-${activeApplicationId}`,
+      );
+      if (appValue) return appValue;
+    }
+    return localStorage.getItem(baseKey);
+  };
+  const normalizeDraftKey = (key: string) => {
+    if (activeApplicationId && key.endsWith(`-${activeApplicationId}`)) {
+      return key.replace(`-${activeApplicationId}`, "");
+    }
+    return key;
+  };
   const setStorageItem = (key: string, value: string) => {
     if (canUseStorage) {
       localStorage.setItem(key, value);
       return;
     }
-    onDraftChange?.(key, value);
+    onDraftChange?.(normalizeDraftKey(key), value);
   };
   const removeStorageItem = (key: string) => {
     if (canUseStorage) {
       localStorage.removeItem(key);
       return;
     }
-    onDraftChange?.(key, null);
+    onDraftChange?.(normalizeDraftKey(key), null);
   };
 
   // Initialize form submission hook for registry
@@ -216,7 +242,7 @@ export function EducationalBackground({
   useEffect(() => {
     try {
       // First try to load from localStorage to get the most recent changes
-      const savedData = getStorageItem("educationalBackgroundData");
+      const savedData = getSharedStorageItem("educationalBackgroundData");
       let formattedData;
 
       if (savedData) {
@@ -497,7 +523,7 @@ export function EducationalBackground({
 
       try {
         // Get personal information data
-        const personalData = getStorageItem("clientInformationData");
+        const personalData = getSharedStorageItem("clientInformationData");
         if (personalData) {
           personalInfo = JSON.parse(personalData);
           console.log(
@@ -507,7 +533,7 @@ export function EducationalBackground({
         }
 
         // Get background IP data
-        const backgroundData = getStorageItem("clientBackgroundIPData");
+        const backgroundData = getSharedStorageItem("clientBackgroundIPData");
         if (backgroundData) {
           backgroundIP = JSON.parse(backgroundData);
           console.log("Loaded background IP data for update:", backgroundIP);

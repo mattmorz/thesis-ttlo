@@ -109,11 +109,34 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
   const getStorageKey = (baseKey: string) =>
     activeApplicationId ? `${baseKey}-${activeApplicationId}` : baseKey;
 
+  const getStorageValue = (baseKey: string) => {
+    if (typeof window === "undefined") return null;
+    const appKey = getStorageKey(baseKey);
+    const raw = localStorage.getItem(appKey) || localStorage.getItem(baseKey);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
+
   const setStorageValue = (baseKey: string, value: unknown) => {
     const serialized = JSON.stringify(value);
     localStorage.setItem(baseKey, serialized);
     if (activeApplicationId) {
       localStorage.setItem(getStorageKey(baseKey), serialized);
+    }
+    if (baseKey === "clientInformationData") {
+      const birthDate =
+        value && typeof value === "object" && "birthDate" in value
+          ? (value as { birthDate?: unknown }).birthDate
+          : undefined;
+      console.log("[ClientProfileForm] setStorageValue birthDate:", {
+        baseKey,
+        storageKey: activeApplicationId ? getStorageKey(baseKey) : baseKey,
+        birthDate,
+      });
     }
   };
   const draftKeys = new Set([
@@ -566,7 +589,7 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
           console.log("[ClientProfileForm] Successfully loaded profile data");
 
           // Format API data for form use
-          const personalData = {
+          const personalData: Record<string, any> = {
             firstName: responseData.data.firstName || "",
             lastName: responseData.data.lastName || "",
             middleName: responseData.data.middleName || "",
@@ -594,6 +617,17 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
             companyEmail: responseData.data.companyEmail || "",
             occupation: responseData.data.occupation || "",
           };
+          const existingPersonal = getStorageValue("clientInformationData");
+          const resolvedBirthDate =
+            typeof personalData.birthDate === "string" &&
+            personalData.birthDate.trim()
+              ? personalData.birthDate
+              : typeof existingPersonal?.birthDate === "string"
+              ? existingPersonal.birthDate
+              : undefined;
+          const mergedPersonalData = resolvedBirthDate
+            ? { ...personalData, birthDate: resolvedBirthDate }
+            : personalData;
 
           const educationData = {
             highestDegree:
@@ -646,13 +680,13 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
 
           // Update form state with API data
           setFormState({
-            personal: personalData,
+            personal: mergedPersonalData,
             education: educationData,
             background: backgroundData,
           });
 
           // Update localStorage with server data for consistency
-          setStorageValue("clientInformationData", personalData);
+          setStorageValue("clientInformationData", mergedPersonalData);
           setStorageValue("educationalBackgroundData", educationData);
           setStorageValue("clientBackgroundIPData", backgroundData);
 

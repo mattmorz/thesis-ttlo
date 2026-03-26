@@ -57,9 +57,7 @@ declare global {
  */
 const formSchema = z.object({
   publishedResearch: z.object({
-  value: z.enum(["yes", "no", "submitted"], {
-    required_error: "This field is required",
-  }),
+    value: z.enum(["yes", "no", "submitted"]).nullable(),
 }),
   developedMaterials: z.object({
     value: z.enum(["yes", "no", "ongoing"]).nullable(),
@@ -167,19 +165,35 @@ export function ClientBackgroundIP({
     !disableLocalStorage && typeof window !== "undefined";
   const getStorageItem = (key: string) =>
     canUseStorage ? localStorage.getItem(key) : null;
+  const getSharedStorageItem = (baseKey: string) => {
+    if (typeof window === "undefined") return null;
+    if (activeApplicationId) {
+      const appValue = localStorage.getItem(
+        `${baseKey}-${activeApplicationId}`,
+      );
+      if (appValue) return appValue;
+    }
+    return localStorage.getItem(baseKey);
+  };
+  const normalizeDraftKey = (key: string) => {
+    if (activeApplicationId && key.endsWith(`-${activeApplicationId}`)) {
+      return key.replace(`-${activeApplicationId}`, "");
+    }
+    return key;
+  };
   const setStorageItem = (key: string, value: string) => {
     if (canUseStorage) {
       localStorage.setItem(key, value);
       return;
     }
-    onDraftChange?.(key, value);
+    onDraftChange?.(normalizeDraftKey(key), value);
   };
   const removeStorageItem = (key: string) => {
     if (canUseStorage) {
       localStorage.removeItem(key);
       return;
     }
-    onDraftChange?.(key, null);
+    onDraftChange?.(normalizeDraftKey(key), null);
   };
 
   // Add form submission hook for registry integration
@@ -197,7 +211,7 @@ export function ClientBackgroundIP({
     resolver: zodResolver(formSchema),
     mode: "onChange",
     defaultValues: {
-      publishedResearch: { value: null },
+      publishedResearch: { value: null }, 
       developedMaterials: { value: null },
       familiarWithIPRights: { value: null },
       ipExperience: {
@@ -770,10 +784,17 @@ export function ClientBackgroundIP({
       // Load data from all tabs via localStorage
       let personalInfo = {};
       let educationalBackground = {};
+      const getAppStorageItem = (baseKey: string) => {
+        if (activeApplicationId) {
+          const appValue = getStorageItem(`${baseKey}-${activeApplicationId}`);
+          if (appValue) return appValue;
+        }
+        return getStorageItem(baseKey);
+      };
 
       try {
         // Get personal information data
-        const personalData = getStorageItem("clientInformationData");
+        const personalData = getAppStorageItem("clientInformationData");
         if (personalData) {
           personalInfo = JSON.parse(personalData);
           console.log(
@@ -783,7 +804,7 @@ export function ClientBackgroundIP({
         }
 
         // Get educational background data
-        const educationData = getStorageItem("educationalBackgroundData");
+        const educationData = getAppStorageItem("educationalBackgroundData");
         if (educationData) {
           educationalBackground = JSON.parse(educationData);
           console.log(
@@ -1096,7 +1117,14 @@ export function ClientBackgroundIP({
 
       try {
         // Get personal information data
-        const personalData = getStorageItem("clientInformationData");
+        const personalData = getSharedStorageItem("clientInformationData");
+        console.log("[ClientBackgroundIP] Submit lookup personalData:", {
+          activeApplicationId,
+          hasPersonalData: !!personalData,
+          storageKey: activeApplicationId
+            ? `clientInformationData-${activeApplicationId}`
+            : "clientInformationData",
+        });
         if (personalData) {
           personalInfo = JSON.parse(personalData);
           console.log(
@@ -1104,6 +1132,9 @@ export function ClientBackgroundIP({
             personalInfo,
           );
         } else {
+          console.log(
+            "[ClientBackgroundIP] Missing personal info payload on submit",
+          );
           toast.dismiss(toastId);
           toast.error("Missing Personal Information", {
             description: "Please complete the Personal Information tab first.",
@@ -1112,7 +1143,14 @@ export function ClientBackgroundIP({
         }
 
         // Get educational background data
-        const educationData = getStorageItem("educationalBackgroundData");
+        const educationData = getSharedStorageItem("educationalBackgroundData");
+        console.log("[ClientBackgroundIP] Submit lookup educationData:", {
+          activeApplicationId,
+          hasEducationData: !!educationData,
+          storageKey: activeApplicationId
+            ? `educationalBackgroundData-${activeApplicationId}`
+            : "educationalBackgroundData",
+        });
         if (educationData) {
           educationalBackground = JSON.parse(educationData);
           console.log(

@@ -189,19 +189,35 @@ export function ClientInformation({
     !disableLocalStorage && typeof window !== "undefined";
   const getStorageItem = (key: string) =>
     canUseStorage ? localStorage.getItem(key) : null;
+  const getSharedStorageItem = (baseKey: string) => {
+    if (typeof window === "undefined") return null;
+    if (activeApplicationId) {
+      const appValue = localStorage.getItem(
+        `${baseKey}-${activeApplicationId}`,
+      );
+      if (appValue) return appValue;
+    }
+    return localStorage.getItem(baseKey);
+  };
+  const normalizeDraftKey = (key: string) => {
+    if (activeApplicationId && key.endsWith(`-${activeApplicationId}`)) {
+      return key.replace(`-${activeApplicationId}`, "");
+    }
+    return key;
+  };
   const setStorageItem = (key: string, value: string) => {
     if (canUseStorage) {
       localStorage.setItem(key, value);
       return;
     }
-    onDraftChange?.(key, value);
+    onDraftChange?.(normalizeDraftKey(key), value);
   };
   const removeStorageItem = (key: string) => {
     if (canUseStorage) {
       localStorage.removeItem(key);
       return;
     }
-    onDraftChange?.(key, null);
+    onDraftChange?.(normalizeDraftKey(key), null);
   };
 
   // Initialize form submission hook for registry
@@ -431,7 +447,7 @@ export function ClientInformation({
       }
 
       // Fix citizenship data
-      if (formattedData.citizenship) {
+        if (formattedData.citizenship) {
         // Make sure we have a valid value
         const hasValidValue =
           formattedData.citizenship.value === "filipino" ||
@@ -517,6 +533,10 @@ export function ClientInformation({
           setFormData(formattedData);
           form.trigger(undefined, { shouldFocus: false });
 
+          if (typeof formattedData.birthDate === "string") {
+            setBirthDate(formattedData.birthDate);
+          }
+
           // Explicitly update selectedCitizenship to match the loaded data
           if (formattedData.citizenship && formattedData.citizenship.value) {
             setSelectedCitizenship(formattedData.citizenship.value);
@@ -550,6 +570,7 @@ export function ClientInformation({
         // Ensure gender data is properly formatted
         const formattedValues = {
           ...values,
+          birthDate,
           gender: {
             value: values.gender?.value || "",
           },
@@ -565,6 +586,10 @@ export function ClientInformation({
           formattedValues,
         );
         setStorageItem(storageKey, JSON.stringify(formattedValues));
+        console.log(
+          "[ClientInformation] Saved (tab change) birthDate:",
+          { storageKey, birthDate },
+        );
       }
     };
 
@@ -576,6 +601,7 @@ export function ClientInformation({
         // Ensure gender data is properly formatted
         const formattedValues = {
           ...values,
+          birthDate,
           gender: {
             value: values.gender?.value || "",
           },
@@ -590,6 +616,10 @@ export function ClientInformation({
           "[ClientInformation] Page unload detected, saving form state",
         );
         setStorageItem(storageKey, JSON.stringify(formattedValues));
+        console.log(
+          "[ClientInformation] Saved (beforeunload) birthDate:",
+          { storageKey, birthDate },
+        );
       }
     };
 
@@ -607,6 +637,7 @@ export function ClientInformation({
         // Ensure gender data is properly formatted
         const formattedValues = {
           ...values,
+          birthDate,
           gender: {
             value: values.gender?.value || "",
           },
@@ -619,13 +650,17 @@ export function ClientInformation({
           "clientInformationData",
           JSON.stringify(formattedValues),
         );
+        console.log(
+          "[ClientInformation] Saved (unmount) birthDate:",
+          { storageKey: "clientInformationData", birthDate },
+        );
       }
 
       // Remove event listeners
       window.removeEventListener("popstate", handleTabChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [form, isFormLoaded]);
+  }, [form, isFormLoaded, birthDate, activeApplicationId]);
 
   // Save state when leaving the personal tab
   useEffect(() => {
@@ -640,6 +675,7 @@ export function ClientInformation({
           // Format values for localStorage
           const formattedValues = {
             ...values,
+            birthDate,
             gender: {
               value: values.gender?.value || "",
             },
@@ -662,6 +698,10 @@ export function ClientInformation({
             "[ClientInformation] Saved personal information data on tab change:",
             formattedValues,
           );
+          console.log(
+            "[ClientInformation] Saved (tab switch) birthDate:",
+            { storageKey, birthDate },
+          );
         } catch (error) {
           console.error(
             "[ClientInformation] Error saving personal data:",
@@ -670,7 +710,7 @@ export function ClientInformation({
         }
       }
     };
-  }, [currentTab, form, isFormLoaded]);
+  }, [currentTab, form, isFormLoaded, birthDate, activeApplicationId]);
 
   // Add a effect to update UI based on form data
   useEffect(() => {
@@ -720,6 +760,7 @@ export function ClientInformation({
       // Format and validate the data before saving
       const formattedValues = {
         ...values,
+        birthDate,
         // Ensure hasCompany is properly set
         hasCompany:
           values.hasCompany !== undefined
@@ -764,6 +805,10 @@ export function ClientInformation({
 
       setStorageItem(storageKey, JSON.stringify(formattedValues));
       setFormData(formattedValues);
+      console.log(
+        "[ClientInformation] Saved (submit) birthDate:",
+        { storageKey, birthDate },
+      );
 
       // Show loading toast
       const toastId = toast.loading("Submitting Form", {
@@ -1390,6 +1435,7 @@ export function ClientInformation({
       // Format and validate the data before saving
       const formattedValues = {
         ...values,
+        birthDate,
         // Ensure hasCompany is properly set
         hasCompany:
           values.hasCompany !== undefined
@@ -1441,7 +1487,7 @@ export function ClientInformation({
 
       try {
         // Get educational background data
-        const educationData = getStorageItem("educationalBackgroundData");
+        const educationData = getSharedStorageItem("educationalBackgroundData");
         if (educationData) {
           try {
             educationalBackground = JSON.parse(educationData);
@@ -1455,7 +1501,7 @@ export function ClientInformation({
         }
 
         // Get background IP data
-        const backgroundData = getStorageItem("clientBackgroundIPData");
+        const backgroundData = getSharedStorageItem("clientBackgroundIPData");
         if (backgroundData) {
           try {
             backgroundIP = JSON.parse(backgroundData);
@@ -1830,6 +1876,7 @@ export function ClientInformation({
       // Format and validate the data before saving
       const formattedValues = {
         ...values,
+        birthDate,
         // Ensure hasCompany is properly set
         hasCompany:
           values.hasCompany !== undefined
@@ -1870,6 +1917,7 @@ export function ClientInformation({
       // Make sure we explicitly keep all field values even when switching views
       const enhancedValues = {
         ...formattedValues,
+        birthDate,
         hasCompany: formattedValues.hasCompany,
         // Always include both sets of fields in localStorage for completeness
         collegeName: formattedValues.collegeName || "",
@@ -1891,6 +1939,10 @@ export function ClientInformation({
       console.log(
         "[ClientInformation] Personal information saved to localStorage:",
         enhancedValues,
+      );
+      console.log(
+        "[ClientInformation] Saved (next click) birthDate:",
+        { storageKey, birthDate },
       );
 
       // If we have an active application, update the form status silently

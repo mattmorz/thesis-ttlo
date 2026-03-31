@@ -5,19 +5,19 @@ import { userAccount } from "@/drizzle/migrations/schema";
 import { eq } from "drizzle-orm";
 import { CustomSession, CustomUser, UserRole } from "./lib/types/auth";
 
-declare module "next-auth" {
-  interface User {
-    role?: string;
-    id?: string;
-  }
+// declare module "next-auth" {
+//   interface User {
+//     role?: string;
+//     id?: string;
+//   }
 
-  interface Session {
-    user: User & {
-      role?: string;
-      id?: string;
-    };
-  }
-}
+//   interface Session {
+//     user: User & {
+//       role?: string;
+//       id?: string;
+//     };
+//   }
+// }
 
 // List of allowed domains for email authentication
 const ALLOWED_DOMAINS = [

@@ -66,7 +66,7 @@ import { ApplicationSelector } from "../../../../../components/ApplicationSelect
 import { ApplicationCreationDialog } from "../../../../../components/ApplicationCreationDialog";
 import { ClientFormStatusLoader } from "./ClientFormStatusLoader";
 import { ClientOnlyContent } from "./ClientOnlyContent";
-// import { FormProgressTracker } from "./FormProgressTracker";
+import { FormProgressTracker } from "./FormProgressTracker";
 import {
   Accordion,
   AccordionContent,

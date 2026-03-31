@@ -32,6 +32,8 @@ import { useFormContext } from "../context/form-context";
 import { usePatentTabsStore } from "./patent-tabs";
 import { useIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
 import { useIpDisclosure } from "@/features/client/ip-disclosure/hooks/use-ip-disclosure";
+import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
+import { useParams } from "next/navigation";
 
 // Store interface for patent application form
 interface PatentApplicationState {
@@ -121,12 +123,16 @@ export function PatentApplication({
     setPatentUtilityModelApplication,
     disclosureId,
   } = useIpDisclosureStore();
+  const { activeApplicationId } = useActiveApplication();
+  const params = useParams();
+  const formId = params.formId as string;
   const { setActiveTab: setPatentTabsActiveTab } = usePatentTabsStore();
   const { savePatentUtilityModelApplication } = useIpDisclosure();
 
   // Track if initial data has been loaded
   const initialDataLoaded = React.useRef(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isUploadingDrawings, setIsUploadingDrawings] = React.useState(false);
 
   // Log when component mounts and when onNext/onPrevious props change
   useEffect(() => {
@@ -162,6 +168,86 @@ export function PatentApplication({
   useEffect(() => {
   form.trigger();
 }, []);
+
+  const uploadTechnicalDrawings = async (files: File[] | undefined) => {
+    if (!files || files.length === 0) {
+      toast.error("Please attach at least one file to upload");
+      return;
+    }
+
+    if (!activeApplicationId) {
+      console.log(
+        "[PatentApplication] Missing activeApplicationId for drawings upload",
+        { formId }
+      );
+      toast.error("Please select an IP application before uploading");
+      return;
+    }
+
+    setIsUploadingDrawings(true);
+
+    try {
+      console.log("[PatentApplication] Starting drawings upload", {
+        formId,
+        activeApplicationId,
+        fileCount: files.length,
+      });
+      const formData = new FormData();
+      formData.append("formId", formId || "");
+      formData.append("ipApplicationId", activeApplicationId);
+      formData.append("formName", "Patent/UM Application - Technical Drawings");
+
+      files.forEach((file, index) => {
+        formData.append("files", file);
+        formData.append(`title-${index}`, file.name || "Technical Drawing");
+        formData.append(
+          `description-${index}`,
+          "Technical drawings and diagrams for Patent/UM application"
+        );
+        formData.append("category-" + index, "patent");
+      });
+
+      const response = await fetch("/api/documents/other/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const responseText = await response.text();
+      console.log("[PatentApplication] Upload response", {
+        status: response.status,
+        text: responseText,
+      });
+      let result: any = null;
+      try {
+        result = JSON.parse(responseText);
+      } catch {
+        // noop - handled below
+      }
+
+      if (!response.ok) {
+        const errorMessage =
+          result?.details ||
+          result?.error ||
+          `Upload failed with status ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      if (result?.success) {
+        toast.success("Technical drawings uploaded successfully");
+      } else {
+        throw new Error(result?.error || "Upload failed");
+      }
+    } catch (error) {
+      console.error("[PatentApplication] Technical drawings upload failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to upload technical drawings"
+      );
+    } finally {
+      setIsUploadingDrawings(false);
+    }
+  };
 
   const [
     title,
@@ -389,6 +475,7 @@ export function PatentApplication({
   // Function to handle navigation without form submission
   const handleNextWithoutSubmit = async () => {
     try {
+      console.log("[PatentApplication] Next clicked");
       // Save current form data
       const values = form.getValues();
       setData(values);
@@ -446,6 +533,18 @@ export function PatentApplication({
           "No disclosure ID available for saving patent application"
         );
         toast.error("Please complete the Applicant's Information tab first");
+      }
+
+      if (values.files && values.files.length > 0) {
+        console.log(
+          "[PatentApplication] Uploading technical drawings before navigation",
+          { fileCount: values.files.length }
+        );
+        await uploadTechnicalDrawings(values.files);
+      } else {
+        console.log(
+          "[PatentApplication] No technical drawings to upload before navigation"
+        );
       }
 
       // Always navigate to the next tab, even if saving fails
@@ -922,6 +1021,21 @@ export function PatentApplication({
                       </div>
                     </FileUploader>
                   </FormControl>
+                  <div className="pt-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-[#1B5E20] text-[#1B5E20] hover:bg-[#E8F5E9] hover:text-[#1B5E20]"
+                      disabled={
+                        isUploadingDrawings || !(field.value?.length ?? 0)
+                      }
+                      onClick={() => uploadTechnicalDrawings(field.value)}
+                    >
+                      {isUploadingDrawings
+                        ? "Uploading..."
+                        : "Upload to Drive"}
+                    </Button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

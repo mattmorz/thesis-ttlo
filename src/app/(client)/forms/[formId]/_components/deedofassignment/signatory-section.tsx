@@ -62,6 +62,7 @@ import {
 
 import { DeedOfAssignmentPDFComponent } from "./deed-of-assignment-pdf";
 import { useDeedAssignmentStore } from "@/lib/store/deed-assignment-store";
+import { X } from "lucide-react";
 
 interface SignatorySectionProps {
   initialData?: any;
@@ -158,6 +159,7 @@ export function SignatorySection({
       seriesYear: "",
     },
   });
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
   // Set isMounted flag on mount/unmount
   useEffect(() => {
@@ -545,13 +547,13 @@ export function SignatorySection({
       const result = await response.json();
       console.log("[SignatorySection] API response:", result);
 
-      // Update the loading toast to success
-      toast.success("Deed of assignment submitted", {
-        id: loadingToastId,
-        description: "Your deed of assignment has been successfully submitted.",
-        duration: 3000,
-      });
-
+      console.log("✅ SUCCESS NA, MO OPEN ANG MODAL");
+toast.success("Deed of assignment submitted", {
+  id: loadingToastId,
+  description: "Your deed of assignment has been successfully submitted.",
+  duration: 3000,
+});
+setShowCompleteModal(true);
       // Optionally register with the form submission system
       try {
         if (
@@ -607,7 +609,7 @@ export function SignatorySection({
 
       // Navigate back to deed details tab instead of forms overview
       const mainTab = searchParams.get("tab") || "deed-assignment";
-      router.push(`?tab=${mainTab}&subTab=deed`, { scroll: false });
+    //  router.push(`?tab=${mainTab}&subTab=deed`, { scroll: false });
     } catch (err) {
       console.error("[SignatorySection] Error submitting form:", err);
       setError(
@@ -932,10 +934,72 @@ export function SignatorySection({
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+         return (
+                  <div className="space-y-6">
+                    
+                    <Form {...form}>
+                      <form onSubmit={async (e) => {
+                  e.preventDefault(); // 🔥 mao ni importante
+                  if (isSubmitting) return;
+
+                  setIsSubmitting(true);
+                  await form.handleSubmit(onSubmit)(e);
+                  setIsSubmitting(false);
+                }}
+                className="space-y-8"
+              >
+{showCompleteModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+  <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+
+    {/* HEADER ROW */}
+<div className="flex items-center justify-end ">
+  
+  {/* CLOSE (RIGHT) */}
+  <button
+    type="button"
+    onClick={() => setShowCompleteModal(false)}
+    className="bg-green-100 rounded-full text-green-700 hover:bg-green-200"
+  >
+    <X className="h-5 w-5" />
+  </button>
+
+      {/* TITLE */}
+      <h2 className="text-xl font-bold text-green-700 text-center flex-1">
+      COMPLETED!
+      </h2>
+
+      {/* spacer para ma-center ang title */}
+      <div className="w-6" />
+    </div>
+
+    {/* DESCRIPTION */}
+    <p className="text-muted-foreground text-center">
+      Your IP Application is successfully completed.
+    </p>
+
+    {/* BUTTONS */}
+    <div className="flex justify-center gap-4 mt-6">
+      <Button
+        className="bg-green-700 text-white hover:bg-green-800"
+        onClick={() => router.push("/forms")}
+      >
+        Track Application
+      </Button>
+
+      <Button
+        type="button"
+        className="bg-green-700 text-white hover:bg-green-800"
+        onClick={() => setShowCompleteModal(false)}
+      >
+        Close
+      </Button>
+    </div>
+
+  </div>
+</div>
+)}
+
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <p>An error occurred: {error.message}</p>
@@ -1824,15 +1888,15 @@ export function SignatorySection({
                   "Update Form"
                 )}
               </Button>
-              <Button
-                type="button"
-                variant="default"
-                className="bg-green-700 text-white hover:bg-green-800"
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={isSubmitting || isUpdating || !form.formState.isValid}
-              >
-                Submit Form
-              </Button>
+             <Button
+  type="submit"
+  variant="default"
+  className="bg-green-700 text-white hover:bg-green-800"
+  
+  disabled={isSubmitting || isUpdating || !form.formState.isValid}
+>
+  {isSubmitting ? "Submitting..." : "Submit Form"}
+</Button>
             </div>
           </div>
         </form>

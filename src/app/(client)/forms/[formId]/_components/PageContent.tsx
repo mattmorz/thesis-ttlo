@@ -1023,6 +1023,53 @@ export function PageContent() {
     ];
   };
 
+  const getLastEnabledTab = () => {
+    if (!activeApplicationId) return FormTabs.CLIENT_PROFILE;
+
+    let lastEnabled = sidebarItems[0]?.id ?? FormTabs.CLIENT_PROFILE;
+    for (let index = 1; index < sidebarItems.length; index += 1) {
+      const prevTabId = sidebarItems[index - 1].id;
+      const isPrevComplete =
+        knownApplicationStatus[activeApplicationId]?.status?.[
+          formTypeMapping[prevTabId]
+        ];
+      if (!isPrevComplete) {
+        break;
+      }
+      lastEnabled = sidebarItems[index].id;
+    }
+    return lastEnabled;
+  };
+
+  useEffect(() => {
+    if (!mounted || !activeApplicationId || !tabParam) return;
+
+    const tabId = tabParam as FormTabId;
+    const isKnownTab = sidebarItems.some((item) => item.id === tabId);
+    if (!isKnownTab) {
+      const fallbackTab = FormTabs.CLIENT_PROFILE;
+      router.replace(getFormUrl(undefined, fallbackTab), { scroll: false });
+      setActiveForm(fallbackTab);
+      return;
+    }
+
+    if (!isTabEnabled(tabId)) {
+      const fallbackTab = getLastEnabledTab();
+      if (fallbackTab !== tabId) {
+        toast.error("Please complete the current form before proceeding.");
+        router.replace(getFormUrl(undefined, fallbackTab), { scroll: false });
+        setActiveForm(fallbackTab as FormTabId);
+      }
+    }
+  }, [
+    activeApplicationId,
+    getLastEnabledTab,
+    isTabEnabled,
+    mounted,
+    router,
+    tabParam,
+  ]);
+
   // Simplify application switching - delegate to the robust implementation
   const handleSwitchApplication = (applicationId: string) => {
     if (!applicationId || applicationId === activeApplicationId) {
@@ -1974,7 +2021,10 @@ export function PageContent() {
           {/* Collapsible Application Management */}
           {(isApplicationsExpanded || applications.length === 1) && (
             <div className="p-4 border-b bg-white">
-              <ApplicationManagement hideCreateButton={false} />
+              <ApplicationManagement
+                hideCreateButton={false}
+                onCreateClick={handleCreateFirstApplication}
+              />
             </div>
           )}
         </div>

@@ -221,7 +221,7 @@ export async function POST(req: NextRequest) {
       const driveFile = await uploadFileToDrive({
         userId,
         file,
-        fileName: `${ipApplicationId}-${fileName}`,
+        fileName,
         mimeType: fileType,
         parentId: folderId,
       });

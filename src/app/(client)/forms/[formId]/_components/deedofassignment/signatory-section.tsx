@@ -7,6 +7,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
+import {
+  DriveUploadButton,
+  useDriveUpload,
+} from "@/components/global/drive-upload";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -110,6 +114,7 @@ export function SignatorySection({
   const [creators, setCreators] = useState<Creator[]>([]);
   const [isYearView, setIsYearView] = useState<boolean>(false);
   const [month, setMonth] = useState<Date>(new Date());
+  const [notarizedFiles, setNotarizedFiles] = useState<File[]>([]);
   const startDate = subYears(new Date(), 10);
   const endDate = addYears(new Date(), 10);
 
@@ -123,9 +128,38 @@ export function SignatorySection({
 
   // Get form ID from URL if available
   const formId = searchParams.get("formId") || undefined;
+  const resolvedFormId =
+    formId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      formId
+    )
+      ? formId
+      : undefined;
 
   // Get store functions
   const { updateSignatoryData, deed: storeDeedData } = useDeedAssignmentStore();
+
+  const notarizedUploader = useDriveUpload(
+    {
+      formId: resolvedFormId,
+      ipApplicationId: activeApplicationId,
+      formName: "Deed of Assignment - Notarized Document",
+      category: "deed-assignment",
+      description: "Notarized deed of assignment document",
+    },
+    {
+      successMessage: "Notarized document uploaded successfully",
+      onSuccess: (result) => {
+        const filePath = (result as { files?: Array<{ filePath?: string }> })
+          ?.files?.[0]?.filePath;
+        if (!filePath) {
+          toast.error("Upload succeeded but no file path returned");
+          return;
+        }
+        handleDocumentUpload(filePath, { showToast: false });
+      },
+    }
+  );
 
   // Function to get application-specific localStorage key
   const getLocalStorageKey = useCallback(
@@ -404,15 +438,45 @@ export function SignatorySection({
     setIsSubmitting(true);
 
     try {
+      if (
+        notarizedFiles.length > 0 &&
+        !form.getValues("notarizedDocumentPath")
+      ) {
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            activeApplicationId
+          );
+        if (!isUuid) {
+          toast.error("Invalid application ID for upload", {
+            description: "Please reselect your application and try again.",
+            duration: 5000,
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        const uploadResult = await notarizedUploader.upload(notarizedFiles);
+        if (!uploadResult.success) {
+          console.error(
+            "[SignatorySection] Notarized upload failed:",
+            uploadResult.error,
+            uploadResult.result
+          );
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      const latestValues = form.getValues();
       // Update values with creators and ensure assignorIds is properly formatted
-      let assignorIdsArray = values.assignorIds || [];
+      let assignorIdsArray = latestValues.assignorIds || [];
 
       // If we have a legacy assignorId value but no assignorIds array, use it
       if (
-        values.assignorId &&
+        latestValues.assignorId &&
         (!assignorIdsArray || assignorIdsArray.length === 0)
       ) {
-        assignorIdsArray = values.assignorId
+        assignorIdsArray = latestValues.assignorId
           .split(",")
           .map((id: string) => id.trim());
       }
@@ -428,7 +492,7 @@ export function SignatorySection({
       }
 
       const submitData = {
-        ...values,
+        ...latestValues,
         creators, // Include creators for reference
         assignorIds: assignorIdsArray,
         // For backward compatibility, store as comma-separated string too
@@ -782,7 +846,10 @@ export function SignatorySection({
     }
   }
 
-  const handleDocumentUpload = async (documentPath: string) => {
+  const handleDocumentUpload = async (
+    documentPath: string,
+    options?: { showToast?: boolean }
+  ) => {
     try {
       // Update the form field with the document path
       form.setValue("notarizedDocumentPath", documentPath);
@@ -807,7 +874,9 @@ export function SignatorySection({
         window.dispatchEvent(new CustomEvent("signatory-data-updated"));
       }
 
-      toast.success("Document uploaded successfully");
+      if (options?.showToast !== false) {
+        toast.success("Document uploaded successfully");
+      }
     } catch (error) {
       console.error(
         "[SignatorySection] Error handling document upload:",
@@ -848,9 +917,7 @@ export function SignatorySection({
     router.push(`?tab=${mainTab}&subTab=royalty`, { scroll: false });
   };
 
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log("[SignatorySection] File upload triggered");
     const file = event.target.files?.[0];
     if (!file) {
@@ -878,58 +945,7 @@ export function SignatorySection({
     }
 
     console.log("[SignatorySection] File selected:", file.name);
-    const formData = new FormData();
-    formData.append("files", file); // Changed from 'file' to 'files' to match API
-    formData.append("projectId", activeApplicationId || "default"); // Add projectId
-    formData.append("formName", "Deed of Assignment - Signatory");
-
-    try {
-      console.log("[SignatorySection] Uploading file...");
-      const response = await fetch("/api/files/upload", {
-        // Updated endpoint
-        method: "POST",
-        body: formData,
-      });
-
-      console.log(
-        "[SignatorySection] Upload response status:",
-        response.status
-      );
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error("[SignatorySection] Upload error:", errorData);
-        throw new Error("Failed to upload file");
-      }
-
-      const result = await response.json();
-      console.log("[SignatorySection] Upload successful:", result);
-
-      // Get the first file path from the result
-      const uploadedFilePath = result.files[0]?.path;
-      if (!uploadedFilePath) {
-        throw new Error("No file path returned from server");
-      }
-
-      handleDocumentUpload(uploadedFilePath);
-      toast.success("File uploaded successfully", {
-        description: (
-          <div className="flex flex-col gap-1">
-            <p>File: {file.name}</p>
-            <p className="text-sm text-gray-500">
-              The notarized document has been attached to your application.
-            </p>
-          </div>
-        ),
-        duration: 5000,
-      });
-    } catch (err) {
-      console.error("[SignatorySection] Error uploading file:", err);
-      toast.error("Unable to upload file", {
-        description:
-          "Please try again or contact support if the problem persists.",
-        duration: 5000,
-      });
-    }
+    setNotarizedFiles([file]);
   };
 
   return (
@@ -1767,10 +1783,25 @@ export function SignatorySection({
                                     >
                                       <span className="flex items-center gap-2">
                                         <Upload className="h-4 w-4" />
-                                        Upload File
+                                        Choose File
                                       </span>
                                     </Button>
                                   </label>
+                                  {notarizedFiles.length > 0 && (
+                                    <div className="text-xs text-gray-500">
+                                      Selected: {notarizedFiles[0]?.name}
+                                    </div>
+                                  )}
+                                  <DriveUploadButton
+                                    files={notarizedFiles}
+                                    uploader={notarizedUploader}
+                                    variant="outline"
+                                    className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                                    disabled={
+                                      isDisabled || !activeApplicationId
+                                    }
+                                    buttonText="Upload to Drive"
+                                  />
                                   {field.value && (
                                     <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
                                       <CheckCircle className="h-4 w-4 text-green-500" />

@@ -25,6 +25,12 @@ import { AlertCircle, Loader2, PlusCircle } from "lucide-react";
 import { useIpDisclosure } from "./hooks/use-ip-disclosure";
 import { useApplicationIpDisclosure } from "@/features/client/ip-disclosure/hooks/use-application-ip-disclosure";
 import { useRouter } from "next/navigation";
+import {
+  Sparkles,
+  BookmarkCheck,
+  Bookmark,
+  FileType
+} from "lucide-react";
 
 // Global logging control
 const DEBUG = false;
@@ -34,29 +40,34 @@ const tabs = [
     id: "applicants-information",
     label: "Applicant's Information",
     component: ApplicantsInformation,
+    icon: FileType,
   },
   {
     id: "patent-application",
     label: "Patent/UM Application",
     component: PatentApplication,
+    icon: Sparkles,
     showIf: (types: IpTypes) => types.patent || types.utilityModel,
   },
   {
     id: "matrix-sample",
     label: "Matrix Sample",
     component: MatrixSampleForm,
+     icon: Sparkles,
     showIf: (types: IpTypes) => types.patent || types.utilityModel,
   },
   {
     id: "patent-search",
     label: "Patent Search Report",
     component: PatentSearchForm,
+    icon: Sparkles,
     showIf: (types: IpTypes) => types.patent || types.utilityModel,
   },
   {
     id: "copyright-application",
     label: "Copyright Application",
     component: CopyrightApplication,
+    icon: BookmarkCheck,
     showIf: (types: IpTypes) => types.copyright,
   },
   // Transaction Form Part 1/2 removed per updated requirements.
@@ -76,18 +87,21 @@ const tabs = [
     id: "trademark",
     label: "Trademark Application",
     component: TrademarkApplication,
+    icon: Bookmark,
     showIf: (types: IpTypes) => types.trademark,
   },
   {
     id: "trade-secret",
     label: "Trade Secret",
     component: TradeSecret,
+    icon: FileType,
     showIf: (types: IpTypes) => types.tradeSecret,
   },
   {
     id: "confirmation",
     label: "Disclosure and Confirmation",
     component: DisclosureConfirmation,
+    icon: FileType,
   },
 ];
 
@@ -374,7 +388,15 @@ export function IPDisclosureForm() {
     currentTab,
     visibleTabs: visibleTabComponents.map((tab) => tab.id),
   });
+const getNextTab = (currentTabId: string) => {
+  const index = visibleTabComponents.findIndex(
+    (tab) => tab.id === currentTabId
+  );
 
+  if (index === -1) return "applicants-information";
+
+  return visibleTabComponents[index + 1]?.id || currentTabId;
+};
   // Function to handle tab changes (previously was using setActiveTabForStore)
   const handleTabChange = (tabId: string) => {
     console.log("IP Disclosure Form - Changing tab to:", tabId);
@@ -495,14 +517,17 @@ export function IPDisclosureForm() {
                   const isCompletedTab = isTabComplete(tab.id);
                   const isDisabled = isFutureTab && !isCompletedTab;
                   return (
-                  <TabsTrigger
-                    key={tab.id}
-                    value={tab.id}
-                    disabled={isDisabled}
-                    className="inline-flex items-center justify-center whitespace-nowrap rounded-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm relative py-2 text-sm font-medium text-muted-foreground data-[state=active]:text-[#1B5E20] data-[state=active]:bg-transparent data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[#1B5E20] hover:text-[#1B5E20]/80 transition-colors px-2 md:px-3 lg:px-4"
-                  >
-                    {tab.label}
-                  </TabsTrigger>
+                 <TabsTrigger
+  key={tab.id}
+  value={tab.id}
+  disabled={isDisabled}
+  className="inline-flex items-center justify-center whitespace-nowrap rounded-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm relative py-2 text-sm font-medium text-muted-foreground data-[state=active]:text-[#1B5E20] data-[state=active]:bg-transparent data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[#1B5E20] hover:text-[#1B5E20]/80 transition-colors px-2 md:px-3 lg:px-4"
+>
+  <div className="flex items-center gap-2">
+    {tab.icon && <tab.icon className="h-4 w-4" />}
+    <span>{tab.label}</span>
+  </div>
+</TabsTrigger>
                 );
                 })}
               </TabsList>

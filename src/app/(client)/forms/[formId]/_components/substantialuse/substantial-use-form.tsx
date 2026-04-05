@@ -259,6 +259,7 @@ export function SubstantialUseForm() {
       researchTitle: "",
     },
   });
+  
 
   useEffect(() => {
   form.trigger();
@@ -879,19 +880,22 @@ export function SubstantialUseForm() {
       lastEventTime = now;
 
       // Check if we've recently fetched this application's data
-      const lastSuccessTime = activeApplicationId
-        ? lastSuccessfulFetchRef.current[activeApplicationId] || 0
-        : 0;
-      const CACHE_DURATION = 10000; // 10 seconds for events (shorter than main cache)
+      //const lastSuccessTime = activeApplicationId
+       // ? lastSuccessfulFetchRef.current[activeApplicationId] || 0
+       // : 0;
+     // const CACHE_DURATION = 10000; // 10 seconds for events (shorter than main cache)
 
-      if (activeApplicationId && now - lastSuccessTime < CACHE_DURATION) {
-        console.log(
-          `Skipping form_completed fetch - already fetched data recently (${Math.round(
-            (now - lastSuccessTime) / 1000
-          )}s ago)`
-        );
-        return;
-      }
+     // if (activeApplicationId && now - lastSuccessTime < CACHE_DURATION) {
+       // console.log(
+        //  `Skipping form_completed fetch - already fetched data recently (${Math.round(
+        //    (now - lastSuccessTime) / 1000
+       //   )}s ago)`
+        //);
+       // return;
+     // }
+     // ❌ remove cache blocking
+// ALWAYS fetch fresh data after completion
+fetchData();
 
       console.log("Form completed event", event.detail);
       if (
@@ -947,7 +951,7 @@ export function SubstantialUseForm() {
           ...(substantialUseId && { substantialUseId }), // Include substantialUseId if available
         },
       });
-      window.dispatchEvent(event);
+      window.dispatchEvent(event); 
     }
   };
 
@@ -982,6 +986,8 @@ export function SubstantialUseForm() {
         remarks: values.remarks?.trim(),
         status: "draft", // Default for new submissions
         applicationId: activeApplicationId, // Add the application ID
+
+        status: "submitted",
       };
 
       console.log(
@@ -1096,6 +1102,9 @@ export function SubstantialUseForm() {
 
           // Dispatch form completion event
           dispatchFormCompleted(substantialUseId);
+          setTimeout(() => {
+  window.location.href = "/forms?tab=deed-assignment";
+}, 800);
 
           toast.success("Form Submitted", {
             id: submitToastId,
@@ -1221,6 +1230,9 @@ export function SubstantialUseForm() {
         id: updateToastId,
         description: "Your substantial use form has been saved as a draft.",
       });
+      dispatchFormCompleted();
+
+
     } catch (error) {
       console.error("[Substantial Use Form] Error updating form:", error);
       toast.error("Update Failed", {
@@ -2053,7 +2065,7 @@ export function SubstantialUseForm() {
               <Button
                 type="submit"
                 className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
-                disabled={!canSubmit || isNextDisabled}
+                disabled={!canSubmit || isNextDisabled || isSubmitting}
               >
                 {isSubmitting ? "Submitting..." : "Submit Form"}
               </Button>

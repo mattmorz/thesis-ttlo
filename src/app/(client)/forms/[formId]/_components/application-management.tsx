@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   PlusCircle,
   RefreshCw,
@@ -95,7 +95,6 @@ export function ApplicationManagement({
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const router = useRouter();
-  const trpcUtils = trpc.useUtils();
 
   const {
     activeApplicationId,
@@ -103,7 +102,6 @@ export function ApplicationManagement({
     activeApplication,
     isLoading,
     applications,
-    setApplications,
     refetchApplications,
     clearFormData,
   } = useActiveApplication();
@@ -117,7 +115,6 @@ export function ApplicationManagement({
     "newest"
   );
   const [deleteConfirmApp, setDeleteConfirmApp] = useState<string | null>(null);
-  const deleteTargetRef = useRef<string | null>(null);
   const [isGuideCollapsed, setIsGuideCollapsed] = useState(false);
   const [otherIpType, setOtherIpType] = useState("");
   const [showDocuments, setShowDocuments] = useState(false);
@@ -162,37 +159,21 @@ export function ApplicationManagement({
   const deleteApplicationMutation =
     trpc.formIntegration.deleteApplication.useMutation({
       onSuccess: () => {
-        const deletedId = deleteTargetRef.current;
         toast.success("Application deleted successfully");
-        deleteTargetRef.current = null;
-        let remainingApps: Application[] = [];
-        setApplications((prev) => {
-          remainingApps = deletedId
-            ? prev.filter((app) => app.id !== deletedId)
-            : prev;
-          return remainingApps;
-        });
-
-        trpcUtils.formIntegration.getUserApplications.invalidate();
         refetchApplications();
 
-        // If we deleted the active application, switch to the next or clear to show the welcome screen
-        if (deletedId === activeApplicationId) {
-          if (remainingApps.length > 0) {
-            handleSwitchApplication(remainingApps[0].id);
+        // If we deleted the active application, set to the first available app or null
+        setTimeout(() => {
+          if (
+            applications.length > 0 &&
+            applications[0].id !== activeApplicationId
+          ) {
+            handleSwitchApplication(applications[0].id);
           } else {
-            if (typeof window !== "undefined") {
-              clearFormData({ emitEvent: false });
-              localStorage.removeItem("activeApplicationId");
-              localStorage.removeItem("activeApplicationIdSetAt");
-              const event = new CustomEvent("application-switched", {
-                detail: { applicationId: null },
-              });
-              window.dispatchEvent(event);
-              setTimeout(() => window.location.reload(), 200);
-            }
+            // Direct call for null since our handler is designed for valid application IDs
+            setActiveApplicationId(null);
           }
-        }
+        }, 300);
       },
       onError: (error) => {
         toast.error(`Failed to delete application: ${error.message}`);
@@ -475,14 +456,13 @@ export function ApplicationManagement({
     if (typeof window === "undefined") return;
 
     if (!deleteConfirmApp) return;
-    deleteTargetRef.current = deleteConfirmApp;
 
     // Show loading toast
     toast.loading("Deleting application...", { id: "deleting-app" });
 
     // Clear form data if deleting active application
     if (deleteConfirmApp === activeApplicationId) {
-      clearFormData({ emitEvent: false });
+      clearFormData();
     }
 
     // Call the mutation to delete the application
@@ -706,17 +686,6 @@ export function ApplicationManagement({
         </div>
 
         <div className="flex gap-1">
-          {!hideCreateButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs gap-1.5 text-[#1B5E20] border-[#1B5E20]/30"
-              onClick={onCreateClick || (() => setIsNewAppDialogOpen(true))}
-            >
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span>New Application</span>
-            </Button>
-          )}
           <Button
             variant="ghost"
             size="icon"
@@ -764,17 +733,9 @@ export function ApplicationManagement({
               {getStatusBadge(application.status as string)}
             </div>
 
-            <div
+            <button
               onClick={() => handleSwitchApplication(application.id)}
               className="w-full text-left"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleSwitchApplication(application.id);
-                }
-              }}
             >
               <br></br>
               <div className="px-3 py-3 border-b bg-slate-50/50">
@@ -854,7 +815,7 @@ export function ApplicationManagement({
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
         ))}
       </div>
@@ -1087,4 +1048,3 @@ export function ApplicationManagement({
     </div>
   );
 }
-

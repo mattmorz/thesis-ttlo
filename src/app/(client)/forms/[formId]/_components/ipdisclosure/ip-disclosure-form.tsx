@@ -31,6 +31,7 @@ import {
   Bookmark,
   FileType
 } from "lucide-react";
+import { deriveIpTypesFromApplicationIpType } from "./utils/ip-type";
 
 // Global logging control
 const DEBUG = false;
@@ -106,7 +107,11 @@ const tabs = [
 ];
 
 export function IPDisclosureForm() {
-  const { selectedIpTypes, isHydrated: formContextHydrated } = useFormContext();
+  const {
+    selectedIpTypes,
+    setSelectedIpTypes,
+    isHydrated: formContextHydrated,
+  } = useFormContext();
   const { activeTab, setActiveTab, visibleTabs, clearLocalStorage } =
     useHydratedIpDisclosureStore();
   const {
@@ -132,6 +137,20 @@ export function IPDisclosureForm() {
     isLoading: isLoadingApplication,
     refreshData,
   } = useApplicationIpDisclosure();
+
+  const derivedIpTypes = useMemo(
+    () =>
+      deriveIpTypesFromApplicationIpType(
+        activeApplication?.ipType ?? undefined
+      ).ipTypes,
+    [activeApplication?.ipType]
+  );
+
+  useEffect(() => {
+    if (!formContextHydrated) return;
+    if (!activeApplication?.ipType) return;
+    setSelectedIpTypes(derivedIpTypes);
+  }, [activeApplication?.ipType, derivedIpTypes, formContextHydrated, setSelectedIpTypes]);
 
   // Add error handling
   useEffect(() => {
@@ -172,6 +191,9 @@ export function IPDisclosureForm() {
   // Get active IP types, using live checkbox state on the applicants tab,
   // and saved store data once navigating away.
   const activeIpTypes: IpTypes = useMemo(() => {
+    if (activeApplication?.ipType) {
+      return derivedIpTypes;
+    }
     if (activeTab === "applicants-information") {
       return selectedIpTypes;
     }
@@ -188,7 +210,13 @@ export function IPDisclosureForm() {
       };
     }
     return selectedIpTypes;
-  }, [activeTab, applicantsInfo?.ipTypes, selectedIpTypes]);
+  }, [
+    activeApplication?.ipType,
+    activeTab,
+    applicantsInfo?.ipTypes,
+    derivedIpTypes,
+    selectedIpTypes,
+  ]);
 
   // Memoize visible tab components based on active IP types
   const visibleTabComponents = useMemo(() => {

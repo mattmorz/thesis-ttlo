@@ -39,8 +39,8 @@ const formSchema = z.object({
     .min(1, "Description is required")
     .min(5, "Description must be at least 5 characters."),
   ipType: z
-    .array(z.string())
-    .min(1, "Select at least one IP type")
+    .string()
+    .min(1, "IP type is required")
     .refine(
       (value) =>
         values.every((value) =>
@@ -112,13 +112,11 @@ export function ApplicationTitleForm() {
     resolver: zodResolver(formSchema),
     mode: "onBlur",
     reValidateMode: "onChange",
-   defaultValues: {
-  title: activeApplication?.title || "",
-  description: activeApplication?.description || "",
-  ipType: activeApplication?.ipType 
-      ? [activeApplication.ipType] : 
-      [],
-},
+    defaultValues: {
+      title: activeApplication?.title || "",
+      description: activeApplication?.description || "",
+      ipType: activeApplication?.ipType || "",
+    },
   });
   useEffect(() => {
   form.trigger();
@@ -232,52 +230,59 @@ export function ApplicationTitleForm() {
                 </FormItem>
               )}
             />
-           <FormField
-  control={form.control}
-  name="ipType"
-  render={({ field }) => {
-    const options = [
-      "copyright",
-      "patent",
-      "utility_model",
-      "industrial_design",
-      "trademark",
-      "trade_secret",
-      "not_sure",
-      "other",
-    ];
-
-    return (
-      <FormItem>
-        <FormLabel>Type of Intellectual Property *</FormLabel>
-        <div className="grid grid-cols-2 gap-2">
-          {options.map((option) => (
-            <label key={option} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                value={option}
-                checked={field.value?.includes(option)}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    field.onChange([...field.value, option]);
-                  } else {
-                    field.onChange(
-                      field.value.filter((val: string) => val !== option)
-                    );
-                  }
-                }}
-              />
-              <span className="capitalize">
-                {option.replace("_", " ")}
-              </span>
-            </label>
-          ))}
-        </div>
-        <FormMessage />
-      </FormItem>
-    );
-  }}
-/>
+            <FormField
+              control={form.control}
+              name="ipType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>IP Type</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={(value) => {
+                        if (!hasClearedIpTypeRef.current) {
+                          hasClearedIpTypeRef.current = true;
+                        }
+                        field.onChange(value);
+                      }}
+                      onOpenChange={(open) => {
+                        if (
+                          open &&
+                          !hasClearedIpTypeRef.current &&
+                          field.value === (activeApplication?.ipType ?? "")
+                        ) {
+                          field.onChange("");
+                          hasClearedIpTypeRef.current = true;
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select IP type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="patent">Patent</SelectItem>
+                        <SelectItem value="trademark">Trademark</SelectItem>
+                        <SelectItem value="copyright">Copyright</SelectItem>
+                        <SelectItem value="industrial_design">
+                          Industrial Design
+                        </SelectItem>
+                        <SelectItem value="utility_model">
+                          Utility Model
+                        </SelectItem>
+                        <SelectItem value="trade_secret">Trade Secret</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="not_sure">Not Sure</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormDescription>
+                    Choose the category that best fits your intellectual
+                    property.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <Button
               type="submit"
               disabled={

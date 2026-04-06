@@ -30,6 +30,8 @@ import {
   IpTypes,
 } from "@/lib/store/ip-disclosure-store";
 import { useFormContext } from "./context/form-context";
+import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
+import { deriveIpTypesFromApplicationIpType } from "./utils/ip-type";
 
 // Global logging control
 const DEBUG = false;
@@ -109,7 +111,6 @@ type TabVisibility = {
 };
 
 type IpTypeKeys = keyof IpTypes;
-type IpTypeFieldPath = `ipTypes.${IpTypeKeys}`;
 
 // Define interfaces for person types
 interface PersonInfo {
@@ -123,8 +124,8 @@ interface ApplicantsInformationProps {
 }
 
 export function ApplicantsInformation() {
-  const { selectedIpTypes, setSelectedIpTypes, resetIpType, isHydrated } =
-    useFormContext();
+  const { setSelectedIpTypes, isHydrated } = useFormContext();
+  const { activeApplication } = useActiveApplication();
   const {
     setApplicantsInfo,
     setActiveTab,
@@ -173,6 +174,42 @@ export function ApplicantsInformation() {
     defaultValues: formData,
     values: formData, // Explicitly set values from our state
   });
+  const derivedIpTypesResult = React.useMemo(
+    () =>
+      deriveIpTypesFromApplicationIpType(
+        activeApplication?.ipType ?? undefined
+      ),
+    [activeApplication?.ipType]
+  );
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (!activeApplication?.ipType) return;
+
+    const { ipTypes, otherIpType } = derivedIpTypesResult;
+    form.setValue("ipTypes", ipTypes, { shouldValidate: true });
+    form.setValue("otherIpType", otherIpType, { shouldValidate: true });
+
+    setFormData((prev) => ({
+      ...prev,
+      ipTypes,
+      otherIpType,
+    }));
+
+    setSelectedIpTypes(ipTypes);
+    setApplicantsInfo({
+      ...form.getValues(),
+      ipTypes,
+      otherIpType,
+    });
+  }, [
+    activeApplication?.ipType,
+    derivedIpTypesResult,
+    form,
+    isHydrated,
+    setApplicantsInfo,
+    setSelectedIpTypes,
+  ]);
   useEffect(() => {
   if (formData) {
     form.reset(formData);
@@ -1040,6 +1077,8 @@ export function ApplicantsInformation() {
     }
     setIsSubmitting(true); // 🔥 START loading
 
+    const { ipTypes: resolvedIpTypes, otherIpType } = derivedIpTypesResult;
+
   try {
     const isValid = await form.trigger();
     if (!isValid) {
@@ -1048,6 +1087,8 @@ export function ApplicantsInformation() {
     }
 
     const values = form.getValues();
+    values.ipTypes = resolvedIpTypes;
+    values.otherIpType = otherIpType;
 
     const success = await saveApplicantsInfo(values, false);
 
@@ -1058,13 +1099,13 @@ export function ApplicantsInformation() {
 
     // navigation
     let nextTab = "";
-    if (values.ipTypes.patent || values.ipTypes.utilityModel) {
+    if (resolvedIpTypes.patent || resolvedIpTypes.utilityModel) {
       nextTab = "patent-application";
-    } else if (values.ipTypes.copyright) {
+    } else if (resolvedIpTypes.copyright) {
       nextTab = "copyright-application";
-    } else if (values.ipTypes.trademark) {
+    } else if (resolvedIpTypes.trademark) {
       nextTab = "trademark";
-    } else if (values.ipTypes.tradeSecret) {
+    } else if (resolvedIpTypes.tradeSecret) {
       nextTab = "trade-secret";
     } else {
       nextTab = "confirmation";
@@ -1078,20 +1119,8 @@ export function ApplicantsInformation() {
 
     // Get form values
     const values = form.getValues();
-
-    // Special handling for "Other" IP type
-    if (values.ipTypes.other && !values.otherIpType) {
-      console.log("Other IP type is selected but no description provided");
-      toast("Please specify the type of IP in the 'Other' field", {
-        icon: "❌",
-        style: {
-          backgroundColor: "#fef2f2",
-          borderColor: "#fecaca",
-          color: "#b91c1c",
-        },
-      });
-      return;
-    }
+    values.ipTypes = resolvedIpTypes;
+    values.otherIpType = otherIpType;
 
     // Log the values for debugging
     console.log("Form values before saving:", {
@@ -1111,17 +1140,7 @@ export function ApplicantsInformation() {
       },
     });
 
-    // Ensure ipTypes has the correct format with STRICT boolean values
-    const ipTypesFormatted = {
-      copyright: values.ipTypes.copyright === true,
-      patent: values.ipTypes.patent === true,
-      utilityModel: values.ipTypes.utilityModel === true,
-      industrialDesign: values.ipTypes.industrialDesign === true,
-      trademark: values.ipTypes.trademark === true,
-      tradeSecret: values.ipTypes.tradeSecret === true,
-      other: values.ipTypes.other === true,
-      notSure: values.ipTypes.notSure === true,
-    };
+    const ipTypesFormatted = resolvedIpTypes;
 
     // Create a data object with the formatted ipTypes
     const dataToSave = {
@@ -1188,13 +1207,13 @@ export function ApplicantsInformation() {
 
     // Determine the next tab based on selected IP types
     let nextTab = "";
-    if (values.ipTypes.patent || values.ipTypes.utilityModel) {
+    if (resolvedIpTypes.patent || resolvedIpTypes.utilityModel) {
       nextTab = "patent-application";
-    } else if (values.ipTypes.copyright) {
+    } else if (resolvedIpTypes.copyright) {
       nextTab = "copyright-application";
-    } else if (values.ipTypes.trademark) {
+    } else if (resolvedIpTypes.trademark) {
       nextTab = "trademark";
-    } else if (values.ipTypes.tradeSecret) {
+    } else if (resolvedIpTypes.tradeSecret) {
       nextTab = "trade-secret";
     } else {
       nextTab = "confirmation";
@@ -1260,24 +1279,10 @@ export function ApplicantsInformation() {
   const watchedIpTypes = form.watch("ipTypes");
   const watchedInventors = form.watch("inventors");
   const watchedEmail = form.watch("email");
-  const watchedOtherIpType = form.watch("otherIpType");
   const watchedIsRightfulOwner = form.watch("isRightfulOwner");
   const hasSelectedIpType = Object.values(watchedIpTypes || {}).some(
     (value) => value === true
   );
-  const isNotSureSelected = Boolean(watchedIpTypes?.notSure);
-  const hasSpecificIpSelected = Object.entries(watchedIpTypes || {}).some(
-    ([key, value]) => key !== "notSure" && value === true
-  );
-  const ipTypesError =
-    form.formState.errors.ipTypes?.message ??
-    (
-      form.formState.errors.ipTypes as
-        | { root?: { message?: string } }
-        | undefined
-    )?.root?.message;
-  const showIpTypeError = !hasSelectedIpType || Boolean(ipTypesError);
-
   const hasApplicantNames =
     (watchedApplicants?.length ?? 0) > 0 &&
     watchedApplicants.every(
@@ -1295,15 +1300,11 @@ export function ApplicantsInformation() {
     );
 
   const hasEmail = Boolean(watchedEmail?.trim());
-  const hasOtherIpType =
-    !watchedIpTypes?.other || Boolean(watchedOtherIpType?.trim());
-
   const isNextDisabled =
     !hasEmail ||
     !hasApplicantNames ||
     !hasInventorNames ||
     !hasSelectedIpType ||
-    !hasOtherIpType ||
     !watchedIsRightfulOwner;
 
   useEffect(() => {
@@ -1333,16 +1334,6 @@ export function ApplicantsInformation() {
       default:
         break;
     }
-  };
-
-  const syncIpTypesToStore = () => {
-    const nextValues = form.getValues();
-    setFormData((prev) => ({
-      ...prev,
-      ipTypes: nextValues.ipTypes,
-      otherIpType: nextValues.otherIpType,
-    }));
-    setApplicantsInfo(nextValues);
   };
 
   const syncApplicantsAndInventors = () => {
@@ -1478,6 +1469,11 @@ export function ApplicantsInformation() {
               Please provide information about the applicants and intellectual
               property type
             </p>
+            {!activeApplication?.ipType && (
+              <p className="text-sm text-red-600">
+                Please select an IP type in Application Title before continuing.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-8">
@@ -1753,130 +1749,6 @@ export function ApplicantsInformation() {
                       </FormItem>
                     )}
                   />
-                </CardContent>
-              </Card>
-
-              <Card className="border-green-200">
-                <CardContent className="pt-6 space-y-4">
-                  <FormLabel className="text-base">
-                    Type of Intellectual Property<span className="text-red-500"> *</span>
-                  </FormLabel>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { name: "copyright" as IpTypeKeys, label: "Copyright" },
-                      { name: "patent" as IpTypeKeys, label: "Patent" },
-                      {
-                        name: "utilityModel" as IpTypeKeys,
-                        label: "Utility Model",
-                      },
-                      {
-                        name: "industrialDesign" as IpTypeKeys,
-                        label: "Industrial Design",
-                      },
-                      { name: "trademark" as IpTypeKeys, label: "Trademark" },
-                      {
-                        name: "tradeSecret" as IpTypeKeys,
-                        label: "Trade Secret",
-                      },
-                      { name: "notSure" as IpTypeKeys, label: "Not Sure" },
-                      { name: "other" as IpTypeKeys, label: "Other:" },
-                    ].map((item) => (
-                      <FormField
-                        key={item.name}
-                        control={form.control}
-                        name={`ipTypes.${item.name}` as IpTypeFieldPath}
-                        render={({ field }) => {
-                          const isChecked = field.value;
-                          const isNotSureField = item.name === "notSure";
-                          const isDisabled = isNotSureField
-                            ? hasSpecificIpSelected
-                            : isNotSureSelected;
-                          return (
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <Checkbox
-                                  id={`checkbox-${item.name}`}
-                                  checked={isChecked}
-                                  disabled={isDisabled}
-                                  onCheckedChange={(checked) => {
-                                    if (item.name === "notSure") {
-                                      if (checked) {
-                                        Object.keys(
-                                          form.getValues("ipTypes")
-                                        ).forEach((key) => {
-                                          if (key !== "notSure") {
-                                            form.setValue(
-                                              `ipTypes.${key as IpTypeKeys}`,
-                                              false,
-                                              { shouldDirty: true }
-                                            );
-                                          }
-                                        });
-                                      }
-                                      field.onChange(checked);
-                                      setSelectedIpTypes({
-                                        notSure: checked === true,
-                                      });
-                                      syncIpTypesToStore();
-                                      return;
-                                    }
-
-                                    field.onChange(checked);
-                                    if (checked) {
-                                      form.setValue("ipTypes.notSure", false, {
-                                        shouldDirty: true,
-                                      });
-                                      setSelectedIpTypes({
-                                        [item.name]: true,
-                                        notSure: false,
-                                      });
-                                    } else {
-                                      setSelectedIpTypes({
-                                        [item.name]: false,
-                                      });
-                                    }
-                                    syncIpTypesToStore();
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel
-                                htmlFor={`checkbox-${item.name}`}
-                                className="font-normal"
-                              >
-                                {item.label}
-                              </FormLabel>
-                            </FormItem>
-                          );
-                        }}
-                      />
-                    ))}
-                  </div>
-                  {showIpTypeError && (
-                    <p className="text-sm text-red-600">
-                      {ipTypesError ?? "Please select at least one IP type."}
-                    </p>
-                  )}
-
-                  <div className="space-y-4">
-                    {form.watch("ipTypes.other") && (
-                      <FormField
-                        control={form.control}
-                        name="otherIpType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                placeholder="Please specify the type of IP..."
-                                {...field}
-                                required
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
                 </CardContent>
               </Card>
             </div>

@@ -43,6 +43,7 @@ const formSchema = z.object({
     .min(1, "IP type is required")
     .refine(
       (value) =>
+        values.every((value) =>
         [
           "patent",
           "copyright",
@@ -52,7 +53,8 @@ const formSchema = z.object({
           "trade_secret",
           "not_sure",
           "other",
-        ].includes(value),
+        ].includes(value)
+      ),
       "IP type is required"
     ),
 });
@@ -125,7 +127,9 @@ export function ApplicationTitleForm() {
       form.reset({
         title: activeApplication.title || "",
         description: activeApplication.description || "",
-        ipType: activeApplication.ipType || "",
+        ipType: activeApplication.ipType
+          ? [activeApplication.ipType]
+          : [],
       });
       hasClearedTitleRef.current = false;
       hasClearedDescriptionRef.current = false;
@@ -139,9 +143,10 @@ export function ApplicationTitleForm() {
       return;
     }
     updateApplicationMutation.mutate({
-      applicationId: activeApplication.id,
-      ...values,
-    });
+  applicationId: activeApplication.id,
+  ...values,
+  ipType: values.ipType[0], // or i-store as array sa DB
+});
   }
 
   return (

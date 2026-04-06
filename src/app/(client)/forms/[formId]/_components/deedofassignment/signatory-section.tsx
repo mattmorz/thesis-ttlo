@@ -966,54 +966,49 @@ setShowCompleteModal(true);
               >
 {showCompleteModal && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-  <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+    
+    <div className="relative bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
 
-    {/* HEADER ROW */}
-<div className="flex items-center justify-end ">
-  
-  {/* CLOSE (RIGHT) */}
-  <button
-    type="button"
-    onClick={() => setShowCompleteModal(false)}
-    className="bg-green-100 rounded-full text-green-700 hover:bg-green-200"
-  >
-    <X className="h-5 w-5" />
-  </button>
+      {/* CLOSE BUTTON (RIGHT) */}
+      <button
+        type="button"
+        onClick={() => setShowCompleteModal(false)}
+        className="absolute top-4 right-4 bg-green-100 p-1.5 rounded-full text-green-700 hover:bg-green-200"
+      >
+        <X className="h-5 w-5" />
+      </button>
 
       {/* TITLE */}
-      <h2 className="text-xl font-bold text-green-700 text-center flex-1">
-      COMPLETED!
+      <h2 className="text-xl font-bold text-green-700 text-center">
+        COMPLETED!
       </h2>
 
-      {/* spacer para ma-center ang title */}
-      <div className="w-6" />
+      {/* DESCRIPTION */}
+      <p className="text-muted-foreground text-center mt-2">
+        Your IP Application is successfully completed.
+      </p>
+
+      {/* BUTTONS */}
+      <div className="flex justify-center gap-4 mt-6">
+        
+        <Button
+          className="bg-green-700 text-white hover:bg-green-800"
+          onClick={() => router.push("/projects")}
+        >
+          Track Application
+        </Button>
+
+        <Button
+          className="bg-green-700 text-white hover:bg-green-800"
+          onClick={() => router.push("/")}
+        >
+          Close
+        </Button>
+
+      </div>
+
     </div>
-
-    {/* DESCRIPTION */}
-    <p className="text-muted-foreground text-center">
-      Your IP Application is successfully completed.
-    </p>
-
-    {/* BUTTONS */}
-    <div className="flex justify-center gap-4 mt-6">
-      <Button
-        className="bg-green-700 text-white hover:bg-green-800"
-        onClick={() => router.push("/forms")}
-      >
-        Track Application
-      </Button>
-
-      <Button
-        type="button"
-        className="bg-green-700 text-white hover:bg-green-800"
-        onClick={() => setShowCompleteModal(false)}
-      >
-        Close
-      </Button>
-    </div>
-
   </div>
-</div>
 )}
 
           {error && (

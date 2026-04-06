@@ -43,7 +43,6 @@ const formSchema = z.object({
     .min(1, "IP type is required")
     .refine(
       (value) =>
-        values.every((value) =>
         [
           "patent",
           "copyright",
@@ -53,8 +52,7 @@ const formSchema = z.object({
           "trade_secret",
           "not_sure",
           "other",
-        ].includes(value)
-      ),
+        ].includes(value),
       "IP type is required"
     ),
 });

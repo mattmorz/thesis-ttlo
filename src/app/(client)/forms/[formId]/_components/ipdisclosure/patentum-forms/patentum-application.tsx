@@ -32,6 +32,12 @@ import { useFormContext } from "../context/form-context";
 import { usePatentTabsStore } from "./patent-tabs";
 import { useIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
 import { useIpDisclosure } from "@/features/client/ip-disclosure/hooks/use-ip-disclosure";
+import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
+import { useParams } from "next/navigation";
+import {
+  DriveUploadButton,
+  useDriveUpload,
+} from "@/components/global/drive-upload";
 
 // Store interface for patent application form
 interface PatentApplicationState {
@@ -121,12 +127,28 @@ export function PatentApplication({
     setPatentUtilityModelApplication,
     disclosureId,
   } = useIpDisclosureStore();
+  const { activeApplicationId } = useActiveApplication();
+  const params = useParams();
+  const formId = params.formId as string;
   const { setActiveTab: setPatentTabsActiveTab } = usePatentTabsStore();
   const { savePatentUtilityModelApplication } = useIpDisclosure();
 
   // Track if initial data has been loaded
   const initialDataLoaded = React.useRef(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const drawingsUploader = useDriveUpload(
+    {
+      formId,
+      ipApplicationId: activeApplicationId,
+      formName: "Patent/UM Application - Technical Drawings",
+      category: "patent",
+      description:
+        "Technical drawings and diagrams for Patent/UM application",
+    },
+    {
+      successMessage: "Technical drawings uploaded successfully",
+    }
+  );
 
   // Log when component mounts and when onNext/onPrevious props change
   useEffect(() => {
@@ -389,6 +411,7 @@ export function PatentApplication({
   // Function to handle navigation without form submission
   const handleNextWithoutSubmit = async () => {
     try {
+      console.log("[PatentApplication] Next clicked");
       // Save current form data
       const values = form.getValues();
       setData(values);
@@ -446,6 +469,18 @@ export function PatentApplication({
           "No disclosure ID available for saving patent application"
         );
         toast.error("Please complete the Applicant's Information tab first");
+      }
+
+      if (values.files && values.files.length > 0) {
+        console.log(
+          "[PatentApplication] Uploading technical drawings before navigation",
+          { fileCount: values.files.length }
+        );
+        await drawingsUploader.upload(values.files);
+      } else {
+        console.log(
+          "[PatentApplication] No technical drawings to upload before navigation"
+        );
       }
 
       // Always navigate to the next tab, even if saving fails
@@ -922,6 +957,14 @@ export function PatentApplication({
                       </div>
                     </FileUploader>
                   </FormControl>
+                  <div className="pt-3">
+                    <DriveUploadButton
+                      files={field.value}
+                      uploader={drawingsUploader}
+                      variant="outline"
+                      className="border-[#1B5E20] text-[#1B5E20] hover:bg-[#E8F5E9] hover:text-[#1B5E20]"
+                    />
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

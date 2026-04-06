@@ -22,15 +22,18 @@ export default function SignOutPage() {
     const performSignOut = async () => {
       try {
         // We'll use a more direct approach to reduce duplicate session checks
-        // First, clear any cached session data from localStorage
+          // First, clear any cached session data from localStorage (v4 + v5)
         localStorage.removeItem("next-auth.session-token");
         localStorage.removeItem("next-auth.callback-url");
         localStorage.removeItem("next-auth.csrf-token");
+        localStorage.removeItem("authjs.session-token");
+        localStorage.removeItem("authjs.callback-url");
+        localStorage.removeItem("authjs.csrf-token");
 
         // Clear cookies without triggering a session check first
         document.cookie.split(";").forEach((cookie) => {
           const [name] = cookie.trim().split("=");
-          if (name.includes("next-auth")) {
+          if (name.includes("next-auth") || name.includes("authjs")) {
             document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
           }
         });

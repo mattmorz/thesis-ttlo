@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
-import { Info, Plus, Trash2, FileText, Image } from "lucide-react";
+import { Info, Plus, Trash2, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 import { create } from "zustand";
@@ -13,8 +13,9 @@ import { debounce } from "lodash";
 import { useFormContext } from "../context/form-context";
 import { useIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
 import React from "react";
-import { usePatentTabsStore } from "./patent-tabs";
 import { useIpDisclosure } from "@/features/client/ip-disclosure/hooks/use-ip-disclosure";
+import { useParams } from "next/navigation";
+import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +43,11 @@ import {
 } from "@/components/ui/table";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import {
+  DriveUploadButton,
+  uploadFilesToDrive,
+  useDriveUpload,
+} from "@/components/global/drive-upload";
 
 // Store interface for matrix form
 interface MatrixFormState {
@@ -122,11 +128,38 @@ export function MatrixSampleForm({
     patentUtilityModelApplication,
     setPatentUtilityModelApplication,
   } = useIpDisclosureStore();
-  const { setActiveTab: setPatentTabsActiveTab } = usePatentTabsStore();
   const { savePatentUtilityModelApplication } = useIpDisclosure();
+  const params = useParams();
+  const formId = params.formId as string;
+  const { activeApplicationId } = useActiveApplication();
 
   // Track if initial data has been loaded
   const initialDataLoaded = React.useRef(false);
+
+  const inventionDocsUploader = useDriveUpload(
+    {
+      formId,
+      ipApplicationId: activeApplicationId,
+      formName: "Patent/UM Application - Matrix Sample - Invention Docs",
+      category: "patent",
+      description: "Invention documents for matrix sample",
+    },
+    {
+      successMessage: "Invention documents uploaded successfully",
+    }
+  );
+  const priorArtDocsUploader = useDriveUpload(
+    {
+      formId,
+      ipApplicationId: activeApplicationId,
+      formName: "Patent/UM Application - Matrix Sample - Prior Art Docs",
+      category: "patent",
+      description: "Prior art documents for matrix sample",
+    },
+    {
+      successMessage: "Prior art documents uploaded successfully",
+    }
+  );
 
   // Function to update the patentUtilityModelApplication in the store
   const updatePatentUtilityModelInStore = (updatedData: any) => {
@@ -269,6 +302,71 @@ const [isSubmitting, setIsSubmitting] = React.useState(false);
     name: "priorArtDocs",
   });
 
+  const getPriorArtFiles = (
+    docs?: Array<{ files?: File[] | null }> | null
+  ) => (docs ?? []).flatMap((doc) => doc?.files ?? []);
+
+  const buildPriorArtUploadFiles = (
+    docs?: Array<{ files?: File[] | null }> | null
+  ) =>
+    (docs ?? []).flatMap((doc, docIndex) =>
+      (doc?.files ?? []).map((file) => {
+        const prefix = `PriorArt-${docIndex + 1}-`;
+        const fileName = file.name?.startsWith(prefix)
+          ? file.name
+          : `${prefix}${file.name || "file"}`;
+        return new File([file], fileName, {
+          type: file.type,
+          lastModified: file.lastModified,
+        });
+      })
+    );
+
+  const getUploadedFileCount = (result: unknown) => {
+    if (!result || typeof result !== "object") return 0;
+    const files = (result as { files?: unknown }).files;
+    return Array.isArray(files) ? files.length : 0;
+  };
+
+  const uploadMatrixFiles = async ({
+    files,
+    formName,
+    description,
+    emptyMessage,
+    successMessage,
+    errorMessage,
+  }: {
+    files: File[];
+    formName: string;
+    description: string;
+    emptyMessage: string;
+    successMessage: string;
+    errorMessage: string;
+  }) => {
+    if (files.length === 0) {
+      console.log(emptyMessage);
+      return true;
+    }
+
+    const result = await uploadFilesToDrive({
+      formId,
+      ipApplicationId: activeApplicationId,
+      formName,
+      category: "patent",
+      description,
+      files,
+    });
+
+    const uploadedCount = getUploadedFileCount(result.result);
+    if (!result.success || uploadedCount < files.length) {
+      toast.error(errorMessage);
+      return false;
+    }
+
+    toast.success(successMessage);
+    return true;
+  };
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("Matrix form submitted");
     setData(values);
@@ -356,25 +454,56 @@ const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Function to handle navigation without form submission
   const handleNextWithoutSubmit = async () => {
-  if (isSubmitting) return; // para dili ma double click
+    if (isSubmitting) return; // para dili ma double click
 
-  setIsSubmitting(true);
+    setIsSubmitting(true);
 
-  try {
-    const values = form.getValues();
-    setData(values);
+    try {
+      const values = form.getValues();
+      setData(values);
 
-    if (disclosureId && patentUtilityModelApplication) {
-      await savePatentUtilityModelApplication();
+      if (disclosureId && patentUtilityModelApplication) {
+        await savePatentUtilityModelApplication();
+      }
+
+      const inventionDocs = values.inventionDocs ?? [];
+      const priorArtFiles = buildPriorArtUploadFiles(values.priorArtDocs);
+
+      const inventionUploadOk = await uploadMatrixFiles({
+        files: inventionDocs,
+        formName: "Patent/UM Application - Matrix Sample - Invention Docs",
+        description: "Invention documents for matrix sample",
+        emptyMessage:
+          "[MatrixSample] No invention docs to upload before navigation",
+        successMessage: "Invention documents uploaded successfully",
+        errorMessage: "Some invention documents failed to upload.",
+      });
+
+      if (!inventionUploadOk) {
+        return;
+      }
+
+      const priorArtUploadOk = await uploadMatrixFiles({
+        files: priorArtFiles,
+        formName: "Patent/UM Application - Matrix Sample - Invention Docs",
+        description: "Prior art documents for matrix sample",
+        emptyMessage:
+          "[MatrixSample] No prior art docs to upload before navigation",
+        successMessage: "Prior art documents uploaded successfully",
+        errorMessage: "Some prior art documents failed to upload.",
+      });
+
+      if (!priorArtUploadOk) {
+        return;
+      }
+
+      navigateToNext();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    navigateToNext();
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   // Function to handle direct navigation to next tab
   const navigateToNext = () => {
@@ -819,6 +948,14 @@ const [isSubmitting, setIsSubmitting] = React.useState(false);
                         </FileUploader>
                       </FormControl>
                       <FormMessage />
+                      <div className="pt-3">
+                        <DriveUploadButton
+                          files={field.value ?? []}
+                          uploader={inventionDocsUploader}
+                          variant="outline"
+                          className="border-[#1B5E20] text-[#1B5E20] hover:bg-[#E8F5E9] hover:text-[#1B5E20]"
+                        />
+                      </div>
                     </FormItem>
                   )}
                 />
@@ -878,6 +1015,14 @@ const [isSubmitting, setIsSubmitting] = React.useState(false);
                           </FileUploader>
                         </FormControl>
                         <FormMessage />
+                        <div className="pt-3">
+                          <DriveUploadButton
+                            files={field.value ?? []}
+                            uploader={priorArtDocsUploader}
+                            variant="outline"
+                            className="border-[#1B5E20] text-[#1B5E20] hover:bg-[#E8F5E9] hover:text-[#1B5E20]"
+                          />
+                        </div>
                       </FormItem>
                     )}
                   />

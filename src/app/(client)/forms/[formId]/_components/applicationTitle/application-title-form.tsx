@@ -39,10 +39,11 @@ const formSchema = z.object({
     .min(1, "Description is required")
     .min(5, "Description must be at least 5 characters."),
   ipType: z
-    .string()
+    .array(z.string())
     .min(1, "Select at least one IP type")
     .refine(
       (value) =>
+        values.every((value) =>
         [
           "patent",
           "copyright",
@@ -52,7 +53,8 @@ const formSchema = z.object({
           "trade_secret",
           "not_sure",
           "other",
-        ].includes(value),
+        ].includes(value)
+      ),
       "IP type is required"
     ),
 });
@@ -113,7 +115,9 @@ export function ApplicationTitleForm() {
    defaultValues: {
   title: activeApplication?.title || "",
   description: activeApplication?.description || "",
-  ipType: activeApplication?.ipType ? [activeApplication.ipType] : [],
+  ipType: activeApplication?.ipType 
+      ? [activeApplication.ipType] : 
+      [],
 },
   });
   useEffect(() => {
@@ -125,7 +129,9 @@ export function ApplicationTitleForm() {
       form.reset({
         title: activeApplication.title || "",
         description: activeApplication.description || "",
-        ipType: activeApplication.ipType || "",
+        ipType: activeApplication.ipType
+          ? [activeApplication.ipType]
+          : [],
       });
       hasClearedTitleRef.current = false;
       hasClearedDescriptionRef.current = false;
@@ -139,9 +145,10 @@ export function ApplicationTitleForm() {
       return;
     }
     updateApplicationMutation.mutate({
-      applicationId: activeApplication.id,
-      ...values,
-    });
+  applicationId: activeApplication.id,
+  ...values,
+  ipType: values.ipType[0], // or i-store as array sa DB
+});
   }
 
   return (

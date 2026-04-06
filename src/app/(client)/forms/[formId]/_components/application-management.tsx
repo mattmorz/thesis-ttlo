@@ -67,7 +67,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { cn } from "@/lib/utils";
 import { displayStatus } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow  } from "date-fns";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Upload } from "lucide-react";
@@ -796,9 +796,13 @@ export function ApplicationManagement({
                     <CalendarDays className="h-3 w-3" />
                     <span>
                       {application.createdAt
-                        ? formatDistanceToNow(new Date(application.createdAt), {
-                            addSuffix: true,
-                          })
+                        ? formatDistanceToNow(
+                            new Date(
+                              new Date(application.createdAt as string).getTime() +
+                                8 * 60 * 60 * 1000
+                            ),
+                            { addSuffix: true }
+                          )
                         : "recently"}
                     </span>
                   </div>

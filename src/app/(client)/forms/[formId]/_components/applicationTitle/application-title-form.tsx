@@ -125,9 +125,7 @@ export function ApplicationTitleForm() {
       form.reset({
         title: activeApplication.title || "",
         description: activeApplication.description || "",
-        ipType: activeApplication.ipType
-          ? [activeApplication.ipType]
-          : [],
+        ipType: activeApplication.ipType || "",
       });
       hasClearedTitleRef.current = false;
       hasClearedDescriptionRef.current = false;
@@ -141,10 +139,9 @@ export function ApplicationTitleForm() {
       return;
     }
     updateApplicationMutation.mutate({
-  applicationId: activeApplication.id,
-  ...values,
-  ipType: values.ipType[0], // or i-store as array sa DB
-});
+      applicationId: activeApplication.id,
+      ...values,
+    });
   }
 
   return (

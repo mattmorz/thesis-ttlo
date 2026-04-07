@@ -92,8 +92,7 @@ export async function GET(request: Request) {
       formStatus.applicationTitle =
         Boolean(title) &&
         title.toLowerCase() !== "untitled application" &&
-        Boolean(ipType) &&
-        String(ipType).toLowerCase() !== "not_sure";
+        Boolean(ipType);
     }
 
     // Return the form status results

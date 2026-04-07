@@ -1060,6 +1060,9 @@ export function ApplicantsInformation() {
     }
 
     setIsSubmitting(true); // 🔥 START loading
+    const { ipTypes: resolvedIpTypes, otherIpType } = derivedIpTypesResult;
+    form.setValue("ipTypes", resolvedIpTypes, { shouldValidate: true });
+    form.setValue("otherIpType", otherIpType, { shouldValidate: true });
 
     // Validate the form
     const isValid = await form.trigger();
@@ -1073,104 +1076,63 @@ export function ApplicantsInformation() {
           color: "#b91c1c",
         },
       });
+      setIsSubmitting(false);
       return;
     }
-    setIsSubmitting(true); // 🔥 START loading
-
-    const { ipTypes: resolvedIpTypes, otherIpType } = derivedIpTypesResult;
-
-  try {
-    const isValid = await form.trigger();
-    if (!isValid) {
-      toast("Please fill in all required fields");
-      return;
-    }
-
-    const values = form.getValues();
-    values.ipTypes = resolvedIpTypes;
-    values.otherIpType = otherIpType;
-
-    const success = await saveApplicantsInfo(values, false);
-
-    if (!success) {
-      toast("Failed to save applicants information");
-      return;
-    }
-
-    // navigation
-    let nextTab = "";
-    if (resolvedIpTypes.patent || resolvedIpTypes.utilityModel) {
-      nextTab = "patent-application";
-    } else if (resolvedIpTypes.copyright) {
-      nextTab = "copyright-application";
-    } else if (resolvedIpTypes.trademark) {
-      nextTab = "trademark";
-    } else if (resolvedIpTypes.tradeSecret) {
-      nextTab = "trade-secret";
-    } else {
-      nextTab = "confirmation";
-    }
-
-    setActiveTab(nextTab);
-
-  } finally {
-    setIsSubmitting(false); // 🔥 STOP loading
-  }
-
-    // Get form values
-    const values = form.getValues();
-    values.ipTypes = resolvedIpTypes;
-    values.otherIpType = otherIpType;
-
-    // Log the values for debugging
-    console.log("Form values before saving:", {
-      ipTypes: values.ipTypes,
-      ipTypesJSON: JSON.stringify(values.ipTypes),
-      ipTypesSelected: Object.entries(values.ipTypes)
-        .filter(([_, selected]) => selected)
-        .map(([key]) => key),
-      otherIpType: values.otherIpType,
-      rawValues: {
-        copyright: values.ipTypes.copyright,
-        trademark: values.ipTypes.trademark,
-      },
-      typeofCheck: {
-        copyright: typeof values.ipTypes.copyright,
-        trademark: typeof values.ipTypes.trademark,
-      },
-    });
-
-    const ipTypesFormatted = resolvedIpTypes;
-
-    // Create a data object with the formatted ipTypes
-    const dataToSave = {
-      ...values,
-      ipTypes: ipTypesFormatted,
-    };
-
-    // Update our local state to ensure consistency
-    setFormData(dataToSave);
-
-    // Update the context for IP types
-    setSelectedIpTypes(ipTypesFormatted);
-    if (DEBUG) {
-      console.log("Updated form context IP types:", ipTypesFormatted);
-    }
-
-    // Save form data to the store
-    setApplicantsInfo(dataToSave);
-    console.log("Saving applicants information with formatted ipTypes:", {
-      ipTypes: dataToSave.ipTypes,
-      ipTypesJSON: JSON.stringify(dataToSave.ipTypes),
-      hasTrueValue: Object.values(dataToSave.ipTypes).some((v) => v === true),
-    });
-
-    // Save to the database WITHOUT registering in form_submission_registry
-    // This avoids automatic registry entries when just navigating
-    console.log(
-      "Saving applicants information to database without registry creation..."
-    );
     try {
+      // Get form values
+      const values = form.getValues();
+      values.ipTypes = resolvedIpTypes;
+      values.otherIpType = otherIpType;
+
+      // Log the values for debugging
+      console.log("Form values before saving:", {
+        ipTypes: values.ipTypes,
+        ipTypesJSON: JSON.stringify(values.ipTypes),
+        ipTypesSelected: Object.entries(values.ipTypes)
+          .filter(([_, selected]) => selected)
+          .map(([key]) => key),
+        otherIpType: values.otherIpType,
+        rawValues: {
+          copyright: values.ipTypes.copyright,
+          trademark: values.ipTypes.trademark,
+        },
+        typeofCheck: {
+          copyright: typeof values.ipTypes.copyright,
+          trademark: typeof values.ipTypes.trademark,
+        },
+      });
+
+      const ipTypesFormatted = resolvedIpTypes;
+
+      // Create a data object with the formatted ipTypes
+      const dataToSave = {
+        ...values,
+        ipTypes: ipTypesFormatted,
+      };
+
+      // Update our local state to ensure consistency
+      setFormData(dataToSave);
+
+      // Update the context for IP types
+      setSelectedIpTypes(ipTypesFormatted);
+      if (DEBUG) {
+        console.log("Updated form context IP types:", ipTypesFormatted);
+      }
+
+      // Save form data to the store
+      setApplicantsInfo(dataToSave);
+      console.log("Saving applicants information with formatted ipTypes:", {
+        ipTypes: dataToSave.ipTypes,
+        ipTypesJSON: JSON.stringify(dataToSave.ipTypes),
+        hasTrueValue: Object.values(dataToSave.ipTypes).some((v) => v === true),
+      });
+
+      // Save to the database WITHOUT registering in form_submission_registry
+      // This avoids automatic registry entries when just navigating
+      console.log(
+        "Saving applicants information to database without registry creation..."
+      );
       const success = await saveApplicantsInfo(dataToSave, false);
 
       if (success) {
@@ -1197,31 +1159,33 @@ export function ApplicantsInformation() {
         });
         return;
       }
+
+      // Determine the next tab based on selected IP types
+      let nextTab = "";
+      if (resolvedIpTypes.patent || resolvedIpTypes.utilityModel) {
+        nextTab = "patent-application";
+      } else if (resolvedIpTypes.copyright) {
+        nextTab = "copyright-application";
+      } else if (resolvedIpTypes.trademark) {
+        nextTab = "trademark";
+      } else if (resolvedIpTypes.tradeSecret) {
+        nextTab = "trade-secret";
+      } else {
+        nextTab = "confirmation";
+      }
+
+      // Navigate to the next tab
+      console.log("Navigating to tab:", nextTab);
+      setActiveTab(nextTab);
     } catch (error) {
       console.error("Error saving applicants information:", error);
       toast(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       return;
+    } finally {
+      setIsSubmitting(false); // 🔥 STOP loading
     }
-
-    // Determine the next tab based on selected IP types
-    let nextTab = "";
-    if (resolvedIpTypes.patent || resolvedIpTypes.utilityModel) {
-      nextTab = "patent-application";
-    } else if (resolvedIpTypes.copyright) {
-      nextTab = "copyright-application";
-    } else if (resolvedIpTypes.trademark) {
-      nextTab = "trademark";
-    } else if (resolvedIpTypes.tradeSecret) {
-      nextTab = "trade-secret";
-    } else {
-      nextTab = "confirmation";
-    }
-
-    // Navigate to the next tab
-    console.log("Navigating to tab:", nextTab);
-    setActiveTab(nextTab);
   };
 
   // Add an effect to update the form context when IP types change in the form
@@ -1280,9 +1244,9 @@ export function ApplicantsInformation() {
   const watchedInventors = form.watch("inventors");
   const watchedEmail = form.watch("email");
   const watchedIsRightfulOwner = form.watch("isRightfulOwner");
-  const hasSelectedIpType = Object.values(watchedIpTypes || {}).some(
-    (value) => value === true
-  );
+  const hasSelectedIpType = activeApplication?.ipType
+    ? Object.values(derivedIpTypesResult.ipTypes).some((value) => value === true)
+    : Object.values(watchedIpTypes || {}).some((value) => value === true);
   const hasApplicantNames =
     (watchedApplicants?.length ?? 0) > 0 &&
     watchedApplicants.every(
@@ -1305,6 +1269,7 @@ export function ApplicantsInformation() {
     !hasApplicantNames ||
     !hasInventorNames ||
     !hasSelectedIpType ||
+    !activeApplication?.ipType ||
     !watchedIsRightfulOwner;
 
   useEffect(() => {

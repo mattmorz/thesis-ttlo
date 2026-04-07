@@ -12,10 +12,8 @@ import {
   contactMessage,
   account,
   copyrightBasicApplication,
-  copyrightTransactionPart2,
   ipDisclosure,
   deedOfAssignment,
-  copyrightTransactionPart1,
   digitalSignature,
   documents,
   documentsValidation,
@@ -213,38 +211,20 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }));
 
-export const copyrightTransactionPart2Relations = relations(
-  copyrightTransactionPart2,
-  ({ one }) => ({
-    copyrightBasicApplication: one(copyrightBasicApplication, {
-      fields: [copyrightTransactionPart2.copyrightId],
-      references: [copyrightBasicApplication.copyrightId],
-    }),
-    ipDisclosure: one(ipDisclosure, {
-      fields: [copyrightTransactionPart2.disclosureId],
-      references: [ipDisclosure.disclosureId],
-    }),
-  })
-);
-
 export const copyrightBasicApplicationRelations = relations(
   copyrightBasicApplication,
   ({ one, many }) => ({
-    copyrightTransactionPart2s: many(copyrightTransactionPart2),
     ipDisclosure: one(ipDisclosure, {
       fields: [copyrightBasicApplication.disclosureId],
       references: [ipDisclosure.disclosureId],
     }),
-    copyrightTransactionPart1s: many(copyrightTransactionPart1),
   })
 );
 
 export const ipDisclosureRelations = relations(
   ipDisclosure,
   ({ one, many }) => ({
-    copyrightTransactionPart2s: many(copyrightTransactionPart2),
     copyrightBasicApplications: many(copyrightBasicApplication),
-    copyrightTransactionPart1s: many(copyrightTransactionPart1),
     disclosureConfirmations: many(disclosureConfirmation),
     userAccount: one(userAccount, {
       fields: [ipDisclosure.clientId],
@@ -272,20 +252,6 @@ export const deedOfAssignmentRelations = relations(
     userAccount: one(userAccount, {
       fields: [deedOfAssignment.userId],
       references: [userAccount.id],
-    }),
-  })
-);
-
-export const copyrightTransactionPart1Relations = relations(
-  copyrightTransactionPart1,
-  ({ one }) => ({
-    copyrightBasicApplication: one(copyrightBasicApplication, {
-      fields: [copyrightTransactionPart1.copyrightId],
-      references: [copyrightBasicApplication.copyrightId],
-    }),
-    ipDisclosure: one(ipDisclosure, {
-      fields: [copyrightTransactionPart1.disclosureId],
-      references: [ipDisclosure.disclosureId],
     }),
   })
 );

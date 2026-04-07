@@ -254,20 +254,6 @@ export async function POST(request: Request) {
       };
     }
 
-    if (requestBody.transactionFormPart1) {
-      updatedData.transactionFormPart1 = {
-        ...currentData.transactionFormPart1,
-        ...requestBody.transactionFormPart1,
-      };
-    }
-
-    if (requestBody.transactionFormPart2) {
-      updatedData.transactionFormPart2 = {
-        ...currentData.transactionFormPart2,
-        ...requestBody.transactionFormPart2,
-      };
-    }
-
     // Update the disclosure in the database
     const updatedDisclosure = await db
       .update(ipDisclosure)

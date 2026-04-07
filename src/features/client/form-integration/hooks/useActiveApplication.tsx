@@ -133,8 +133,6 @@ export function useActiveApplication(): UseActiveApplicationReturn {
 
       // Copyright data
       localStorage.removeItem("copyrightApplicationData");
-      localStorage.removeItem("transactionFormPart1Data");
-      localStorage.removeItem("transactionFormPart2Data");
 
       // Patent data
       localStorage.removeItem("patentApplicationData");

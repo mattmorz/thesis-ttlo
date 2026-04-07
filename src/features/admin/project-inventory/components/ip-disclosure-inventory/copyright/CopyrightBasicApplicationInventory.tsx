@@ -73,14 +73,6 @@ type CopyrightData = {
     createdAt: string;
     updatedAt: string;
   };
-  transactionPart1?: {
-    id: string | null;
-    transactionData: any;
-  };
-  transactionPart2?: {
-    id: string | null;
-    transactionDetails: any;
-  };
 };
 
 // Column definition for visibility toggling
@@ -99,7 +91,6 @@ type ColumnVisibility = {
   creationDate: boolean;
   applicationStatus: boolean;
   disclosureStatus: boolean;
-  transactionStatus: boolean;
   createdAt: boolean;
   actions: boolean;
 };
@@ -141,7 +132,6 @@ export function CopyrightBasicApplicationInventory() {
     creationDate: true,
     applicationStatus: true,
     disclosureStatus: true,
-    transactionStatus: true,
     createdAt: true,
     actions: true,
   });
@@ -175,11 +165,6 @@ export function CopyrightBasicApplicationInventory() {
     {
       id: "disclosureStatus",
       label: "Disclosure Status",
-      width: "w-[150px]",
-    },
-    {
-      id: "transactionStatus",
-      label: "Transaction Status",
       width: "w-[150px]",
     },
     {
@@ -331,27 +316,6 @@ export function CopyrightBasicApplicationInventory() {
     setCurrentPage(1);
   }, [searchQuery]);
 
-  // Check if transaction parts exist
-  const getTransactionStatus = (item: CopyrightData) => {
-    if (!item.transactionPart1 && !item.transactionPart2) {
-      return "No transactions";
-    }
-
-    if (item.transactionPart1 && item.transactionPart2) {
-      return "Complete";
-    }
-
-    if (item.transactionPart1) {
-      return "Part 1 only";
-    }
-
-    if (item.transactionPart2) {
-      return "Part 2 only";
-    }
-
-    return "Unknown";
-  };
-
   // Truncate long text for display
   const truncateText = (text: string, maxLength = 100) => {
     if (!text) return "-";
@@ -497,12 +461,6 @@ export function CopyrightBasicApplicationInventory() {
                       </TableHead>
                     )}
 
-                    {visibleColumns.transactionStatus && (
-                      <TableHead className="w-[150px]">
-                        Transaction Status
-                      </TableHead>
-                    )}
-
                     {visibleColumns.createdAt && (
                       <TableHead
                         className="cursor-pointer hover:bg-muted/50 w-[110px]"
@@ -562,14 +520,6 @@ export function CopyrightBasicApplicationInventory() {
                             className={getStatusColor(item.disclosure.status)}
                           >
                             {item.disclosure.status.replace("_", " ")}
-                          </Badge>
-                        </TableCell>
-                      )}
-
-                      {visibleColumns.transactionStatus && (
-                        <TableCell>
-                          <Badge variant="outline">
-                            {getTransactionStatus(item)}
                           </Badge>
                         </TableCell>
                       )}
@@ -723,32 +673,6 @@ export function CopyrightBasicApplicationInventory() {
                 </div>
               </div>
 
-              {/* Transaction Status */}
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Transaction Status</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">
-                      Transaction Part 1
-                    </h4>
-                    <Badge variant="outline">
-                      {selectedItem.transactionPart1
-                        ? "Available"
-                        : "Not Available"}
-                    </Badge>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">
-                      Transaction Part 2
-                    </h4>
-                    <Badge variant="outline">
-                      {selectedItem.transactionPart2
-                        ? "Available"
-                        : "Not Available"}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
         </DialogContent>

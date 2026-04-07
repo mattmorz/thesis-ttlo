@@ -128,30 +128,6 @@ CREATE TABLE IF NOT EXISTS "copyright_application" (
     FOREIGN KEY ("disclosure_id") REFERENCES "ip_disclosure"("disclosure_id") ON DELETE CASCADE
 );
 
--- Copyright Transaction Form Part 1
-CREATE TABLE IF NOT EXISTS "copyright_transaction_part1" (
-    "transaction_part1_id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "disclosure_id" UUID NOT NULL,
-    "copyright_id" UUID NOT NULL,
-    "transaction_data" JSONB NOT NULL,
-    "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY ("disclosure_id") REFERENCES "ip_disclosure"("disclosure_id") ON DELETE CASCADE,
-    FOREIGN KEY ("copyright_id") REFERENCES "copyright_application"("copyright_id") ON DELETE CASCADE
-);
-
--- Copyright Transaction Form Part 2
-CREATE TABLE IF NOT EXISTS "copyright_transaction_part2" (
-    "transaction_part2_id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "disclosure_id" UUID NOT NULL,
-    "copyright_id" UUID NOT NULL,
-    "transaction_data" JSONB NOT NULL,
-    "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY ("disclosure_id") REFERENCES "ip_disclosure"("disclosure_id") ON DELETE CASCADE,
-    FOREIGN KEY ("copyright_id") REFERENCES "copyright_application"("copyright_id") ON DELETE CASCADE
-);
-
 -- Patent/Utility Model Application - Main table
 CREATE TABLE IF NOT EXISTS "patent_utility_model_application" (
     "patent_id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -335,8 +311,6 @@ DECLARE
         'trademark_application',
         'trade_secret_application',
         'copyright_application',
-        'copyright_transaction_part1',
-        'copyright_transaction_part2',
         'patent_utility_model_application',
         'patent_inventors',
         'patent_search_report',
@@ -391,8 +365,6 @@ COMMENT ON TABLE ip_disclosure_inventor IS 'Stores information about inventors/a
 COMMENT ON TABLE trademark_application IS 'Stores trademark-specific information for IP disclosures';
 COMMENT ON TABLE trade_secret_application IS 'Stores trade secret-specific information for IP disclosures';
 COMMENT ON TABLE copyright_application IS 'Stores copyright-specific information for IP disclosures';
-COMMENT ON TABLE copyright_transaction_part1 IS 'Stores copyright transaction part 1 information including co-authors';
-COMMENT ON TABLE copyright_transaction_part2 IS 'Stores copyright transaction part 2 information including applicant details and work creation';
 COMMENT ON TABLE patent_utility_model_application IS 'Stores patent and utility model-specific information for IP disclosures';
 COMMENT ON TABLE patent_inventors IS 'Stores information about inventors for patent and utility model applications';
 COMMENT ON TABLE patent_search_report IS 'Stores patent search report information including search strings and relevant documents';

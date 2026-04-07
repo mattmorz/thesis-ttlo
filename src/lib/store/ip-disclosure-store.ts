@@ -178,7 +178,7 @@ const deepMergeWithPriority = (target: any, source: any): any => {
 
   // If source is user-edited data, it takes priority for certain fields
   if (sourceMetadata?.userEdited === true) {
-    // Handle transaction form part 1 - preserve user edits to co-authors
+    // Preserve user edits to co-authors
     if (
       source.transaction_data?.coAuthors &&
       Array.isArray(source.transaction_data.coAuthors)
@@ -189,7 +189,7 @@ const deepMergeWithPriority = (target: any, source: any): any => {
       ];
     }
 
-    // Handle transaction form part 2 - preserve user edits
+    // Preserve user edits to transaction details
     if (source.transaction_details) {
       merged.transaction_details = deepMerge(
         merged.transaction_details || {},
@@ -526,8 +526,6 @@ interface IpDisclosureState {
 
   // Add properties for copyright-specific form data
   copyrightApplication: any | null;
-  transactionFormPart1: any | null;
-  transactionFormPart2: any | null;
 
   // Combined property for patent and utility model data since they share forms
   patentUtilityModelApplication: any | null;
@@ -556,8 +554,6 @@ interface IpDisclosureState {
   setApplicantsInfo: (data: ApplicantsInfo) => void;
   setDisclosureConfirmation: (data: DisclosureConfirmation) => void;
   setCopyrightApplication: (data: any) => void;
-  setTransactionFormPart1: (data: any) => void;
-  setTransactionFormPart2: (data: any) => void;
   setPatentUtilityModelApplication: (data: any) => void;
   setTrademarkApplication: (data: any) => void;
   setTradeSecretApplication: (data: any) => void;
@@ -583,8 +579,6 @@ interface IpDisclosureState {
     formKey: keyof Pick<
       IpDisclosureState,
       | "copyrightApplication"
-      | "transactionFormPart1"
-      | "transactionFormPart2"
       | "patentUtilityModelApplication"
       | "trademarkApplication"
       | "tradeSecretApplication"
@@ -614,8 +608,6 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
 
       // Add properties for copyright-specific form data
       copyrightApplication: null,
-      transactionFormPart1: null,
-      transactionFormPart2: null,
 
       // Combined property for patent and utility model data since they share forms
       patentUtilityModelApplication: null,
@@ -779,7 +771,7 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
         // Get current data from store to merge with
         const currentData = get().copyrightApplication || {};
 
-        // Create a normalized comparison function similar to the one in setTransactionFormPart1
+        // Create a normalized comparison function similar to co-author handling
         const normalizeAndCompare = (obj1: any, obj2: any) => {
           // If either is null/undefined, they're only equal if both are
           if (!obj1 || !obj2) return obj1 === obj2;
@@ -795,7 +787,7 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
           const keys2 = Object.keys(obj2WithoutMeta).sort();
           if (keys1.length !== keys2.length) return false;
 
-          // For transaction form part 1, we need to do a deep comparison of coAuthors
+          // Co-authors can be edited incrementally, so compare them deeply
           // This is different than other forms because coAuthors can be edited incrementally
           if (
             obj1WithoutMeta.transaction_data?.coAuthors &&
@@ -1027,412 +1019,6 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
         }
       },
 
-      setTransactionFormPart1: (data: any) => {
-        // Only update if hydrated to prevent loops
-        if (!get().hydrated) return;
-
-        // Use operation ID for throttling to prevent cascading updates
-        const operationId = `setTransactionFormPart1-${Date.now()}`;
-        if (shouldThrottleUpdate(operationId)) {
-          console.log(`Throttling ${operationId} - too many rapid updates`);
-          return;
-        }
-
-        // Skip update if data is null or empty
-        if (!data || Object.keys(data).length === 0) {
-          return;
-        }
-
-        // Track the operation for debugging
-        const isTracked = trackOperation("setTransactionFormPart1", {
-          hasData: !!data,
-          hasTransactionData: !!data?.transaction_data,
-          coAuthorsLength: data?.transaction_data?.coAuthors?.length || 0,
-        });
-
-        if (!isTracked) {
-          console.error("Operation blocked due to potential infinite loop");
-          return;
-        }
-
-        // Get current data from store to merge with
-        const currentData = get().transactionFormPart1 || {};
-
-        // Create a normalized comparison function similar to the one in setCopyrightApplication
-        const normalizeAndCompare = (obj1: any, obj2: any) => {
-          // If either is null/undefined, they're only equal if both are
-          if (!obj1 || !obj2) return obj1 === obj2;
-
-          // Ignore metadata for this comparison
-          const obj1WithoutMeta = { ...obj1 };
-          const obj2WithoutMeta = { ...obj2 };
-          delete obj1WithoutMeta._metadata;
-          delete obj2WithoutMeta._metadata;
-
-          // Check if they have the same keys
-          const keys1 = Object.keys(obj1WithoutMeta).sort();
-          const keys2 = Object.keys(obj2WithoutMeta).sort();
-          if (keys1.length !== keys2.length) return false;
-
-          // For transaction form part 1, we need to do a deep comparison of coAuthors
-          // This is different than other forms because coAuthors can be edited incrementally
-          if (
-            obj1WithoutMeta.transaction_data?.coAuthors &&
-            obj2WithoutMeta.transaction_data?.coAuthors
-          ) {
-            const coAuthors1 = obj1WithoutMeta.transaction_data.coAuthors;
-            const coAuthors2 = obj2WithoutMeta.transaction_data.coAuthors;
-
-            // If arrays have different lengths, they're different
-            if (coAuthors1.length !== coAuthors2.length) return false;
-
-            // Compare each co-author entry
-            for (let i = 0; i < coAuthors1.length; i++) {
-              // Simple stringify comparison for co-author objects
-              if (
-                JSON.stringify(coAuthors1[i]) !== JSON.stringify(coAuthors2[i])
-              ) {
-                return false;
-              }
-            }
-
-            // Remove coAuthors from the comparison since we've already compared them
-            const obj1NoCoAuthors = { ...obj1WithoutMeta };
-            const obj2NoCoAuthors = { ...obj2WithoutMeta };
-            if (obj1NoCoAuthors.transaction_data) {
-              obj1NoCoAuthors.transaction_data = {
-                ...obj1NoCoAuthors.transaction_data,
-              };
-              delete obj1NoCoAuthors.transaction_data.coAuthors;
-            }
-            if (obj2NoCoAuthors.transaction_data) {
-              obj2NoCoAuthors.transaction_data = {
-                ...obj2NoCoAuthors.transaction_data,
-              };
-              delete obj2NoCoAuthors.transaction_data.coAuthors;
-            }
-
-            // Compare the rest of the objects (without coAuthors) using JSON stringify
-            return (
-              JSON.stringify(obj1NoCoAuthors) ===
-              JSON.stringify(obj2NoCoAuthors)
-            );
-          }
-
-          // For other cases, do a simple JSON comparison
-          return (
-            JSON.stringify(obj1WithoutMeta) === JSON.stringify(obj2WithoutMeta)
-          );
-        };
-
-        // Skip if the data is the same (except metadata)
-        if (normalizeAndCompare(currentData, data)) {
-          // Even if data is the same, ensure metadata is updated if user edited
-          if (
-            data._metadata?.userEdited &&
-            !currentData._metadata?.userEdited
-          ) {
-            set({
-              transactionFormPart1: {
-                ...currentData,
-                _metadata: {
-                  userEdited: true,
-                  lastModified: Date.now(),
-                  source: "user-input",
-                },
-              },
-            });
-
-            console.log(
-              "Updated metadata for transactionFormPart1 to reflect user edit"
-            );
-          }
-          return;
-        }
-
-        // Create a copy we can safely modify
-        const processedData = { ...(data || {}) };
-
-        // Add metadata to track this as a user edit
-        processedData._metadata = {
-          userEdited: true,
-          lastModified: Date.now(),
-          source: "user-input",
-        };
-
-        // Handle coAuthors at root level (wrong location)
-        if (processedData.coAuthors && Array.isArray(processedData.coAuthors)) {
-          console.log(
-            "Found coAuthors at root level, moving to transaction_data"
-          );
-
-          // Ensure transaction_data exists
-          if (!processedData.transaction_data) {
-            processedData.transaction_data = {};
-          }
-
-          // Move coAuthors to transaction_data
-          processedData.transaction_data.coAuthors = processedData.coAuthors;
-
-          // Remove from root level
-          delete processedData.coAuthors;
-        }
-
-        // Make sure transaction_data exists
-        if (!processedData.transaction_data) {
-          // Initialize with empty object
-          processedData.transaction_data = {};
-        }
-
-        // Ensure coAuthors exists and is an array
-        if (!processedData.transaction_data.coAuthors) {
-          // Initialize with empty array
-          processedData.transaction_data.coAuthors = [];
-        } else if (!Array.isArray(processedData.transaction_data.coAuthors)) {
-          // If coAuthors exists but is not an array, convert it
-          if (
-            typeof processedData.transaction_data.coAuthors === "object" &&
-            processedData.transaction_data.coAuthors !== null
-          ) {
-            // Convert object to array with single item
-            processedData.transaction_data.coAuthors = [
-              processedData.transaction_data.coAuthors,
-            ];
-          } else {
-            // Initialize as empty array for non-object values
-            processedData.transaction_data.coAuthors = [];
-          }
-        }
-
-        // Preserve existing IDs from the current data
-        if (!processedData.disclosureId && currentData.disclosureId) {
-          processedData.disclosureId = currentData.disclosureId;
-        }
-
-        if (!processedData.copyrightId && currentData.copyrightId) {
-          processedData.copyrightId = currentData.copyrightId;
-        }
-
-        // Filter out empty co-authors to prevent issues
-        if (Array.isArray(processedData.transaction_data.coAuthors)) {
-          const filteredCoAuthors =
-            processedData.transaction_data.coAuthors.filter((author: any) => {
-              if (!author) return false;
-
-              // Check if the author object has any filled fields
-              return Object.entries(author).some(
-                ([key, value]) =>
-                  key !== "isClaimingEntireWork" && // Skip boolean fields for this check
-                  value !== undefined &&
-                  value !== null &&
-                  value !== ""
-              );
-            });
-
-          // Check if any valid entries were found
-          const hasValidCoAuthor = filteredCoAuthors.length > 0;
-
-          // Preserve filtered co-authors if any valid ones found
-          if (hasValidCoAuthor) {
-            processedData.transaction_data.coAuthors = filteredCoAuthors;
-          } else if (processedData.transaction_data.coAuthors.length > 0) {
-            // Keep at least one entry if there are entries, even if they're empty
-            processedData.transaction_data.coAuthors = [
-              processedData.transaction_data.coAuthors[0],
-            ];
-          }
-        }
-
-        // If no valid entries and array is empty, add a default empty author
-        if (
-          !processedData.transaction_data.coAuthors ||
-          processedData.transaction_data.coAuthors.length === 0
-        ) {
-          console.log("No valid coAuthors found, adding a default empty entry");
-          processedData.transaction_data.coAuthors = [
-            {
-              firstName: "",
-              middleName: "",
-              lastName: "",
-              dateOfBirth: "",
-              civilStatus: "",
-              sex: "",
-              nationality: "",
-              countryOfResidence: "",
-              address: "",
-              municipality: "",
-              provinceState: "",
-              zipCode: "",
-              mobileNumber: "",
-              emailAddress: "",
-              isClaimingEntireWork: false,
-              claimDetails: "",
-            },
-          ];
-        }
-
-        // Now merge with priority to preserve user edits
-        const mergedData = deepMergeWithPriority(currentData, processedData);
-
-        // Only update if there are actual changes
-        if (!normalizeAndCompare(currentData, mergedData)) {
-          set({ transactionFormPart1: mergedData });
-
-          if (process.env.NODE_ENV === "development") {
-            console.log("Transaction form part 1 updated with new data:", {
-              hasTransactionData: !!mergedData.transaction_data,
-              coAuthorsLength:
-                mergedData.transaction_data?.coAuthors?.length || 0,
-              disclosureId: mergedData.disclosureId,
-              copyrightId: mergedData.copyrightId,
-              isUserEdited: mergedData._metadata?.userEdited,
-              dataSource: mergedData._metadata?.source,
-              firstCoAuthorName:
-                mergedData.transaction_data?.coAuthors?.length > 0
-                  ? `${
-                      mergedData.transaction_data.coAuthors[0].firstName || ""
-                    } ${
-                      mergedData.transaction_data.coAuthors[0].middleName || ""
-                    } ${
-                      mergedData.transaction_data.coAuthors[0].lastName || ""
-                    }`.trim()
-                  : "none",
-            });
-          }
-        } else {
-          console.log(
-            "Skipping transaction form part 1 update - no changes detected after merge"
-          );
-        }
-      },
-
-      setTransactionFormPart2: (data: any) => {
-        // Only update if hydrated to prevent loops
-        if (!get().hydrated) return;
-
-        // Use operation ID for throttling to prevent cascading updates
-        const operationId = `setTransactionFormPart2-${Date.now()}`;
-        if (shouldThrottleUpdate(operationId)) {
-          console.log(`Throttling ${operationId} - too many rapid updates`);
-          return;
-        }
-
-        console.log("Saving transaction form part 2:", data);
-
-        // Get current data from store to merge with
-        const currentData = get().transactionFormPart2 || {};
-
-        // Create a copy we can safely modify
-        const processedData = { ...(data || {}) };
-
-        // Add metadata to track this as a user edit
-        processedData._metadata = {
-          userEdited: true,
-          lastModified: Date.now(),
-          source: "user-input",
-        };
-
-        // Ensure default structures exist
-        if (!processedData.transaction_details) {
-          processedData.transaction_details = {
-            transactionType: {
-              copyrightRegistration: false,
-              anonymousWork: false,
-              correctionEntry: false,
-              resaleRights: false,
-              certifiedCopy: false,
-              recordation: false,
-              reconstitution: false,
-            },
-            submissionType: {
-              filingMethod: {
-                electronicFiling: true,
-                throughIPSO: false,
-              },
-              filingType: {
-                singleFiling: true,
-                bulkFiling: false,
-              },
-            },
-            ipsoRegion: "",
-            bulkFilingQty: "",
-          };
-        }
-
-        if (!processedData.applicant_info) {
-          processedData.applicant_info = {
-            entityType: {
-              smallEntity: false,
-              bigEntity: false,
-            },
-            applicantType: {
-              authorCreator: false,
-              agent: false,
-              copyrightClaimant: false,
-              licensee: false,
-              heir: false,
-              newOwner: false,
-            },
-            personalInfo: {
-              surname: "",
-              firstName: "",
-              middleName: "",
-              companyName: "",
-              dateOfBirth: "",
-              civilStatus: "Single",
-              sex: "Male",
-              nationality: "",
-              countryOfResidence: "",
-              address: "",
-              municipalityCity: "",
-              provinceState: "",
-              zipCode: "",
-              mobileNumber: "",
-              emailAddress: "",
-            },
-          };
-        }
-
-        if (!processedData.author_info) {
-          processedData.author_info = {
-            isSameAsApplicant: false,
-            sameAsApplicant: false,
-            personalInfo: {
-              surname: "",
-              firstName: "",
-              middleName: "",
-              dateOfBirth: "",
-              civilStatus: "Single",
-              sex: "Male",
-              nationality: "",
-              countryOfResidence: "",
-              address: "",
-              municipalityCity: "",
-              provinceState: "",
-              zipCode: "",
-              mobileNumber: "",
-              emailAddress: "",
-            },
-            authors: [],
-          };
-        }
-
-        // Now merge with priority to preserve user edits
-        const mergedData = deepMergeWithPriority(currentData, processedData);
-
-        // Log structure for debugging
-        console.log("Transaction form part 2 structure:", {
-          hasTransactionDetails: !!mergedData.transaction_details,
-          hasApplicantInfo: !!mergedData.applicant_info,
-          hasAuthorInfo: !!mergedData.author_info,
-          disclosureId: mergedData.disclosureId,
-          copyrightId: mergedData.copyrightId,
-          isUserEdited: mergedData._metadata?.userEdited,
-          dataSource: mergedData._metadata?.source,
-        });
-
-        set({ transactionFormPart2: mergedData });
-      },
 
       setPatentUtilityModelApplication: (data: any) => {
         // Only update if hydrated to prevent loops
@@ -1632,8 +1218,6 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
           // Add copyright data to submission
           Object.assign(submissionData, {
             copyrightApplication: state.copyrightApplication,
-            transactionFormPart1: state.transactionFormPart1,
-            transactionFormPart2: state.transactionFormPart2,
           });
         }
 
@@ -1738,8 +1322,6 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
           initialDataFetched: false,
           fetchAttempted: false,
           copyrightApplication: null,
-          transactionFormPart1: null,
-          transactionFormPart2: null,
           patentUtilityModelApplication: null,
           trademarkApplication: null,
           tradeSecretApplication: null,
@@ -1934,8 +1516,6 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
             hasApplicantsInfo: !!data?.applicantsInfo,
             hasCopyrightApplication: !!data?.copyrightApplication,
             hasCopyrightBasicApp: !!data?.copyright_basic_application,
-            hasTransactionFormPart1: !!data?.transactionFormPart1,
-            hasTransactionFormPart2: !!data?.transactionFormPart2,
           });
 
           // Mark as fetched
@@ -2029,28 +1609,6 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
             });
           }
 
-          if (data.transactionFormPart1) {
-            get().setTransactionFormPart1({
-              ...data.transactionFormPart1,
-              _metadata: {
-                userEdited: false,
-                lastModified: Date.now(),
-                source: "api",
-              },
-            });
-          }
-
-          if (data.transactionFormPart2) {
-            get().setTransactionFormPart2({
-              ...data.transactionFormPart2,
-              _metadata: {
-                userEdited: false,
-                lastModified: Date.now(),
-                source: "api",
-              },
-            });
-          }
-
           return data;
         } catch (error) {
           console.error(`[${timestamp}] Error fetching initial data:`, error);
@@ -2101,8 +1659,6 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
         formKey: keyof Pick<
           IpDisclosureState,
           | "copyrightApplication"
-          | "transactionFormPart1"
-          | "transactionFormPart2"
           | "patentUtilityModelApplication"
           | "trademarkApplication"
           | "tradeSecretApplication"
@@ -2199,8 +1755,6 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
         const state = get();
         const formKeys = [
           "applicantsInfo",
-          "transactionFormPart1",
-          "transactionFormPart2",
           "copyrightApplication",
           "patentUtilityModelApplication",
           "trademarkApplication",
@@ -2461,8 +2015,6 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
             // Check for user edited data that should be preserved during hydration
             const formKeys = [
               "applicantsInfo",
-              "transactionFormPart1",
-              "transactionFormPart2",
               "copyrightApplication",
               "patentUtilityModelApplication",
               "trademarkApplication",
@@ -2599,8 +2151,6 @@ export function initializeFormData({
   formKey: keyof Pick<
     IpDisclosureState,
     | "copyrightApplication"
-    | "transactionFormPart1"
-    | "transactionFormPart2"
     | "patentUtilityModelApplication"
     | "trademarkApplication"
     | "tradeSecretApplication"

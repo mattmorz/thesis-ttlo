@@ -686,6 +686,23 @@ export function ApplicationManagement({
         </div>
 
         <div className="flex gap-1">
+          {!hideCreateButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5 text-[#1B5E20] border-[#1B5E20]/30"
+              onClick={() => {
+                if (onCreateClick && applications.length === 0) {
+                  onCreateClick();
+                  return;
+                }
+                setIsNewAppDialogOpen(true);
+              }}
+            >
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span>New Application</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -819,7 +836,6 @@ export function ApplicationManagement({
           </div>
         ))}
       </div>
-
       {/* New Application Dialog */}
       {isNewAppDialogOpen && !onCreateClick && (
         <Dialog open={isNewAppDialogOpen} onOpenChange={setIsNewAppDialogOpen}>

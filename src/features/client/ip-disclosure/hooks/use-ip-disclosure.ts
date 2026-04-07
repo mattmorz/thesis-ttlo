@@ -41,10 +41,6 @@ export function useIpDisclosure() {
     disclosureConfirmation,
     setCopyrightApplication,
     copyrightApplication,
-    setTransactionFormPart1,
-    transactionFormPart1,
-    setTransactionFormPart2,
-    transactionFormPart2,
     setPatentUtilityModelApplication,
     patentUtilityModelApplication,
     setTrademarkApplication,
@@ -654,34 +650,6 @@ export function useIpDisclosure() {
           },
         ],
       },
-      // Add empty transaction form data to avoid property not exist errors
-      transactionFormPart1: {
-        transaction_data: {
-          coAuthors: [],
-        },
-        disclosureId: undefined,
-        copyrightId: undefined,
-      },
-      transactionFormPart2: {
-        applicantInfoIsSameAsAuthor: false,
-        applicant: {
-          name: "",
-          address: "",
-          citizenship: "",
-        },
-        author: {
-          name: "",
-          pseudonym: "",
-          citizenship: "",
-          yearOfDeath: "",
-        },
-        work: {
-          title: "",
-          date: "",
-        },
-        disclosureId: undefined,
-        copyrightId: undefined,
-      },
       // Add empty disclosure confirmation data
       disclosureConfirmation: {
         writtenDisclosures: {
@@ -708,17 +676,13 @@ export function useIpDisclosure() {
       hasDisclosureId: !!data.disclosureId || !!data.disclosure_id,
       hasApplicationId: !!data.applicationId || !!data.application_id,
       hasCopyrightBasicApp: !!data.copyright_basic_application,
-      hasCopyrightTransactionPart1: !!data.copyright_transaction_part1,
-      hasCopyrightTransactionPart2: !!data.copyright_transaction_part2,
       hasPatentUtilityModelApplication: !!data.patent_utility_model_application,
       hasTrademarkApplication: !!data.trademark_application,
       hasTradeSecretApplication: !!data.trade_secret_application,
       hasDisclosureConfirmation: !!data.disclosure_confirmation,
     });
 
-    // Extract transaction form data
-    const transactionPart1 = extractTransactionFormPart1(data);
-    const transactionPart2 = extractTransactionFormPart2(data);
+    // Extract form data
 
     // Extract applicants info, making sure to handle flattened API responses
     const applicantsData = extractApplicantsInfo(data);
@@ -748,8 +712,6 @@ export function useIpDisclosure() {
       hasApplicantsData: !!applicantsData,
       hasDisclosureConfirmation: !!disclosureConfirmation,
       hasCopyrightApplication: !!copyrightApplicationData,
-      hasTransactionPart1: !!transactionPart1,
-      hasTransactionPart2: !!transactionPart2,
       hasPatentUtilityModel: !!patentUtilityApplicationData,
       hasTrademark: !!trademarkApplicationData,
       hasTradeSecret: !!tradeSecretApplicationData,
@@ -762,8 +724,6 @@ export function useIpDisclosure() {
       applicantsInfo: applicantsData,
       disclosureConfirmation: disclosureConfirmation,
       copyrightApplication: copyrightApplicationData,
-      transactionFormPart1: transactionPart1,
-      transactionFormPart2: transactionPart2,
       patentUtilityModelApplication: patentUtilityApplicationData,
       trademarkApplication: trademarkApplicationData,
       tradeSecretApplication: tradeSecretApplicationData,
@@ -771,184 +731,6 @@ export function useIpDisclosure() {
   };
 
   // Helper functions to extract data from API responses
-  const extractTransactionFormPart1 = (data: any) => {
-    // Log detailed information about the input data structure
-    console.log("[extractTransactionFormPart1] Data input check:", {
-      hasData: !!data,
-      hasTransactionFormPart1: !!data?.transactionFormPart1,
-      hasCopyrightTransactionPart1: !!data?.copyright_transaction_part1,
-      transactionDataType: data?.copyright_transaction_part1?.transaction_data
-        ? typeof data.copyright_transaction_part1.transaction_data
-        : "undefined",
-      hasNestedTransactionData:
-        !!data?.copyright_transaction_part1?.transaction_data?.transaction_data,
-    });
-
-    // Check for direct transactionFormPart1 data
-    if (data.transactionFormPart1) {
-      console.log(
-        "[extractTransactionFormPart1] Found direct transactionFormPart1 data"
-      );
-      return data.transactionFormPart1;
-    }
-
-    // Check for copyright_transaction_part1 data
-    if (data.copyright_transaction_part1) {
-      console.log(
-        "[extractTransactionFormPart1] Found copyright_transaction_part1 data"
-      );
-
-      let transactionData = data.copyright_transaction_part1.transaction_data;
-      let coAuthors = [];
-
-      // Handle case where transaction_data is a string (from JSONB)
-      if (typeof transactionData === "string") {
-        try {
-          console.log(
-            "[extractTransactionFormPart1] Parsing transaction_data string"
-          );
-          transactionData = JSON.parse(transactionData);
-        } catch (error) {
-          console.error(
-            "[extractTransactionFormPart1] Error parsing transaction_data:",
-            error
-          );
-          transactionData = { coAuthors: [] };
-        }
-      }
-
-      // Handle double-nested transaction_data structure (as seen in the database example)
-      if (transactionData && typeof transactionData === "object") {
-        console.log(
-          "[extractTransactionFormPart1] Transaction data fields:",
-          Object.keys(transactionData)
-        );
-
-        // Check if there's a nested transaction_data with coAuthors
-        if (
-          transactionData.transaction_data &&
-          typeof transactionData.transaction_data === "object"
-        ) {
-          console.log(
-            "[extractTransactionFormPart1] Found double-nested transaction_data structure"
-          );
-
-          // Extract coAuthors from the nested structure
-          coAuthors = transactionData.transaction_data.coAuthors || [];
-
-          // Check if there's metadata we should preserve in the outer object
-          const metadata = transactionData._metadata || null;
-          const copyrightId = transactionData.copyrightId || null;
-          const disclosureId = transactionData.disclosureId || null;
-
-          // Log what we found
-          console.log(
-            "[extractTransactionFormPart1] Extracted coAuthors from nested structure:",
-            Array.isArray(coAuthors)
-              ? `Array with ${coAuthors.length} items`
-              : typeof coAuthors
-          );
-
-          // Build a clean transaction_data without the nesting
-          transactionData = {
-            coAuthors: coAuthors,
-          };
-
-          // Preserve metadata if it existed
-          if (metadata) {
-            transactionData._metadata = metadata;
-          }
-        }
-      }
-
-      // Ensure coAuthors is always an array
-      if (transactionData && !Array.isArray(transactionData.coAuthors)) {
-        if (
-          transactionData.coAuthors &&
-          typeof transactionData.coAuthors === "object"
-        ) {
-          transactionData.coAuthors = [transactionData.coAuthors];
-          console.log(
-            "[extractTransactionFormPart1] Converted single coAuthor object to array"
-          );
-        } else {
-          transactionData.coAuthors = [];
-          console.log(
-            "[extractTransactionFormPart1] Initialized empty coAuthors array"
-          );
-        }
-      }
-
-      // Get IDs from various possible locations
-      const copyrightId =
-        data.copyright_transaction_part1.copyright_id ||
-        data.copyright_transaction_part1.copyrightId ||
-        (transactionData && transactionData.copyrightId);
-
-      const disclosureId =
-        data.disclosure_id ||
-        data.disclosureId ||
-        (transactionData && transactionData.disclosureId);
-
-      // Final form with consolidated fields
-      const result = {
-        disclosureId: disclosureId,
-        copyrightId: copyrightId,
-        transaction_data: transactionData || { coAuthors: [] },
-      };
-
-      console.log("[extractTransactionFormPart1] Final extracted data:", {
-        hasDisclosureId: !!result.disclosureId,
-        hasCopyrightId: !!result.copyrightId,
-        hasCoAuthors: !!result.transaction_data.coAuthors,
-        coAuthorsCount: Array.isArray(result.transaction_data.coAuthors)
-          ? result.transaction_data.coAuthors.length
-          : 0,
-      });
-
-      return result;
-    }
-
-    // No transaction part 1 data found
-    console.log(
-      "[extractTransactionFormPart1] No transaction part 1 data found"
-    );
-    return null;
-  };
-
-  const extractTransactionFormPart2 = (data: any) => {
-    // Check for direct transactionFormPart2 data
-    if (data.transactionFormPart2) {
-      console.log(
-        "[extractTransactionFormPart2] Found direct transactionFormPart2 data"
-      );
-      return data.transactionFormPart2;
-    }
-
-    // Check for copyright_transaction_part2 data
-    if (data.copyright_transaction_part2) {
-      console.log(
-        "[extractTransactionFormPart2] Found copyright_transaction_part2 data"
-      );
-
-      // Format the data consistently
-      return {
-        disclosureId: data.disclosure_id || data.disclosureId,
-        copyrightId: data.copyright_transaction_part2.copyright_id,
-        transaction_details:
-          data.copyright_transaction_part2.transaction_details || {},
-        applicant_info: data.copyright_transaction_part2.applicant_info || {},
-        author_info: data.copyright_transaction_part2.author_info || {},
-      };
-    }
-
-    // No transaction part 2 data found
-    console.log(
-      "[extractTransactionFormPart2] No transaction part 2 data found"
-    );
-    return null;
-  };
-
   const extractApplicantsInfo = (data: any) => {
     // Check for direct applicantsInfo
     if (data.applicantsInfo) {
@@ -1290,10 +1072,7 @@ export function useIpDisclosure() {
         (value) => value === true
       );
       const store = useIpDisclosureStore.getState();
-      const hasCopyrightData =
-        store.copyrightApplication ||
-        store.transactionFormPart1 ||
-        store.transactionFormPart2;
+      const hasCopyrightData = store.copyrightApplication;
 
       if (!hasSelectedIpTypes && hasCopyrightData && !dataToSave.ipTypes) {
         console.log(
@@ -1993,11 +1772,8 @@ export function useIpDisclosure() {
 
   // Function to save copyright application
   const saveCopyrightApplication = async () => {
-    // Get the latest state from the store
     const {
       copyrightApplication: currentCopyrightApp,
-      transactionFormPart1: currentTransactionPart1,
-      transactionFormPart2: currentTransactionPart2,
       disclosureId: currentDisclosureId,
     } = useIpDisclosureStore.getState();
 
@@ -2014,12 +1790,9 @@ export function useIpDisclosure() {
         {
           hasCopyrightApp: !!currentCopyrightApp,
           copyrightId: currentCopyrightApp?.copyrightId,
-          hasTransactionPart1: !!currentTransactionPart1,
-          hasTransactionPart2: !!currentTransactionPart2,
         }
       );
 
-      // Define type for sanitized copyright app to include copyrightId
       type SanitizedCopyrightApp = {
         workTitle: string;
         workDescription: string;
@@ -2029,7 +1802,6 @@ export function useIpDisclosure() {
         copyrightId?: string;
       };
 
-      // Sanitize the copyright application data before sending to server
       const sanitizedCopyrightApp = currentCopyrightApp
         ? ({
             workTitle:
@@ -2048,201 +1820,13 @@ export function useIpDisclosure() {
             category: currentCopyrightApp.category || "Literary Work",
             publicationStatus:
               currentCopyrightApp.publicationStatus || "unpublished",
-            // Only include these minimal fields needed for the basic copyright application
             copyrightId: currentCopyrightApp.copyrightId,
           } as SanitizedCopyrightApp)
         : null;
 
-      // Deep copy the transaction form data to prevent mutation issues
-      let processedTransactionPart1 = null;
-      if (currentTransactionPart1) {
-        try {
-          // Deep copy the object using JSON serialization
-          processedTransactionPart1 = JSON.parse(
-            JSON.stringify(currentTransactionPart1)
-          );
-
-          // Ensure coAuthors is properly formatted as an array
-          if (processedTransactionPart1.transaction_data) {
-            if (!processedTransactionPart1.transaction_data.coAuthors) {
-              processedTransactionPart1.transaction_data.coAuthors = [];
-            } else if (
-              !Array.isArray(
-                processedTransactionPart1.transaction_data.coAuthors
-              )
-            ) {
-              // Convert to array if it's a single object
-              processedTransactionPart1.transaction_data.coAuthors = [
-                processedTransactionPart1.transaction_data.coAuthors,
-              ];
-            }
-          }
-
-          console.log(
-            "[saveCopyrightApplication] Processed transaction part 1:",
-            {
-              hasTransactionData: !!processedTransactionPart1.transaction_data,
-              coAuthorsCount:
-                processedTransactionPart1.transaction_data?.coAuthors?.length ||
-                0,
-            }
-          );
-        } catch (parseError) {
-          console.error(
-            "[saveCopyrightApplication] Error serializing transaction part 1:",
-            parseError
-          );
-          console.log(
-            "[saveCopyrightApplication] Original transaction part 1 data:",
-            currentTransactionPart1
-          );
-          // Use original data as fallback but still ensure it's usable
-          processedTransactionPart1 = { ...currentTransactionPart1 };
-        }
-      }
-
-      // Define a type for transactionPart2 to fix linter error
-      type TransactionPart2 = {
-        transaction_details?: {
-          transactionType?: {
-            copyrightRegistration: boolean;
-            anonymousWork: boolean;
-            correctionEntry: boolean;
-            resaleRights: boolean;
-            certifiedCopy: boolean;
-            recordation: boolean;
-            reconstitution: boolean;
-          };
-          submissionType?: {
-            filingMethod?: {
-              electronicFiling: boolean;
-              throughIPSO: boolean;
-            };
-            filingType?: {
-              singleFiling: boolean;
-              bulkFiling: boolean;
-            };
-          };
-        };
-        copyrightId?: string;
-        [key: string]: any; // Allow additional properties
-      };
-
-      // Process transaction part 2 similarly
-      let processedTransactionPart2: TransactionPart2 | null = null;
-      let shouldUpdateStore = false;
-      let storeUpdates: { [key: string]: any } = {};
-
-      if (currentTransactionPart2) {
-        try {
-          processedTransactionPart2 = JSON.parse(
-            JSON.stringify(currentTransactionPart2)
-          ) as TransactionPart2;
-
-          // Check if transaction_details and transactionType exist
-          if (processedTransactionPart2?.transaction_details?.transactionType) {
-            // Check if any transaction type is selected
-            const transactionType =
-              processedTransactionPart2.transaction_details.transactionType;
-            const hasAnyTransactionTypeSelected = Object.values(
-              transactionType
-            ).some((value) => value === true);
-
-            // If no transaction type is selected, automatically set copyrightRegistration to true
-            if (!hasAnyTransactionTypeSelected && sanitizedCopyrightApp) {
-              console.log(
-                "[saveCopyrightApplication] No transaction type selected, automatically setting copyrightRegistration to true"
-              );
-              processedTransactionPart2.transaction_details.transactionType.copyrightRegistration =
-                true;
-
-              // Instead of updating the store immediately, mark it for update later
-              shouldUpdateStore = true;
-            }
-          } else if (sanitizedCopyrightApp) {
-            // If transaction_details or transactionType doesn't exist, create it
-            console.log(
-              "[saveCopyrightApplication] Creating transaction_details with default copyrightRegistration=true"
-            );
-            processedTransactionPart2 = processedTransactionPart2 || {};
-            processedTransactionPart2.transaction_details =
-              processedTransactionPart2.transaction_details || {};
-            processedTransactionPart2.transaction_details.transactionType = {
-              copyrightRegistration: true,
-              anonymousWork: false,
-              correctionEntry: false,
-              resaleRights: false,
-              certifiedCopy: false,
-              recordation: false,
-              reconstitution: false,
-            };
-
-            // Instead of updating the store immediately, mark it for update later
-            shouldUpdateStore = true;
-          }
-
-          console.log(
-            "[saveCopyrightApplication] Processed transaction part 2 keys:",
-            processedTransactionPart2
-              ? Object.keys(processedTransactionPart2)
-              : "null"
-          );
-        } catch (parseError) {
-          console.error(
-            "[saveCopyrightApplication] Error serializing transaction part 2:",
-            parseError
-          );
-          processedTransactionPart2 = {
-            ...currentTransactionPart2,
-          } as TransactionPart2;
-        }
-      } else if (sanitizedCopyrightApp) {
-        // If transaction part 2 doesn't exist but we have copyright app data,
-        // create a minimal transaction part 2 with copyrightRegistration=true
-        console.log(
-          "[saveCopyrightApplication] Creating minimal transaction part 2 with copyrightRegistration=true"
-        );
-        processedTransactionPart2 = {
-          transaction_details: {
-            transactionType: {
-              copyrightRegistration: true,
-              anonymousWork: false,
-              correctionEntry: false,
-              resaleRights: false,
-              certifiedCopy: false,
-              recordation: false,
-              reconstitution: false,
-            },
-            submissionType: {
-              filingMethod: {
-                electronicFiling: true,
-                throughIPSO: false,
-              },
-              filingType: {
-                singleFiling: true,
-                bulkFiling: false,
-              },
-            },
-          },
-        };
-
-        // Instead of updating the store immediately, mark it for update later
-        shouldUpdateStore = true;
-      }
-
-      // Prepare updates for store - only called once to prevent infinite loops
-      if (shouldUpdateStore) {
-        storeUpdates = {
-          transactionFormPart2: processedTransactionPart2,
-        };
-      }
-
-      // Explicitly create the input object to ensure all fields are properly passed
       const copyrightInput = {
         disclosureId: currentDisclosureId,
         copyrightApplication: sanitizedCopyrightApp,
-        transactionFormPart1: processedTransactionPart1,
-        transactionFormPart2: processedTransactionPart2,
       };
 
       console.log(
@@ -2258,52 +1842,17 @@ export function useIpDisclosure() {
         }
       );
 
-      // Call the mutation to save to the database
       const result = await saveCopyrightMutation.mutateAsync(copyrightInput);
       console.log("[saveCopyrightApplication] Server response:", result);
 
-      // If the operation was successful, update the store with any pending changes
-      // and the newly received copyright ID
-      if (result.success) {
-        // Prepare the final store update
-        const storeUpdate = { ...storeUpdates };
-
-        if (result.copyrightId) {
-          console.log(
-            `[saveCopyrightApplication] Update succeeded with copyright ID: ${result.copyrightId}`
-          );
-
-          // Update copyright application with the ID if needed
-          if (sanitizedCopyrightApp) {
-            storeUpdate.copyrightApplication = {
-              ...currentCopyrightApp,
-              copyrightId: result.copyrightId,
-            };
-          }
-
-          // Update transaction forms with the copyright ID if they exist
-          if (processedTransactionPart1) {
-            storeUpdate.transactionFormPart1 = {
-              ...processedTransactionPart1,
-              copyrightId: result.copyrightId,
-            };
-          }
-
-          if (processedTransactionPart2) {
-            storeUpdate.transactionFormPart2 = {
-              ...processedTransactionPart2,
-              copyrightId: result.copyrightId,
-            };
-          }
-        }
-
-        // Now update the store once with all changes
-        if (Object.keys(storeUpdate).length > 0) {
-          useIpDisclosureStore.setState((state) => ({
-            ...state,
-            ...storeUpdate,
-          }));
-        }
+      if (result.success && result.copyrightId && sanitizedCopyrightApp) {
+        useIpDisclosureStore.setState((state) => ({
+          ...state,
+          copyrightApplication: {
+            ...currentCopyrightApp,
+            copyrightId: result.copyrightId,
+          },
+        }));
       }
 
       return result.success;
@@ -2320,12 +1869,9 @@ export function useIpDisclosure() {
         );
       }
 
-      // Log information about the attempted save to help debugging
       console.error("[saveCopyrightApplication] Failed with data:", {
         disclosureId: currentDisclosureId,
         hasCopyrightApp: !!currentCopyrightApp,
-        hasTransactionPart1: !!currentTransactionPart1,
-        hasTransactionPart2: !!currentTransactionPart2,
       });
 
       return false;
@@ -2482,13 +2028,6 @@ export function useIpDisclosure() {
       } catch (parseError) {
         console.error("Error parsing database JSON:", parseError);
         return null;
-      }
-
-      // For copyright_transaction_part1, directly check if it's a string that needs parsing
-      let copyrightTransactionPart1 =
-        dbData.copyright_transaction_part1 || dbData.transactionFormPart1;
-      if (copyrightTransactionPart1) {
-        console.log("Found copyright transaction part 1 data");
       }
 
       return dbData;
@@ -2712,14 +2251,6 @@ export function useIpDisclosure() {
           stateUpdates.copyrightApplication = data.copyrightApplication;
         }
 
-        if (data.transactionFormPart1) {
-          stateUpdates.transactionFormPart1 = data.transactionFormPart1;
-        }
-
-        if (data.transactionFormPart2) {
-          stateUpdates.transactionFormPart2 = data.transactionFormPart2;
-        }
-
         if (data.patentUtilityModelApplication) {
           stateUpdates.patentUtilityModelApplication =
             data.patentUtilityModelApplication;
@@ -2745,10 +2276,6 @@ export function useIpDisclosure() {
             store.setApplicantsInfo(stateUpdates.applicantsInfo);
           if (stateUpdates.copyrightApplication)
             store.setCopyrightApplication(stateUpdates.copyrightApplication);
-          if (stateUpdates.transactionFormPart1)
-            store.setTransactionFormPart1(stateUpdates.transactionFormPart1);
-          if (stateUpdates.transactionFormPart2)
-            store.setTransactionFormPart2(stateUpdates.transactionFormPart2);
           if (stateUpdates.patentUtilityModelApplication)
             store.setPatentUtilityModelApplication(
               stateUpdates.patentUtilityModelApplication
@@ -2858,10 +2385,6 @@ export function useIpDisclosure() {
     disclosureConfirmation,
     setCopyrightApplication,
     copyrightApplication,
-    setTransactionFormPart1,
-    transactionFormPart1,
-    setTransactionFormPart2,
-    transactionFormPart2,
     setPatentUtilityModelApplication,
     patentUtilityModelApplication,
     setTrademarkApplication,
@@ -2885,8 +2408,6 @@ export function useIpDisclosure() {
     fetchDisclosureData,
     createDefaultData,
     processApiData,
-    extractTransactionFormPart1,
-    extractTransactionFormPart2,
     extractApplicantsInfo,
     extractDisclosureConfirmation,
     extractCopyrightApplication,

@@ -20,8 +20,6 @@ interface FormContextType {
   resetIpType: (type: keyof IpTypes) => void;
   currentTransactionStep: number;
   setCurrentTransactionStep: (step: number) => void;
-  currentTransactionTab: string;
-  setCurrentTransactionTab: (tab: string) => void;
   currentTransactionSubTab: string;
   setCurrentTransactionSubTab: (tab: string) => void;
   isHydrated: boolean;
@@ -62,7 +60,6 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
   }, [isHydrated]); // Remove applicantsInfo from dependencies to prevent loops
 
   const [currentTransactionStep, setCurrentTransactionStep] = useState(1);
-  const [currentTransactionTab, setCurrentTransactionTab] = useState("details");
   const [currentTransactionSubTab, setCurrentTransactionSubTab] =
     useState("details");
 
@@ -284,13 +281,11 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
     selectedIpTypes,
     setSelectedIpTypes: updateIpTypes,
     resetIpType,
-    currentTransactionStep,
-    setCurrentTransactionStep,
-    currentTransactionTab,
-    setCurrentTransactionTab,
-    currentTransactionSubTab,
-    setCurrentTransactionSubTab,
-    isHydrated,
+      currentTransactionStep,
+      setCurrentTransactionStep,
+      currentTransactionSubTab,
+      setCurrentTransactionSubTab,
+      isHydrated,
   };
 
   return <FormContext.Provider value={value}>{children}</FormContext.Provider>;

@@ -94,25 +94,6 @@ export async function getClientProfileData(options?: {
 }
 
 /**
- * Update Copyright Transaction Part 2 data
- */
-export async function updateCopyrightTransaction(
-  transactionId: string,
-  data: any
-): Promise<{ success: boolean; message: string }> {
-  return CategoryAdapter.updateCopyrightTransaction(transactionId, data);
-}
-
-/**
- * Delete Copyright Transaction Part 2
- */
-export async function deleteCopyrightTransaction(
-  transactionId: string
-): Promise<{ success: boolean; message: string }> {
-  return CategoryAdapter.deleteCopyrightTransaction(transactionId);
-}
-
-/**
  * Get Substantial Use data
  */
 export async function getSubstantialUseData(options?: {

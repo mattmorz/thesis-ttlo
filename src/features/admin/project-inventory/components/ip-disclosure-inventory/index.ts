@@ -17,10 +17,6 @@ export { SearchReportInventory } from "./patent-um/SearchReportInventory";
 // Export copyright components directly
 export { CopyrightDisclosureInventory } from "./copyright/CopyrightDisclosureInventory";
 export { CopyrightBasicApplicationInventory } from "./copyright/CopyrightBasicApplicationInventory";
-export { CopyrightTransactionPart1Inventory } from "./copyright/CopyrightTransactionPart1Inventory";
-export { CopyrightTransactionPart2Inventory } from "./copyright/CopyrightTransactionPart2Inventory";
-export { CopyrightTransactionPart2View } from "./copyright/CopyrightTransactionPart2View";
-export { CopyrightTransactionPart2Card } from "./copyright/CopyrightTransactionPart2Card";
 export {
   CopyrightSearchProvider,
   useCopyrightSearch,

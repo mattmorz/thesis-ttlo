@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { appRouter } from "@/trpc/router";
-import { headers } from "next/headers";
-import { db } from "@/drizzle/db";
-import { sql } from "drizzle-orm";
 import pkg from "pg";
 
 export const dynamic = "force-dynamic";
@@ -75,8 +72,6 @@ export async function GET(
       inventors: any;
       applicantsInfo: any;
       copyright_basic_application: any;
-      copyright_transaction_part1: any;
-      copyright_transaction_part2: any;
       [key: string]: any; // Add index signature to allow string indexing
     };
 
@@ -88,240 +83,13 @@ export async function GET(
       );
     }
 
-    // Specifically check for transaction form data
     console.log("Successfully fetched disclosure with ID:", disclosureId);
 
     // Log presence of key sections to help with debugging
     console.log("Disclosure data sections present:", {
-      hasTransactionFormPart1: !!disclosure.copyright_transaction_part1,
-      hasTransactionFormPart2: !!disclosure.copyright_transaction_part2,
       hasApplicantsInfo: !!disclosure.applicantsInfo,
       hasCopyrightApplication: !!disclosure.copyright_basic_application,
     });
-
-    // Process copyright transaction part 1 data (co-authors)
-    let transactionFormPart1 = null;
-    if (disclosure.copyright_transaction_part1) {
-      console.log("Processing copyright_transaction_part1 data");
-      // Extract copyright ID and transaction data
-      const copyrightId = disclosure.copyright_transaction_part1.copyright_id;
-      let transactionData =
-        disclosure.copyright_transaction_part1.transaction_data;
-
-      // Check if transaction_data is a string that needs parsing
-      if (transactionData && typeof transactionData === "string") {
-        try {
-          transactionData = JSON.parse(transactionData);
-          console.log("Parsed transaction_data from string to object", {
-            keys: Object.keys(transactionData),
-            hasCoAuthors: !!transactionData.coAuthors,
-          });
-        } catch (err) {
-          console.error("Error parsing transaction_data JSON:", err);
-          // Initialize with an empty object if parsing fails
-          transactionData = {};
-        }
-      }
-
-      // If transactionData is null or undefined, initialize it
-      if (!transactionData) {
-        console.log(
-          "transactionData is null or undefined, initializing with empty object"
-        );
-        transactionData = {};
-      }
-
-      // Ensure coAuthors exists and is an array
-      if (!transactionData.coAuthors) {
-        console.log("coAuthors missing, initializing with empty array");
-        transactionData.coAuthors = [];
-      } else if (!Array.isArray(transactionData.coAuthors)) {
-        // If coAuthors exists but is not an array, convert it
-        console.log("coAuthors is not an array, converting to array");
-        if (typeof transactionData.coAuthors === "object") {
-          // If it's an object, convert to array with single item
-          transactionData.coAuthors = [transactionData.coAuthors];
-        } else {
-          // Otherwise, initialize as empty array
-          transactionData.coAuthors = [];
-        }
-      }
-
-      // Check if coAuthors has any valid entries
-      const hasValidCoAuthor = transactionData.coAuthors.some(
-        (author: {
-          firstName?: string;
-          lastName?: string;
-          emailAddress?: string;
-          nationality?: string;
-        }) =>
-          author.firstName?.trim() ||
-          author.lastName?.trim() ||
-          author.emailAddress?.trim() ||
-          author.nationality?.trim()
-      );
-
-      if (!hasValidCoAuthor && transactionData.coAuthors.length === 0) {
-        console.log("No valid coAuthors found, adding a default empty entry");
-        transactionData.coAuthors.push({
-          firstName: "",
-          middleName: "",
-          lastName: "",
-          dateOfBirth: "",
-          civilStatus: "",
-          sex: "",
-          nationality: "",
-          countryOfResidence: "",
-          address: "",
-          municipality: "",
-          provinceState: "",
-          zipCode: "",
-          mobileNumber: "",
-          emailAddress: "",
-          isClaimingEntireWork: false,
-          claimDetails: "",
-        });
-      }
-
-      // Log coAuthors structure
-      console.log("coAuthors structure:", {
-        isArray: Array.isArray(transactionData.coAuthors),
-        length: Array.isArray(transactionData.coAuthors)
-          ? transactionData.coAuthors.length
-          : 0,
-        firstItem:
-          transactionData.coAuthors &&
-          Array.isArray(transactionData.coAuthors) &&
-          transactionData.coAuthors.length > 0
-            ? Object.keys(transactionData.coAuthors[0])
-            : "none",
-        hasValidEntry: hasValidCoAuthor,
-      });
-
-      // Create transaction form part 1 object
-      transactionFormPart1 = {
-        disclosureId: disclosure.disclosure_id,
-        copyrightId: copyrightId,
-        transaction_data: transactionData,
-      };
-
-      console.log("Processed transaction form part 1:", {
-        hasCoAuthors: transactionData.coAuthors
-          ? Array.isArray(transactionData.coAuthors)
-            ? transactionData.coAuthors.length
-            : "not an array"
-          : "none",
-        disclosureId: disclosure.disclosure_id,
-        copyrightId: copyrightId,
-        coAuthorsSample:
-          transactionData.coAuthors && transactionData.coAuthors.length > 0
-            ? transactionData.coAuthors.map(
-                (author: {
-                  firstName?: string;
-                  lastName?: string;
-                  emailAddress?: string;
-                }) => ({
-                  firstName: author.firstName,
-                  lastName: author.lastName,
-                  isEmpty: !(
-                    author.firstName?.trim() ||
-                    author.lastName?.trim() ||
-                    author.emailAddress?.trim()
-                  ),
-                })
-              )
-            : "none",
-      });
-    }
-
-    // Process copyright transaction part 2 data
-    let transactionFormPart2 = null;
-    if (disclosure.copyright_transaction_part2) {
-      console.log("Processing copyright_transaction_part2 data");
-
-      // Extract copyright ID and transaction details
-      const copyrightId = disclosure.copyright_transaction_part2.copyright_id;
-      let transactionDetails =
-        disclosure.copyright_transaction_part2.transaction_details;
-
-      // Check if transaction_details is a string that needs parsing
-      if (transactionDetails && typeof transactionDetails === "string") {
-        try {
-          transactionDetails = JSON.parse(transactionDetails);
-          console.log("Parsed transaction_details from string to object");
-        } catch (err) {
-          console.error("Error parsing transaction_details JSON:", err);
-          // Initialize with an empty object if parsing fails
-          transactionDetails = {};
-        }
-      }
-
-      // If transactionDetails is null or undefined, initialize it
-      if (!transactionDetails) {
-        console.log(
-          "transactionDetails is null or undefined, initializing with empty object"
-        );
-        transactionDetails = {};
-      }
-
-      // Process transaction form part 2 data
-      // Extract all required fields
-      const applicantInfo =
-        disclosure.copyright_transaction_part2.applicant_info || {};
-      const authorInfo =
-        disclosure.copyright_transaction_part2.author_info || {};
-      const workCreationForm =
-        disclosure.copyright_transaction_part2.work_creation_form || {};
-      const submissionType =
-        disclosure.copyright_transaction_part2.submission_type || {};
-      const transactionType =
-        disclosure.copyright_transaction_part2.transaction_type || {};
-
-      // Check documentsSubmitted structure and ensure it's formatted correctly
-      if (!transactionDetails.documentsSubmitted) {
-        console.log(
-          "documentsSubmitted missing, initializing with default structure"
-        );
-        transactionDetails.documentsSubmitted = {
-          electronicCopy: false,
-          governmentId: false,
-          others: false,
-          files: {},
-        };
-      }
-
-      // Check signature structure
-      if (!transactionDetails.signature) {
-        console.log("signature missing, initializing with default structure");
-        transactionDetails.signature = {
-          agree: false,
-          firstName: "",
-          middleInitial: "",
-          lastName: "",
-          signatureFile: [],
-        };
-      }
-
-      // Create transaction form part 2 object with all necessary fields
-      transactionFormPart2 = {
-        disclosureId: disclosure.disclosure_id,
-        copyrightId: copyrightId,
-        transaction_details: transactionDetails,
-        applicant_info: applicantInfo,
-        author_info: authorInfo,
-        work_creation_form: workCreationForm,
-        submission_type: submissionType,
-        transaction_type: transactionType,
-      };
-
-      console.log("Processed transaction form part 2:", {
-        hasTransactionDetails: !!transactionDetails,
-        hasDocumentsSubmitted: !!transactionDetails.documentsSubmitted,
-        hasSignature: !!transactionDetails.signature,
-        disclosureId: disclosure.disclosure_id,
-        copyrightId: copyrightId,
-      });
-    }
 
     // Process copyright basic application data
     let copyrightApplication = null;
@@ -383,8 +151,7 @@ export async function GET(
     };
 
     // Check if we have copyright data but no IP types selected
-    const hasCopyrightData =
-      copyrightApplication || transactionFormPart1 || transactionFormPart2;
+    const hasCopyrightData = copyrightApplication;
     const hasIpTypesSelected =
       applicantsInfo.ipTypes &&
       Object.values(applicantsInfo.ipTypes).some((value) => value === true);
@@ -435,8 +202,6 @@ export async function GET(
       status: disclosure.status,
       applicantsInfo,
       copyrightApplication,
-      transactionFormPart1,
-      transactionFormPart2,
     };
 
     // Log the constructed response components for debugging
@@ -445,12 +210,6 @@ export async function GET(
       hasClientId: !!responseData.clientId,
       hasApplicantsInfo: !!responseData.applicantsInfo,
       hasCopyrightApplication: !!responseData.copyrightApplication,
-      hasTransactionFormPart1: !!responseData.transactionFormPart1,
-      hasTransactionFormPart1CoAuthors: responseData.transactionFormPart1
-        ?.transaction_data?.coAuthors
-        ? true
-        : false,
-      hasTransactionFormPart2: !!responseData.transactionFormPart2,
     });
 
     // Add more detailed logging for structure
@@ -460,12 +219,6 @@ export async function GET(
       hasApplicantsEmail: responseData.applicantsInfo?.email ? true : false,
       hasApplicantsTypes: responseData.applicantsInfo?.ipTypes
         ? Object.keys(responseData.applicantsInfo.ipTypes)
-        : [],
-      transactionFormPart1Keys: responseData.transactionFormPart1
-        ? Object.keys(responseData.transactionFormPart1)
-        : [],
-      transactionFormPart2Keys: responseData.transactionFormPart2
-        ? Object.keys(responseData.transactionFormPart2)
         : [],
     });
 

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { ipApplication, activityLog, applicationPhase, userAccount, archives, authenticator, clientProfile, calendarEvent, comment, contactMessage, account, copyrightBasicApplication, copyrightTransactionPart2, ipDisclosure, deedOfAssignment, copyrightTransactionPart1, digitalSignature, documents, documentsValidation, externalCollaboration, formSubmissionRegistry, disclosureConfirmation, documentManagement, formDataMapping, ipContributors, ipDetails, ipDisclosureApplicant, internalValidation, ipApplicationNotification, ipDisclosureAttachment, otherDocuments, patentMatrixSample, patentUtilityModelApplication, ipDisclosureReview, notification, patentSearchReport, phaseReview, phaseReviewAttachment, phaseTask, session, substantialUse, tradeSecretApplication, trademarkApplication, phaseReminder, ipDisclosureInventor, internalValidationAssignee, phaseTaskAssignee, ipApplicationEnrollment, eventParticipant } from "./schema";
+import { ipApplication, activityLog, applicationPhase, userAccount, archives, authenticator, clientProfile, calendarEvent, comment, contactMessage, account, copyrightBasicApplication, ipDisclosure, deedOfAssignment, digitalSignature, documents, documentsValidation, externalCollaboration, formSubmissionRegistry, disclosureConfirmation, documentManagement, formDataMapping, ipContributors, ipDetails, ipDisclosureApplicant, internalValidation, ipApplicationNotification, ipDisclosureAttachment, otherDocuments, patentMatrixSample, patentUtilityModelApplication, ipDisclosureReview, notification, patentSearchReport, phaseReview, phaseReviewAttachment, phaseTask, session, substantialUse, tradeSecretApplication, trademarkApplication, phaseReminder, ipDisclosureInventor, internalValidationAssignee, phaseTaskAssignee, ipApplicationEnrollment, eventParticipant } from "./schema";
 
 export const activityLogRelations = relations(activityLog, ({one}) => ({
 	ipApplication: one(ipApplication, {
@@ -158,30 +158,15 @@ export const accountRelations = relations(account, ({one}) => ({
 	}),
 }));
 
-export const copyrightTransactionPart2Relations = relations(copyrightTransactionPart2, ({one}) => ({
-	copyrightBasicApplication: one(copyrightBasicApplication, {
-		fields: [copyrightTransactionPart2.copyrightId],
-		references: [copyrightBasicApplication.copyrightId]
-	}),
-	ipDisclosure: one(ipDisclosure, {
-		fields: [copyrightTransactionPart2.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-}));
-
 export const copyrightBasicApplicationRelations = relations(copyrightBasicApplication, ({one, many}) => ({
-	copyrightTransactionPart2s: many(copyrightTransactionPart2),
 	ipDisclosure: one(ipDisclosure, {
 		fields: [copyrightBasicApplication.disclosureId],
 		references: [ipDisclosure.disclosureId]
 	}),
-	copyrightTransactionPart1s: many(copyrightTransactionPart1),
 }));
 
 export const ipDisclosureRelations = relations(ipDisclosure, ({one, many}) => ({
-	copyrightTransactionPart2s: many(copyrightTransactionPart2),
 	copyrightBasicApplications: many(copyrightBasicApplication),
-	copyrightTransactionPart1s: many(copyrightTransactionPart1),
 	disclosureConfirmations: many(disclosureConfirmation),
 	ipDisclosureApplicants: many(ipDisclosureApplicant),
 	ipApplication: one(ipApplication, {
@@ -210,17 +195,6 @@ export const deedOfAssignmentRelations = relations(deedOfAssignment, ({one}) => 
 	userAccount: one(userAccount, {
 		fields: [deedOfAssignment.userId],
 		references: [userAccount.id]
-	}),
-}));
-
-export const copyrightTransactionPart1Relations = relations(copyrightTransactionPart1, ({one}) => ({
-	copyrightBasicApplication: one(copyrightBasicApplication, {
-		fields: [copyrightTransactionPart1.copyrightId],
-		references: [copyrightBasicApplication.copyrightId]
-	}),
-	ipDisclosure: one(ipDisclosure, {
-		fields: [copyrightTransactionPart1.disclosureId],
-		references: [ipDisclosure.disclosureId]
 	}),
 }));
 

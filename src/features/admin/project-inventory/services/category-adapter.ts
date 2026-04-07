@@ -9,8 +9,6 @@ import {
   patentSearchReport,
   patentMatrixSample,
   copyrightBasicApplication,
-  copyrightTransactionPart1,
-  copyrightTransactionPart2,
   trademarkApplication,
   tradeSecretApplication,
   clientProfile,
@@ -245,29 +243,9 @@ export class CategoryAdapter {
           .offset(offset);
       }
 
-      // Enhance with transaction parts and inventors
+      // Enhance with inventors
       const enhancedData = await Promise.all(
         result.map(async (item) => {
-          const transactionPart1 = await db
-            .select()
-            .from(copyrightTransactionPart1)
-            .where(
-              eq(
-                copyrightTransactionPart1.copyrightId,
-                item.copyrightApplication.copyrightId
-              )
-            );
-
-          const transactionPart2 = await db
-            .select()
-            .from(copyrightTransactionPart2)
-            .where(
-              eq(
-                copyrightTransactionPart2.copyrightId,
-                item.copyrightApplication.copyrightId
-              )
-            );
-
           const inventors = await db
             .select()
             .from(ipDisclosureInventor)
@@ -280,8 +258,6 @@ export class CategoryAdapter {
 
           return {
             ...item,
-            transactionPart1: transactionPart1[0] || null,
-            transactionPart2: transactionPart2[0] || null,
             inventors,
           };
         })
@@ -834,112 +810,5 @@ export class CategoryAdapter {
     }
   }
 
-  /**
-   * Update Copyright Transaction Part 2 data
-   */
-  static async updateCopyrightTransaction(
-    transactionId: string,
-    data: any
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      // Build the update object based on provided fields
-      const updateData: Record<string, any> = {};
-
-      Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined) {
-          // Handle date fields if present
-          if (
-            typeof value === "string" &&
-            (key.includes("Date") || key.includes("date"))
-          ) {
-            updateData[key] = new Date(value).toISOString();
-          } else {
-            updateData[key] = value;
-          }
-        }
-      });
-
-      // Add updatedAt timestamp as ISO string
-      updateData.updatedAt = new Date().toISOString();
-
-      console.log(
-        "Copyright transaction update data:",
-        JSON.stringify(updateData)
-      );
-
-      // Only proceed if there are fields to update
-      if (Object.keys(updateData).length === 0) {
-        return { success: false, message: "No fields to update" };
-      }
-
-      // Perform the update
-      try {
-        await db
-          .update(copyrightTransactionPart2)
-          .set(updateData)
-          .where(
-            eq(copyrightTransactionPart2.transactionPart2Id, transactionId)
-          );
-
-        console.log(
-          "Copyright transaction updated successfully for ID:",
-          transactionId
-        );
-        return {
-          success: true,
-          message: "Copyright transaction updated successfully",
-        };
-      } catch (dbError) {
-        console.error(
-          "Database error updating Copyright transaction:",
-          dbError
-        );
-        return {
-          success: false,
-          message: `Database error: ${
-            dbError instanceof Error ? dbError.message : String(dbError)
-          }`,
-        };
-      }
-    } catch (error) {
-      console.error("Error updating Copyright transaction:", error);
-      return {
-        success: false,
-        message: `Failed to update Copyright transaction: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      };
-    }
-  }
-
-  /**
-   * Delete Copyright Transaction Part 2
-   */
-  static async deleteCopyrightTransaction(
-    transactionId: string
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      // Perform the delete operation
-      await db
-        .delete(copyrightTransactionPart2)
-        .where(eq(copyrightTransactionPart2.transactionPart2Id, transactionId));
-
-      console.log(
-        "Copyright transaction deleted successfully for ID:",
-        transactionId
-      );
-      return {
-        success: true,
-        message: "Copyright transaction deleted successfully",
-      };
-    } catch (error) {
-      console.error("Error deleting Copyright transaction:", error);
-      return {
-        success: false,
-        message: `Failed to delete Copyright transaction: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      };
-    }
-  }
+ 
 }

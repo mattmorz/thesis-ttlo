@@ -1476,7 +1476,7 @@ export function ApplicantsInformation() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-6">
             <div className="space-y-6">
               <Card className="border-green-200">
                 <CardContent className="pt-6 space-y-4">
@@ -1578,6 +1578,29 @@ export function ApplicantsInformation() {
                       )}
                     </div>
                   ))}
+                </CardContent>
+              </Card>
+
+              <Card className="border-green-200">
+                <CardContent className="pt-6">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base">
+                          Email Address<span className="text-red-500"> *</span>
+                        </FormLabel>
+                        <FormDescription>
+                          Enter the primary contact email address
+                        </FormDescription>
+                        <FormControl>
+                          <Input placeholder="email@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
               </Card>
 
@@ -1727,8 +1750,8 @@ export function ApplicantsInformation() {
                 </CardContent>
               </Card>
             </div>
-
-            <div className="space-y-6">
+{/*}
+           <div className="space-y-6">
               <Card className="border-green-200">
                 <CardContent className="pt-6">
                   <FormField
@@ -1751,8 +1774,9 @@ export function ApplicantsInformation() {
                   />
                 </CardContent>
               </Card>
-            </div>
+            </div>*/}
           </div>
+          
 
           <Card className="col-span-2 border-green-200">
             <CardContent className="pt-6">

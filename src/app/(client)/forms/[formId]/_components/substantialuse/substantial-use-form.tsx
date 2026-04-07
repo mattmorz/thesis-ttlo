@@ -62,7 +62,6 @@ declare global {
     ) => void;
   }
 }
-
 const laboratoryFacilitiesSchema = z
   .object({
     experimentalApparatus: z.boolean().default(false),
@@ -259,11 +258,6 @@ export function SubstantialUseForm() {
       researchTitle: "",
     },
   });
-  
-
-  useEffect(() => {
-  form.trigger();
-}, []);
 
   const {
     fields: applicantFields,
@@ -1096,15 +1090,13 @@ fetchData();
             );
             // Continue with form submission even if registration fails
           }
+  form.reset({}, { keepValues: false });
+  form.clearErrors();
 
           // Set form status to submitted
           setFormStatus("submitted");
 
-          // Dispatch form completion event
-          dispatchFormCompleted(substantialUseId);
-          setTimeout(() => {
-  window.location.href = "/forms?tab=deed-assignment";
-}, 800);
+         
 
           toast.success("Form Submitted", {
             id: submitToastId,
@@ -1376,17 +1368,17 @@ fetchData();
     | undefined;
 
   useEffect(() => {
-    if (isLoading || isSubmitting) return;
+      if (isLoading || isSubmitting || form.formState.isSubmitted) return;
     void form.trigger(["laboratoryFacilities", "fundingResources"]);
   }, [form, isLoading, isSubmitting, formData, activeApplicationId]);
 
   useEffect(() => {
-    if (isLoading || isSubmitting) return;
+      if (isLoading || isSubmitting || form.formState.isSubmitted) return;
     void form.trigger("laboratoryFacilities");
   }, [form, isLoading, isSubmitting, laboratoryFacilities]);
 
   useEffect(() => {
-    if (isLoading || isSubmitting) return;
+      if (isLoading || isSubmitting || form.formState.isSubmitted) return;
     void form.trigger("fundingResources");
   }, [form, isLoading, isSubmitting, fundingResources]);
 
@@ -1405,7 +1397,7 @@ fetchData();
   }, [form, isLoading, isSubmitting, fundingResourcesValid]);
 
   useEffect(() => {
-    if (isLoading || isSubmitting) return;
+     if (isLoading || isSubmitting || form.formState.isSubmitted) return;
     void form.trigger(["remarks", "applicants"]);
   }, [form, isLoading, isSubmitting, formData, activeApplicationId]);
 

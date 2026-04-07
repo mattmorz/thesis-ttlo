@@ -158,6 +158,7 @@ export function SignatorySection({
           return;
         }
         handleDocumentUpload(filePath, { showToast: false });
+        
       },
     }
   );
@@ -920,35 +921,31 @@ setShowCompleteModal(true);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("[SignatorySection] File upload triggered");
-    const file = event.target.files?.[0];
-    if (!file) {
-      console.log("[SignatorySection] No file selected");
-      return;
-    }
+  const files = event.target.files;
 
-    // Check file type
+  if (!files || files.length === 0) return;
+
+  const validFiles: File[] = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
     if (file.type !== "application/pdf") {
-      toast.error("Invalid file type", {
-        description: "Please upload a PDF file only.",
-        duration: 5000,
-      });
-      return;
+      toast.error(`${file.name} is not a PDF`);
+      continue;
     }
 
-    // Check file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-      toast.error("File too large", {
-        description: "Please upload a file smaller than 5MB.",
-        duration: 5000,
-      });
-      return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(`${file.name} is too large (max 5MB)`);
+      continue;
     }
 
-    console.log("[SignatorySection] File selected:", file.name);
-    setNotarizedFiles([file]);
-  };
+    validFiles.push(file);
+  }
+
+  // ✅ IMPORTANT: append, dili replace
+  setNotarizedFiles((prev) => [...prev, ...validFiles]);
+};
 
          return (
                   <div className="space-y-6">
@@ -1803,7 +1800,7 @@ setShowCompleteModal(true);
 
                     {/* Upload Section */}
                     <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 h-[120px]">
+                     <div className="flex flex-col gap-4 p-4 bg-gray-50 rounded-lg border">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-[#1B5E20]/10 flex items-center justify-center">
                             <Upload className="h-5 w-5 text-[#1B5E20]" />
@@ -1823,10 +1820,12 @@ setShowCompleteModal(true);
                           render={({ field }) => (
                             <FormItem className="flex-1 max-w-[200px]">
                               <FormControl>
-                                <div className="flex flex-col gap-2">
+                                <div className="flex flex-col gap-3 w-full">
+                                  <div className="flex gap-2 w-full">
                                   <Input
                                     type="file"
                                     accept=".pdf"
+                                    multiple
                                     onChange={handleFileUpload}
                                     disabled={isDisabled}
                                     className="hidden"
@@ -1846,11 +1845,36 @@ setShowCompleteModal(true);
                                       </span>
                                     </Button>
                                   </label>
-                                  {notarizedFiles.length > 0 && (
-                                    <div className="text-xs text-gray-500">
-                                      Selected: {notarizedFiles[0]?.name}
-                                    </div>
-                                  )}
+                                 {notarizedFiles.length > 0 && (
+  <div className="flex flex-col w-full">
+    {notarizedFiles.map((file, index) => (
+      <div
+        key={index}
+        className="flex items-center justify-between bg-gray-50 border rounded-md px-3 py-2"
+      >
+        {/* FILE NAME */}
+        <div className="flex items-center gap-2 overflow-hidden">
+          <span className="text-sm truncate max-w-[180px]">
+            📄 {file.name}
+          </span>
+        </div>
+
+        {/* REMOVE BUTTON */}
+        <button
+          type="button"
+          onClick={() =>
+            setNotarizedFiles((prev) =>
+              prev.filter((_, i) => i !== index)
+            )
+          }
+          className="text-red-500 hover:text-red-700 font-bold"
+        >
+          ✕
+        </button>
+      </div>
+    ))}
+  </div>
+)}
                                   <DriveUploadButton
                                     files={notarizedFiles}
                                     uploader={notarizedUploader}
@@ -1861,14 +1885,15 @@ setShowCompleteModal(true);
                                     }
                                     buttonText="Upload to Drive"
                                   />
-                                  {field.value && (
+                                {/* {field.value && (
                                     <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
                                       <CheckCircle className="h-4 w-4 text-green-500" />
                                       <span className="truncate">
                                         File uploaded
                                       </span>
                                     </div>
-                                  )}
+                                  )} */}
+                                </div>
                                 </div>
                               </FormControl>
                             </FormItem>

@@ -750,11 +750,18 @@ export function ApplicationManagement({
               {getStatusBadge(application.status as string)}
             </div>
 
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => handleSwitchApplication(application.id)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleSwitchApplication(application.id);
+                }
+              }}
               className="w-full text-left"
             >
-              <br></br>
               <div className="px-3 py-3 border-b bg-slate-50/50">
                 <div className="flex items-center mb-1">
                   <h3 className="font-medium text-sm truncate pr-16 text-gray-900">
@@ -832,7 +839,7 @@ export function ApplicationManagement({
                   </div>
                 </div>
               </div>
-            </button>
+            </div>
           </div>
         ))}
       </div>

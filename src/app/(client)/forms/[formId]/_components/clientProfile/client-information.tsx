@@ -470,6 +470,10 @@ export function ClientInformation({
         }
       }
 
+      if (formattedData.affiliationType) {
+        formattedData.hasCompany = formattedData.affiliationType === "company";
+      }
+
       // Now always save the merged data back to localStorage to keep it in sync
       // Only save if we have an active application
       if (activeApplicationId) {
@@ -2501,6 +2505,33 @@ export function ClientInformation({
                       ) => {
                         field.onChange(value);
 
+                        const nextHasCompany = value === "company";
+                        form.setValue("hasCompany", nextHasCompany, {
+                          shouldValidate: false,
+                          shouldDirty: true,
+                        });
+
+                        if (value === "company") {
+                          form.setValue("collegeName", "");
+                          form.setValue("departmentName", "");
+                        } else if (value === "academic") {
+                          form.setValue("companyName", "");
+                          form.setValue("companyStreet", "");
+                          form.setValue("companyBarangay", "");
+                          form.setValue("companyCityMunicipality", "");
+                          form.setValue("companyProvince", "");
+                          form.setValue("companyEmail", "");
+                        } else {
+                          form.setValue("companyName", "");
+                          form.setValue("companyStreet", "");
+                          form.setValue("companyBarangay", "");
+                          form.setValue("companyCityMunicipality", "");
+                          form.setValue("companyProvince", "");
+                          form.setValue("companyEmail", "");
+                          form.setValue("collegeName", "");
+                          form.setValue("departmentName", "");
+                        }
+
                         if (activeApplicationId) {
                           const currentValues = form.getValues();
                           const storageKey = `clientInformationData-${activeApplicationId}`;
@@ -2509,6 +2540,7 @@ export function ClientInformation({
                             JSON.stringify({
                               ...currentValues,
                               affiliationType: value,
+                              hasCompany: nextHasCompany,
                             }),
                           );
                         }

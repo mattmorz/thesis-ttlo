@@ -968,12 +968,15 @@ setShowCompleteModal(true);
 
       {/* CLOSE BUTTON (RIGHT) */}
       <button
-        type="button"
-        onClick={() => setShowCompleteModal(false)}
-        className="absolute top-4 right-4 bg-green-100 p-1.5 rounded-full text-green-700 hover:bg-green-200"
-      >
-        <X className="h-5 w-5" />
-      </button>
+  type="button"
+  onClick={() => {
+    setShowCompleteModal(false);
+    router.refresh(); // ✅ smooth refresh
+  }}
+  className="absolute top-4 right-4 bg-green-100 p-1.5 rounded-full text-green-700 hover:bg-green-200"
+>
+  <X className="h-5 w-5" />
+</button>
 
       {/* TITLE */}
       <h2 className="text-xl font-bold text-green-700 text-center">

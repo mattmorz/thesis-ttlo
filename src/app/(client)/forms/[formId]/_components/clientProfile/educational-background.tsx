@@ -49,7 +49,17 @@ import { Checkbox } from "@/components/ui/checkbox";
  */
 const formSchema = z.object({
   highestDegree: z.object({
-    value: z.enum(["bachelor", "master", "doctorate", "other"]).optional(),
+    value: z
+      .enum([
+        "bachelor",
+        "master",
+        "doctorate",
+        "other",
+        "associate",
+        "vocational",
+        "highschool",
+      ])
+      .optional(),
     otherValue: z.string().optional().nullable(),
   }),
   degree: z.string().min(1, "Degree is required"),
@@ -258,9 +268,15 @@ export function EducationalBackground({
         if (parsedData.highestDegree) {
           // Ensure highestDegree.value is one of the allowed values
           if (
-            !["bachelor", "master", "doctorate", "other"].includes(
-              parsedData.highestDegree.value,
-            )
+            ![
+              "bachelor",
+              "master",
+              "doctorate",
+              "other",
+              "associate",
+              "vocational",
+              "highschool",
+            ].includes(parsedData.highestDegree.value)
           ) {
             formattedData.highestDegree.value = "bachelor";
           }
@@ -304,9 +320,15 @@ export function EducationalBackground({
         if (initialData.highestDegree) {
           // Ensure highestDegree.value is one of the allowed values
           if (
-            !["bachelor", "master", "doctorate", "other"].includes(
-              initialData.highestDegree.value,
-            )
+            ![
+              "bachelor",
+              "master",
+              "doctorate",
+              "other",
+              "associate",
+              "vocational",
+              "highschool",
+            ].includes(initialData.highestDegree.value)
           ) {
             formattedData.highestDegree.value = "bachelor";
           }

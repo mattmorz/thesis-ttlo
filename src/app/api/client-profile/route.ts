@@ -11,6 +11,111 @@ import { checkPermission, bypassPermissions } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
+const HIGHEST_DEGREE_DB_VALUES = new Set([
+  "bachelor",
+  "master",
+  "doctorate",
+  "other",
+]);
+
+const HIGHEST_DEGREE_LEGACY_VALUES = new Set([
+  "associate",
+  "vocational",
+  "highschool",
+]);
+
+function normalizeHighestDegree(
+  highestDegree: { value?: unknown; otherValue?: unknown } | undefined,
+  subType?: unknown
+) {
+  if (!highestDegree || typeof highestDegree !== "object") {
+    return { value: "bachelor", otherValue: null };
+  }
+
+  const rawValue =
+    typeof highestDegree.value === "string"
+      ? highestDegree.value.toLowerCase()
+      : "";
+
+  if (rawValue === "other") {
+    return {
+      value: "other",
+      otherValue:
+        typeof highestDegree.otherValue === "string"
+          ? highestDegree.otherValue
+          : "",
+    };
+  }
+
+  if (HIGHEST_DEGREE_LEGACY_VALUES.has(rawValue)) {
+    return {
+      value: "other",
+      otherValue:
+        typeof subType === "string" && subType.trim()
+          ? subType
+          : rawValue,
+    };
+  }
+
+  if (HIGHEST_DEGREE_DB_VALUES.has(rawValue)) {
+    return { value: rawValue, otherValue: null };
+  }
+
+  return { value: "bachelor", otherValue: null };
+}
+
+function denormalizeHighestDegree(
+  highestDegree:
+    | { value?: unknown; otherValue?: unknown }
+    | null
+    | undefined
+) {
+  if (!highestDegree || typeof highestDegree !== "object") return highestDegree;
+  if (highestDegree.value !== "other") return highestDegree;
+
+  const otherValue =
+    typeof highestDegree.otherValue === "string"
+      ? highestDegree.otherValue.toLowerCase()
+      : "";
+
+  if (HIGHEST_DEGREE_LEGACY_VALUES.has(otherValue)) {
+    return { value: otherValue, otherValue: null };
+  }
+
+  return highestDegree;
+}
+
+function normalizeHasCompany(personalInfo: any) {
+  const raw = personalInfo?.hasCompany;
+  if (typeof raw === "boolean") return raw;
+  if (raw === "false") return false;
+  if (raw === "true") return true;
+
+  const hasCollegeData =
+    (typeof personalInfo?.collegeName === "string" &&
+      personalInfo.collegeName.trim() !== "") ||
+    (typeof personalInfo?.departmentName === "string" &&
+      personalInfo.departmentName.trim() !== "");
+
+  const hasCompanyData =
+    (typeof personalInfo?.companyName === "string" &&
+      personalInfo.companyName.trim() !== "") ||
+    (typeof personalInfo?.companyEmail === "string" &&
+      personalInfo.companyEmail.trim() !== "") ||
+    (typeof personalInfo?.companyStreet === "string" &&
+      personalInfo.companyStreet.trim() !== "") ||
+    (typeof personalInfo?.companyBarangay === "string" &&
+      personalInfo.companyBarangay.trim() !== "") ||
+    (typeof personalInfo?.companyCityMunicipality === "string" &&
+      personalInfo.companyCityMunicipality.trim() !== "") ||
+    (typeof personalInfo?.companyProvince === "string" &&
+      personalInfo.companyProvince.trim() !== "");
+
+  if (hasCollegeData) return false;
+  if (hasCompanyData) return true;
+  return true;
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -95,41 +200,41 @@ export async function POST(req: Request) {
       mailingAddress: personalInfo?.mailingAddress?.trim(),
 
       // Explicitly handle hasCompany field and related fields
-      hasCompany: personalInfo?.hasCompany === false ? false : true,
+      hasCompany: normalizeHasCompany(personalInfo),
 
       // College/Department fields - preserve even if empty
       collegeName:
-        personalInfo?.hasCompany === false
+        normalizeHasCompany(personalInfo) === false
           ? personalInfo?.collegeName?.trim() || ""
           : null,
       departmentName:
-        personalInfo?.hasCompany === false
+        normalizeHasCompany(personalInfo) === false
           ? personalInfo?.departmentName?.trim() || ""
           : null,
 
       // Company Information - only save if hasCompany is true
       companyName:
-        personalInfo?.hasCompany === false
+        normalizeHasCompany(personalInfo) === false
           ? null
           : personalInfo?.companyName?.trim() || null,
       companyStreet:
-        personalInfo?.hasCompany === false
+        normalizeHasCompany(personalInfo) === false
           ? null
           : personalInfo?.companyStreet?.trim() || null,
       companyBarangay:
-        personalInfo?.hasCompany === false
+        normalizeHasCompany(personalInfo) === false
           ? null
           : personalInfo?.companyBarangay?.trim() || null,
       companyCityMunicipality:
-        personalInfo?.hasCompany === false
+        normalizeHasCompany(personalInfo) === false
           ? null
           : personalInfo?.companyCityMunicipality?.trim() || null,
       companyProvince:
-        personalInfo?.hasCompany === false
+        normalizeHasCompany(personalInfo) === false
           ? null
           : personalInfo?.companyProvince?.trim() || null,
       companyEmail:
-        personalInfo?.hasCompany === false
+        normalizeHasCompany(personalInfo) === false
           ? null
           : personalInfo?.companyEmail?.trim() || null,
 
@@ -166,6 +271,12 @@ export async function POST(req: Request) {
       status: status,
       updatedAt: new Date().toISOString(),
     };
+
+    // Normalize highest degree to align with DB constraints
+    formattedData.highestDegree = normalizeHighestDegree(
+      educationalBackground?.highestDegree,
+      educationalBackground?.subType
+    );
 
     // Right after formattedData is created, update the validation for citizenship
     // Fix citizenship format to ensure it meets database constraints
@@ -617,7 +728,7 @@ export async function GET(req: Request) {
           companyProvince: directProfile.companyProvince,
           companyEmail: directProfile.companyEmail,
           occupation: directProfile.occupation,
-          highestDegree: directProfile.highestDegree,
+          highestDegree: denormalizeHighestDegree(directProfile.highestDegree),
           degree: directProfile.degree,
           profession: directProfile.profession,
           publishedResearch: directProfile.publishedResearch,
@@ -745,7 +856,9 @@ export async function GET(req: Request) {
             companyProvince: directFallbackProfile.companyProvince,
             companyEmail: directFallbackProfile.companyEmail,
             occupation: directFallbackProfile.occupation,
-            highestDegree: directFallbackProfile.highestDegree,
+            highestDegree: denormalizeHighestDegree(
+              directFallbackProfile.highestDegree
+            ),
             degree: directFallbackProfile.degree,
             profession: directFallbackProfile.profession,
             publishedResearch: directFallbackProfile.publishedResearch,
@@ -797,7 +910,7 @@ export async function GET(req: Request) {
         companyProvince: profile.companyProvince,
         companyEmail: profile.companyEmail,
         occupation: profile.occupation,
-        highestDegree: profile.highestDegree,
+        highestDegree: denormalizeHighestDegree(profile.highestDegree),
         degree: profile.degree,
         profession: profile.profession,
         publishedResearch: profile.publishedResearch,
@@ -856,7 +969,7 @@ export async function GET(req: Request) {
       companyProvince: profile.companyProvince,
       companyEmail: profile.companyEmail,
       occupation: profile.occupation,
-      highestDegree: profile.highestDegree,
+      highestDegree: denormalizeHighestDegree(profile.highestDegree),
       degree: profile.degree,
       profession: profile.profession,
       publishedResearch: profile.publishedResearch,
@@ -1015,42 +1128,42 @@ export async function PUT(req: Request) {
       formattedData.mailingAddress = personalInfo.mailingAddress?.trim();
 
       // Explicitly handle hasCompany field and related fields
-      formattedData.hasCompany =
-        personalInfo.hasCompany === false ? false : true;
+      const normalizedHasCompany = normalizeHasCompany(personalInfo);
+      formattedData.hasCompany = normalizedHasCompany;
 
       // College/Department fields - preserve even if empty
       formattedData.collegeName =
-        personalInfo.hasCompany === false
+        normalizedHasCompany === false
           ? personalInfo.collegeName?.trim() || ""
           : null;
       formattedData.departmentName =
-        personalInfo.hasCompany === false
+        normalizedHasCompany === false
           ? personalInfo.departmentName?.trim() || ""
           : null;
 
       // Company Information - only save if hasCompany is true
       formattedData.companyName =
-        personalInfo.hasCompany === false
+        normalizedHasCompany === false
           ? null
           : personalInfo.companyName?.trim() || null;
       formattedData.companyStreet =
-        personalInfo.hasCompany === false
+        normalizedHasCompany === false
           ? null
           : personalInfo.companyStreet?.trim() || null;
       formattedData.companyBarangay =
-        personalInfo.hasCompany === false
+        normalizedHasCompany === false
           ? null
           : personalInfo.companyBarangay?.trim() || null;
       formattedData.companyCityMunicipality =
-        personalInfo.hasCompany === false
+        normalizedHasCompany === false
           ? null
           : personalInfo.companyCityMunicipality?.trim() || null;
       formattedData.companyProvince =
-        personalInfo.hasCompany === false
+        normalizedHasCompany === false
           ? null
           : personalInfo.companyProvince?.trim() || null;
       formattedData.companyEmail =
-        personalInfo.hasCompany === false
+        normalizedHasCompany === false
           ? null
           : personalInfo.companyEmail?.trim() || null;
 
@@ -1059,10 +1172,10 @@ export async function PUT(req: Request) {
 
     if (educationalBackground) {
       // Educational Background
-      formattedData.highestDegree = educationalBackground.highestDegree || {
-        value: "bachelor",
-        otherValue: null,
-      };
+      formattedData.highestDegree = normalizeHighestDegree(
+        educationalBackground.highestDegree,
+        educationalBackground.subType
+      );
       formattedData.degree = educationalBackground.degree?.trim();
       formattedData.profession = educationalBackground.profession?.trim();
     }

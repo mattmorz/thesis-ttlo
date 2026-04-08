@@ -968,12 +968,15 @@ setShowCompleteModal(true);
 
       {/* CLOSE BUTTON (RIGHT) */}
       <button
-        type="button"
-        onClick={() => setShowCompleteModal(false)}
-        className="absolute top-4 right-4 bg-green-100 p-1.5 rounded-full text-green-700 hover:bg-green-200"
-      >
-        <X className="h-5 w-5" />
-      </button>
+  type="button"
+  onClick={() => {
+    setShowCompleteModal(false);
+    router.refresh(); // ✅ smooth refresh
+  }}
+  className="absolute top-4 right-4 bg-green-100 p-1.5 rounded-full text-green-700 hover:bg-green-200"
+>
+  <X className="h-5 w-5" />
+</button>
 
       {/* TITLE */}
       <h2 className="text-xl font-bold text-green-700 text-center">
@@ -1055,11 +1058,10 @@ setShowCompleteModal(true);
                               className="text-center"
                               disabled={isDisabled}
                               onChange={(e) => {
-                                console.log(
-                                  "[SignatorySection] Day field changed:",
-                                  e.target.value
-                                );
-                                field.onChange(e);
+                                const value = e.target.value
+                                  .replace(/[^0-9]/g, "") // numbers only
+                                  .slice(0, 2); // max 2 digits
+                                field.onChange(value);
                               }}
                             />
                           </FormControl>
@@ -1080,12 +1082,9 @@ setShowCompleteModal(true);
                               className="text-center"
                               disabled={isDisabled}
                               onChange={(e) => {
-                                console.log(
-                                  "[SignatorySection] Month field changed:",
-                                  e.target.value
-                                );
-                                field.onChange(e);
-                              }}
+    const value = e.target.value.replace(/[^a-zA-Z ]/g, "");
+    field.onChange(value);
+  }}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1105,11 +1104,10 @@ setShowCompleteModal(true);
                               className="text-center"
                               disabled={isDisabled}
                               onChange={(e) => {
-                                console.log(
-                                  "[SignatorySection] Year field changed:",
-                                  e.target.value
-                                );
-                                field.onChange(e);
+                                const value = e.target.value
+                                  .replace(/[^0-9]/g, "") // numbers only
+                                  .slice(0, 4); // max 4 digits
+                                field.onChange(value);
                               }}
                             />
                           </FormControl>
@@ -1486,25 +1484,20 @@ setShowCompleteModal(true);
                                       placeholder="Enter ID number"
                                       value={field.value || ""}
                                       onChange={(e) => {
-                                        // Update the field directly
-                                        field.onChange(e.target.value);
+                                        const value = e.target.value
+                                          .replace(/[^0-9\-\/ ]/g, ""); // allow numbers + - / space
 
-                                        // Get current assignorIds array
-                                        const currentIds =
-                                          form.getValues("assignorIds") || [];
-                                        // Update the array at the specific index
+                                        field.onChange(value);
+
+                                        const currentIds = form.getValues("assignorIds") || [];
                                         const newIds = [...currentIds];
-                                        newIds[index] = e.target.value;
-                                        // Update the form value for the whole array
+                                        newIds[index] = value;
+
                                         form.setValue("assignorIds", newIds);
-                                        // Also update the legacy assignorId field for backward compatibility
-                                        form.setValue(
-                                          "assignorId",
-                                          newIds.join(", ")
-                                        );
+                                        form.setValue("assignorId", newIds.join(", "));
                                       }}
                                       disabled={isDisabled}
-                                    />
+                                    />  
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>

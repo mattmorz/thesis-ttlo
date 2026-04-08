@@ -108,7 +108,7 @@ export function ApplicationTitleForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    mode: "onBlur",
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: {
       title: activeApplication?.title || "",
@@ -116,9 +116,7 @@ export function ApplicationTitleForm() {
       ipType: activeApplication?.ipType || "",
     },
   });
-  useEffect(() => {
-  form.trigger();
-}, []);
+ 
 
   useEffect(() => {
     if (activeApplication) {
@@ -239,6 +237,7 @@ export function ApplicationTitleForm() {
                           hasClearedIpTypeRef.current = true;
                         }
                         field.onChange(value);
+                        form.trigger(); 
                       }}
                       onOpenChange={(open) => {
                         if (
@@ -282,7 +281,7 @@ export function ApplicationTitleForm() {
               type="submit"
               disabled={
                 updateApplicationMutation.isLoading || !form.formState.isValid
-              }
+               }
             >
               {updateApplicationMutation.isLoading ? "Saving..." : "Save Changes"}
             </Button>

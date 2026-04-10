@@ -225,11 +225,8 @@ export function ClientInformation({
     showToasts: false, // We'll handle toasts ourselves
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    defaultValues: {
+  const defaultValues: z.infer<typeof formSchema> & { contactNumber?: string } =
+    {
       firstName: "",
       lastName: "",
       middleName: "",
@@ -250,7 +247,13 @@ export function ClientInformation({
       departmentName: "",
       occupation: "",
       affiliationType: "company",
-    },
+    };
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    defaultValues,
   });
 
   // Watch the hasCompany field to respond to changes
@@ -533,8 +536,28 @@ export function ClientInformation({
 
         // Ensure the form is reset with the correct data
         setTimeout(() => {
-          form.reset(formattedData);
-          setFormData(formattedData);
+          const normalizedData = {
+            ...defaultValues,
+            ...formattedData,
+            gender: {
+              value:
+                formattedData.gender?.value ??
+                defaultValues.gender.value ??
+                "",
+            },
+            citizenship: {
+              value:
+                formattedData.citizenship?.value ??
+                defaultValues.citizenship.value,
+              otherValue:
+                formattedData.citizenship?.value === "other"
+                  ? formattedData.citizenship.otherValue ?? ""
+                  : null,
+            },
+          };
+
+          form.reset(normalizedData);
+          setFormData(normalizedData);
           form.trigger(undefined, { shouldFocus: false });
 
           if (typeof formattedData.birthDate === "string") {

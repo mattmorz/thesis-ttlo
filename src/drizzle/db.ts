@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "@/drizzle/migrations/schema";
-import * as relations from "@/drizzle/migrations/relations";
+import * as schema from "@/drizzle/schema";
+import * as relations from "@/drizzle/relations";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 // Define the full DB type for better type safety

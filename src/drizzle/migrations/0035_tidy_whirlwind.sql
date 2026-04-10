@@ -253,14 +253,24 @@ ALTER TABLE "copyright_transaction_part2" ALTER COLUMN "author_info" SET DEFAULT
 ALTER TABLE "phase_reminder" ALTER COLUMN "reminder_time" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "application_phase" ADD COLUMN "progress" integer DEFAULT 0;--> statement-breakpoint
 ALTER TABLE "application_phase" ADD COLUMN "order_index" integer NOT NULL;--> statement-breakpoint
-ALTER TABLE "calendar_event" ADD COLUMN "event_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_pkey";--> statement-breakpoint
+ALTER TABLE "calendar_event" ADD COLUMN IF NOT EXISTS "event_id" uuid;--> statement-breakpoint
+UPDATE "calendar_event" SET "event_id" = gen_random_uuid() WHERE "event_id" IS NULL;--> statement-breakpoint
+ALTER TABLE "calendar_event" ALTER COLUMN "event_id" SET DEFAULT gen_random_uuid();--> statement-breakpoint
+ALTER TABLE "calendar_event" ALTER COLUMN "event_id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "calendar_event" ADD CONSTRAINT "calendar_event_pkey" PRIMARY KEY ("event_id");--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "priority" varchar(20);--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "application_id" uuid;--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "phase_id" uuid;--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD COLUMN "work_creation_form" jsonb DEFAULT '{"title":"","dateOfCreation":"","placeOfCreation":"","classificationOfWork":"","submissionType":{"isLocal":true,"isForeign":false},"registrationStatus":{"isRegistered":false,"registrationOffice":{"withIPOPHL":false,"withNLP":false}},"publicationStatus":{"isPublished":"NO","publisherInfo":""},"derivativeWork":{"isDerivative":"NO","originalWorkInfo":""},"indigenousKnowledge":{"isIndigenous":"NO","sourceInfo":""},"governmentFunded":{"isFunded":"NO","fundingAgency":""},"regularDuties":{"isRegularDuty":"NO","employer":""},"rightsClaim":{"isClaimingEntireWork":"YES","partialRights":""}}'::jsonb;--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD COLUMN "documents_submitted" jsonb DEFAULT '{"electronicCopy":false,"governmentId":false,"deedOfAssignment":false,"marriageCertificate":false,"specialPowerOfAttorney":false,"boardResolution":false,"secretaryCertificate":false,"ipophlCertificate":false,"others":{"checked":false,"value":""},"files":{}}'::jsonb;--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD COLUMN "signature" jsonb DEFAULT '{"agree":false,"signatureType":"upload","signatureData":"","firstName":"","middleInitial":"","lastName":"","signatureFile":[]}'::jsonb;--> statement-breakpoint
-ALTER TABLE "documents" ADD COLUMN "document_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_pkey";--> statement-breakpoint
+ALTER TABLE "documents" ADD COLUMN IF NOT EXISTS "document_id" uuid;--> statement-breakpoint
+UPDATE "documents" SET "document_id" = gen_random_uuid() WHERE "document_id" IS NULL;--> statement-breakpoint
+ALTER TABLE "documents" ALTER COLUMN "document_id" SET DEFAULT gen_random_uuid();--> statement-breakpoint
+ALTER TABLE "documents" ALTER COLUMN "document_id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "documents" ADD CONSTRAINT "documents_pkey" PRIMARY KEY ("document_id");--> statement-breakpoint
 ALTER TABLE "documents" ADD COLUMN "phase_id" uuid;--> statement-breakpoint
 ALTER TABLE "documents" ADD COLUMN "file_path" text NOT NULL;--> statement-breakpoint
 ALTER TABLE "documents" ADD COLUMN "status" varchar(50) DEFAULT 'pending';--> statement-breakpoint
@@ -275,7 +285,12 @@ ALTER TABLE "documents" ADD COLUMN "validation_remarks" text;--> statement-break
 ALTER TABLE "external_collaboration" ADD COLUMN "office" varchar(255) NOT NULL;--> statement-breakpoint
 ALTER TABLE "internal_validation" ADD COLUMN "document_id" uuid;--> statement-breakpoint
 ALTER TABLE "internal_validation" ADD COLUMN "assigned_to" uuid;--> statement-breakpoint
-ALTER TABLE "phase_reminder" ADD COLUMN "reminder_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "phase_reminder_pkey";--> statement-breakpoint
+ALTER TABLE "phase_reminder" ADD COLUMN IF NOT EXISTS "reminder_id" uuid;--> statement-breakpoint
+UPDATE "phase_reminder" SET "reminder_id" = gen_random_uuid() WHERE "reminder_id" IS NULL;--> statement-breakpoint
+ALTER TABLE "phase_reminder" ALTER COLUMN "reminder_id" SET DEFAULT gen_random_uuid();--> statement-breakpoint
+ALTER TABLE "phase_reminder" ALTER COLUMN "reminder_id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "phase_reminder" ADD CONSTRAINT "phase_reminder_pkey" PRIMARY KEY ("reminder_id");--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "frequency" varchar(20);--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "custom_days" integer;--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "is_active" boolean DEFAULT true;--> statement-breakpoint

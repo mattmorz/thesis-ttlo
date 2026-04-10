@@ -632,11 +632,11 @@ export function ClientInformation({
     // Also listen for tab navigation/page refresh
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // Cleanup function
-    return () => {
-      // Save state when component unmounts
-      if (isFormLoaded) {
-        const values = form.getValues();
+      // Cleanup function
+      return () => {
+        // Save state when component unmounts
+        if (isFormLoaded) {
+          const values = form.getValues();
 
         // Ensure gender data is properly formatted
         const formattedValues = {
@@ -650,13 +650,13 @@ export function ClientInformation({
         console.log(
           "[ClientInformation] Component unmounting, saving form state",
         );
-        setStorageItem(
-          "clientInformationData",
-          JSON.stringify(formattedValues),
-        );
+        const storageKey = activeApplicationId
+          ? `clientInformationData-${activeApplicationId}`
+          : "clientInformationData";
+        setStorageItem(storageKey, JSON.stringify(formattedValues));
         console.log(
           "[ClientInformation] Saved (unmount) birthDate:",
-          { storageKey: "clientInformationData", birthDate },
+          { storageKey, birthDate },
         );
       }
 

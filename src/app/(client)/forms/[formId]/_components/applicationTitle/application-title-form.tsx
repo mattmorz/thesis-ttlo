@@ -21,13 +21,37 @@ import { toast } from "sonner";
 import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
+
+const IP_TYPE_VALUES = [
+  "patent",
+  "trademark",
+  "copyright",
+  "industrial_design",
+  "utility_model",
+  "trade_secret",
+  "other",
+  "not_sure",
+] as const;
+
+const IP_TYPE_OPTIONS = [
+  { value: "patent", label: "Patent", key: "patent" },
+  { value: "trademark", label: "Trademark", key: "trademark" },
+  { value: "copyright", label: "Copyright", key: "copyright" },
+  {
+    value: "industrial_design",
+    label: "Industrial Design",
+    key: "industrialDesign",
+  },
+  { value: "utility_model", label: "Utility Model", key: "utilityModel" },
+  { value: "trade_secret", label: "Trade Secret", key: "tradeSecret" },
+  { value: "other", label: "Other", key: "other" },
+  { value: "not_sure", label: "Not Sure", key: "notSure" },
+] as const;
+
+type IpTypeValue = (typeof IP_TYPE_OPTIONS)[number]["value"];
+type IpTypeKey = (typeof IP_TYPE_OPTIONS)[number]["key"];
 
 const formSchema = z.object({
   title: z
@@ -38,23 +62,9 @@ const formSchema = z.object({
     .string()
     .min(1, "Description is required")
     .min(5, "Description must be at least 5 characters."),
-  ipType: z
-    .string()
-    .min(1, "IP type is required")
-    .refine(
-      (value) =>
-        [
-          "patent",
-          "copyright",
-          "trademark",
-          "utility_model",
-          "industrial_design",
-          "trade_secret",
-          "not_sure",
-          "other",
-        ].includes(value),
-      "IP type is required"
-    ),
+  ipTypes: z
+    .array(z.enum(IP_TYPE_VALUES))
+    .min(1, "Please select at least one IP type."),
 });
 
 export function ApplicationTitleForm() {
@@ -63,7 +73,10 @@ export function ApplicationTitleForm() {
     useActiveApplication();
   const hasClearedTitleRef = useRef(false);
   const hasClearedDescriptionRef = useRef(false);
-  const hasClearedIpTypeRef = useRef(false);
+  const applicantsInfo = useIpDisclosureStore((state) => state.applicantsInfo);
+  const setApplicantsInfo = useIpDisclosureStore(
+    (state) => state.setApplicantsInfo
+  );
 
   const updateApplicationMutation = trpc.formIntegration.updateApplication.useMutation({
     onSuccess: (_data, variables) => {
@@ -106,6 +119,18 @@ export function ApplicationTitleForm() {
     },
   });
 
+  const storedIpTypes = applicantsInfo?.ipTypes;
+  const storedIpSelections = storedIpTypes
+    ? IP_TYPE_OPTIONS.filter((option) => storedIpTypes[option.key as IpTypeKey])
+        .map((option) => option.value)
+    : [];
+
+  const getInitialIpTypes = () => {
+    if (storedIpSelections.length > 0) return storedIpSelections;
+    if (activeApplication?.ipType) return [activeApplication.ipType];
+    return [];
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: "onChange",
@@ -113,7 +138,7 @@ export function ApplicationTitleForm() {
     defaultValues: {
       title: activeApplication?.title || "",
       description: activeApplication?.description || "",
-      ipType: activeApplication?.ipType || "",
+      ipTypes: getInitialIpTypes(),
     },
   });
  
@@ -123,11 +148,10 @@ export function ApplicationTitleForm() {
       form.reset({
         title: activeApplication.title || "",
         description: activeApplication.description || "",
-        ipType: activeApplication.ipType || "",
+        ipTypes: getInitialIpTypes(),
       });
       hasClearedTitleRef.current = false;
       hasClearedDescriptionRef.current = false;
-      hasClearedIpTypeRef.current = false;
     }
   }, [activeApplication, form]);
 
@@ -136,9 +160,40 @@ export function ApplicationTitleForm() {
       toast.error("No active application selected.");
       return;
     }
+
+    const selectedIpTypes = values.ipTypes;
+    const primaryIpType =
+      IP_TYPE_OPTIONS.find((option) =>
+        selectedIpTypes.includes(option.value)
+      )?.value ?? "other";
+
+    const nextIpTypes = IP_TYPE_OPTIONS.reduce(
+      (acc, option) => {
+        acc[option.key as IpTypeKey] = selectedIpTypes.includes(option.value);
+        return acc;
+      },
+      {
+        copyright: false,
+        patent: false,
+        utilityModel: false,
+        industrialDesign: false,
+        trademark: false,
+        tradeSecret: false,
+        other: false,
+        notSure: false,
+      } as Record<IpTypeKey, boolean>
+    );
+
+    setApplicantsInfo({
+      ...(applicantsInfo ?? {}),
+      ipTypes: nextIpTypes,
+    });
+
     updateApplicationMutation.mutate({
       applicationId: activeApplication.id,
-      ...values,
+      title: values.title,
+      description: values.description,
+      ipType: primaryIpType,
     });
   }
 
@@ -225,49 +280,39 @@ export function ApplicationTitleForm() {
             />
             <FormField
               control={form.control}
-              name="ipType"
+              name="ipTypes"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>IP Type</FormLabel>
                   <FormControl>
-                    <Select
-                      value={field.value ?? ""}
-                      onValueChange={(value) => {
-                        if (!hasClearedIpTypeRef.current) {
-                          hasClearedIpTypeRef.current = true;
-                        }
-                        field.onChange(value);
-                        form.trigger(); 
-                      }}
-                      onOpenChange={(open) => {
-                        if (
-                          open &&
-                          !hasClearedIpTypeRef.current &&
-                          field.value === (activeApplication?.ipType ?? "")
-                        ) {
-                          field.onChange("");
-                          hasClearedIpTypeRef.current = true;
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select IP type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="patent">Patent</SelectItem>
-                        <SelectItem value="trademark">Trademark</SelectItem>
-                        <SelectItem value="copyright">Copyright</SelectItem>
-                        <SelectItem value="industrial_design">
-                          Industrial Design
-                        </SelectItem>
-                        <SelectItem value="utility_model">
-                          Utility Model
-                        </SelectItem>
-                        <SelectItem value="trade_secret">Trade Secret</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                        <SelectItem value="not_sure">Not Sure</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-3">
+                      {IP_TYPE_OPTIONS.map((option) => {
+                        const checked = field.value?.includes(option.value);
+                        return (
+                          <label
+                            key={option.value}
+                            className="flex items-center gap-3"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(nextChecked) => {
+                                const current = field.value ?? [];
+                                const next = nextChecked
+                                  ? Array.from(
+                                      new Set([...current, option.value])
+                                    )
+                                  : current.filter(
+                                      (value: string) => value !== option.value
+                                    );
+                                field.onChange(next);
+                                form.trigger();
+                              }}
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </FormControl>
                   <FormDescription>
                     Choose the category that best fits your intellectual

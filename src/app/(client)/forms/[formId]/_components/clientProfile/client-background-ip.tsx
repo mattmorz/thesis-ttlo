@@ -1127,6 +1127,67 @@ export function ClientBackgroundIP({
         });
         if (personalData) {
           personalInfo = JSON.parse(personalData);
+
+          // Normalize affiliation fields before submission
+          const hasCollegeData =
+            typeof (personalInfo as any).collegeName === "string" &&
+              (personalInfo as any).collegeName.trim() !== "" ||
+            (typeof (personalInfo as any).departmentName === "string" &&
+              (personalInfo as any).departmentName.trim() !== "");
+          const hasCompanyData =
+            (typeof (personalInfo as any).companyName === "string" &&
+              (personalInfo as any).companyName.trim() !== "") ||
+            (typeof (personalInfo as any).companyEmail === "string" &&
+              (personalInfo as any).companyEmail.trim() !== "") ||
+            (typeof (personalInfo as any).companyStreet === "string" &&
+              (personalInfo as any).companyStreet.trim() !== "") ||
+            (typeof (personalInfo as any).companyBarangay === "string" &&
+              (personalInfo as any).companyBarangay.trim() !== "") ||
+            (typeof (personalInfo as any).companyCityMunicipality === "string" &&
+              (personalInfo as any).companyCityMunicipality.trim() !== "") ||
+            (typeof (personalInfo as any).companyProvince === "string" &&
+              (personalInfo as any).companyProvince.trim() !== "");
+
+          let normalizedHasCompany: boolean | undefined;
+          const rawHasCompany = (personalInfo as any).hasCompany;
+          if (typeof rawHasCompany === "boolean") {
+            normalizedHasCompany = rawHasCompany;
+          } else if (rawHasCompany === "false") {
+            normalizedHasCompany = false;
+          } else if (rawHasCompany === "true") {
+            normalizedHasCompany = true;
+          }
+
+          if (normalizedHasCompany === undefined) {
+            if (hasCollegeData) normalizedHasCompany = false;
+            else if (hasCompanyData) normalizedHasCompany = true;
+            else normalizedHasCompany = true;
+          }
+
+          let normalizedAffiliation = (personalInfo as any).affiliationType;
+          if (normalizedHasCompany === false) normalizedAffiliation = "academic";
+          if (normalizedHasCompany === true) normalizedAffiliation = "company";
+
+          personalInfo = {
+            ...personalInfo,
+            hasCompany: normalizedHasCompany,
+            affiliationType: normalizedAffiliation,
+            // Clear incompatible fields to avoid ambiguity
+            ...(normalizedHasCompany === false
+              ? {
+                  companyName: "",
+                  companyStreet: "",
+                  companyBarangay: "",
+                  companyCityMunicipality: "",
+                  companyProvince: "",
+                  companyEmail: "",
+                }
+              : {
+                  collegeName: "",
+                  departmentName: "",
+                }),
+          };
+
           console.log(
             "Loaded personal information data for submission:",
             personalInfo,

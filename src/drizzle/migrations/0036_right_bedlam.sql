@@ -194,7 +194,12 @@ ALTER TABLE "copyright_transaction_part2" ALTER COLUMN "transaction_details" SET
 ALTER TABLE "copyright_transaction_part2" ALTER COLUMN "applicant_info" SET DEFAULT '{"personalInfo":{"sex":null,"address":"","surname":"","zipCode":"","firstName":"","middleName":"","civilStatus":null,"dateOfBirth":null,"nationality":"","emailAddress":"","mobileNumber":"","provinceState":"","municipalityCity":"","countryOfResidence":""},"applicantType":{"heir":false,"agent":false,"licensee":false,"newOwner":false,"authorCreator":false,"copyrightClaimant":false}}'::jsonb;--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ALTER COLUMN "author_info" SET DEFAULT '{"personalInfo":{"sex":null,"address":"","surname":"","zipCode":"","firstName":"","middleName":"","civilStatus":null,"dateOfBirth":null,"nationality":"","emailAddress":"","mobileNumber":"","provinceState":"","municipalityCity":"","countryOfResidence":""},"isSameAsApplicant":false}'::jsonb;--> statement-breakpoint
 ALTER TABLE "phase_reminder" ALTER COLUMN "reminder_time" SET DEFAULT '12:00:00';--> statement-breakpoint
-ALTER TABLE "calendar_event" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_pkey";--> statement-breakpoint
+ALTER TABLE "calendar_event" ADD COLUMN IF NOT EXISTS "id" uuid;--> statement-breakpoint
+UPDATE "calendar_event" SET "id" = gen_random_uuid() WHERE "id" IS NULL;--> statement-breakpoint
+ALTER TABLE "calendar_event" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();--> statement-breakpoint
+ALTER TABLE "calendar_event" ALTER COLUMN "id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "calendar_event" ADD CONSTRAINT "calendar_event_pkey" PRIMARY KEY ("id");--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "project_id" uuid;--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "other_event_type" text;--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "is_all_day" boolean DEFAULT false;--> statement-breakpoint
@@ -202,7 +207,12 @@ ALTER TABLE "client_profile" ADD COLUMN "ip_application_id" uuid;--> statement-b
 ALTER TABLE "client_profile" ADD COLUMN "has_company" boolean DEFAULT true;--> statement-breakpoint
 ALTER TABLE "client_profile" ADD COLUMN "college_name" varchar(255);--> statement-breakpoint
 ALTER TABLE "client_profile" ADD COLUMN "department_name" varchar(255);--> statement-breakpoint
-ALTER TABLE "documents" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_pkey";--> statement-breakpoint
+ALTER TABLE "documents" ADD COLUMN IF NOT EXISTS "id" uuid;--> statement-breakpoint
+UPDATE "documents" SET "id" = gen_random_uuid() WHERE "id" IS NULL;--> statement-breakpoint
+ALTER TABLE "documents" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();--> statement-breakpoint
+ALTER TABLE "documents" ALTER COLUMN "id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "documents" ADD CONSTRAINT "documents_pkey" PRIMARY KEY ("id");--> statement-breakpoint
 ALTER TABLE "documents" ADD COLUMN "file_name" text NOT NULL;--> statement-breakpoint
 ALTER TABLE "documents" ADD COLUMN "description" text;--> statement-breakpoint
 ALTER TABLE "documents" ADD COLUMN "type" varchar(50) NOT NULL;--> statement-breakpoint
@@ -220,7 +230,12 @@ ALTER TABLE "internal_validation" ADD COLUMN "file_type" text NOT NULL;--> state
 ALTER TABLE "internal_validation" ADD COLUMN "file_size" integer NOT NULL;--> statement-breakpoint
 ALTER TABLE "internal_validation" ADD COLUMN "title" text;--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ADD COLUMN "application_id" uuid;--> statement-breakpoint
-ALTER TABLE "phase_reminder" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "phase_reminder_pkey";--> statement-breakpoint
+ALTER TABLE "phase_reminder" ADD COLUMN IF NOT EXISTS "id" uuid;--> statement-breakpoint
+UPDATE "phase_reminder" SET "id" = gen_random_uuid() WHERE "id" IS NULL;--> statement-breakpoint
+ALTER TABLE "phase_reminder" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();--> statement-breakpoint
+ALTER TABLE "phase_reminder" ALTER COLUMN "id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "phase_reminder" ADD CONSTRAINT "phase_reminder_pkey" PRIMARY KEY ("id");--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "reminder_type" varchar(20) DEFAULT 'none';--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "reminder_day" varchar(20) DEFAULT 'none';--> statement-breakpoint
 ALTER TABLE "documents_validation" ADD CONSTRAINT "documents_id_fkey" FOREIGN KEY ("document_id") REFERENCES "public"."documents"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

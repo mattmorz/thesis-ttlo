@@ -185,6 +185,12 @@ export function ApplicantsInformation() {
   useEffect(() => {
     if (!isHydrated) return;
     if (!activeApplication?.ipType) return;
+    if (
+      applicantsInfo?.ipTypes &&
+      Object.values(applicantsInfo.ipTypes).some((value) => value === true)
+    ) {
+      return;
+    }
 
     const { ipTypes, otherIpType } = derivedIpTypesResult;
     form.setValue("ipTypes", ipTypes, { shouldValidate: true });

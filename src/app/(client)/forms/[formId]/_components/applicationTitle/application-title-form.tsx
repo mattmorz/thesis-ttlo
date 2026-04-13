@@ -288,6 +288,16 @@ export function ApplicationTitleForm() {
                     <div className="space-y-3">
                       {IP_TYPE_OPTIONS.map((option) => {
                         const checked = field.value?.includes(option.value);
+                        const isNotSureSelected =
+                          field.value?.includes("not_sure") ?? false;
+                        const isAnyOtherSelected =
+                          (field.value ?? []).some(
+                            (value: string) => value !== "not_sure"
+                          );
+                        const isDisabled =
+                          option.value === "not_sure"
+                            ? isAnyOtherSelected
+                            : isNotSureSelected;
                         return (
                           <label
                             key={option.value}
@@ -295,6 +305,7 @@ export function ApplicationTitleForm() {
                           >
                             <Checkbox
                               checked={checked}
+                              disabled={isDisabled}
                               onCheckedChange={(nextChecked) => {
                                 const current = field.value ?? [];
                                 const next = nextChecked
@@ -308,7 +319,13 @@ export function ApplicationTitleForm() {
                                 form.trigger();
                               }}
                             />
-                            <span>{option.label}</span>
+                            <span
+                              className={
+                                isDisabled ? "text-muted-foreground" : undefined
+                              }
+                            >
+                              {option.label}
+                            </span>
                           </label>
                         );
                       })}

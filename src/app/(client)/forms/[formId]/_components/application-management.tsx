@@ -122,6 +122,35 @@ export function ApplicationManagement({
   const [otherIpType, setOtherIpType] = useState("");
   const [showDocuments, setShowDocuments] = useState(false);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleApplicationTitleUpdate = () => {
+      refetchApplications();
+      trpcUtils.formIntegration.getUserApplications.invalidate();
+    };
+
+    window.addEventListener(
+      "applicationTitleFormCompleted",
+      handleApplicationTitleUpdate as EventListener
+    );
+    window.addEventListener(
+      "formProgressRefresh",
+      handleApplicationTitleUpdate as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "applicationTitleFormCompleted",
+        handleApplicationTitleUpdate as EventListener
+      );
+      window.removeEventListener(
+        "formProgressRefresh",
+        handleApplicationTitleUpdate as EventListener
+      );
+    };
+  }, [refetchApplications, trpcUtils.formIntegration.getUserApplications]);
+
   // tRPC mutation to create a new application
   const createApplicationMutation =
     trpc.formIntegration.createApplication.useMutation({

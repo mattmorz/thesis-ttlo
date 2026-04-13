@@ -172,7 +172,6 @@ export function ApplicantsInformation() {
     mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: formData,
-    values: formData, // Explicitly set values from our state
   });
   const derivedIpTypesResult = React.useMemo(
     () =>
@@ -216,22 +215,7 @@ export function ApplicantsInformation() {
     setApplicantsInfo,
     setSelectedIpTypes,
   ]);
-  useEffect(() => {
-  if (formData) {
-    form.reset(formData);
-
-    setTimeout(() => {
-      form.trigger(); // trigger validation after reset
-    }, 100);
-  }
-}, [formData, form]);
-  // Update the form whenever formData changes
-  useEffect(() => {
-    if (formData) {
-      form.reset(formData);
-      console.log("Form reset with data:", formData);
-    }
-  }, [formData, form]);
+  // Avoid resetting the form on every formData change.
 
   const {
     fields: applicantFields,
@@ -258,6 +242,7 @@ export function ApplicantsInformation() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const applicantsSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const prevActiveTabRef = useRef<string | null>(null);
 
   // Simplified function to load data from disclosure or existing data
   useEffect(() => {
@@ -563,9 +548,12 @@ export function ApplicantsInformation() {
 
   // Add a new effect to handle when navigating back to the applicants tab
   useEffect(() => {
-    // This effect should run when the activeTab is 'applicants-information'
-    // and the store already has data (after navigating back from another tab)
+    const wasOnDifferentTab = prevActiveTabRef.current !== activeTab;
+    prevActiveTabRef.current = activeTab;
+
+    // Only refresh when we navigate back to this tab (avoid resetting while typing)
     if (
+      wasOnDifferentTab &&
       activeTab === "applicants-information" &&
       applicantsInfo &&
       isHydrated &&
@@ -1598,7 +1586,7 @@ export function ApplicantsInformation() {
                       Add Inventor
                     </Button>
                   </div>
-                  <FormField
+                  {/* <FormField
                     control={form.control}
                     name="isApplicantAlsoInventor"
                     render={({ field }) => (
@@ -1619,7 +1607,7 @@ export function ApplicantsInformation() {
                         </div>
                       </FormItem>
                     )}
-                  />
+                  /> */}
                   {inventorFields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
                       <div className="flex-1 flex gap-2">
@@ -1759,11 +1747,15 @@ export function ApplicantsInformation() {
                     <div className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
                         <Checkbox
+                          id="isRightfulOwner"
                           checked={field.value}
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <div className="space-y-1 leading-none">
+                      <label
+                        htmlFor="isRightfulOwner"
+                        className="space-y-1 leading-none cursor-pointer"
+                      >
                         <FormDescription className="font-semibold text-foreground">
                           Applicant&apos;s Right and Ownership
                           <span className="ml-2 text-red-600">*</span>
@@ -1771,7 +1763,7 @@ export function ApplicantsInformation() {
                           authorized representative
                         </FormDescription>
                         <FormLabel className="text-sm text-muted-foreground" />
-                      </div>
+                      </label>
                     </div>
                     <FormMessage />
                   </FormItem>

@@ -298,12 +298,15 @@ export function ApplicationTitleForm() {
                           option.value === "not_sure"
                             ? isAnyOtherSelected
                             : isNotSureSelected;
+                        const checkboxId = `ipType-${option.value}`;
                         return (
                           <label
                             key={option.value}
-                            className="flex items-center gap-3"
+                            htmlFor={checkboxId}
+                            className="flex items-center gap-3 cursor-pointer"
                           >
                             <Checkbox
+                              id={checkboxId}
                               checked={checked}
                               disabled={isDisabled}
                               onCheckedChange={(nextChecked) => {

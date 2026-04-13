@@ -133,9 +133,19 @@ export function IPDisclosureForm() {
 
   useEffect(() => {
     if (!formContextHydrated) return;
+    if (applicantsInfo?.ipTypes) {
+      setSelectedIpTypes(applicantsInfo.ipTypes);
+      return;
+    }
     if (!activeApplication?.ipType) return;
     setSelectedIpTypes(derivedIpTypes);
-  }, [activeApplication?.ipType, derivedIpTypes, formContextHydrated, setSelectedIpTypes]);
+  }, [
+    activeApplication?.ipType,
+    applicantsInfo?.ipTypes,
+    derivedIpTypes,
+    formContextHydrated,
+    setSelectedIpTypes,
+  ]);
 
   // Add error handling
   useEffect(() => {
@@ -176,9 +186,6 @@ export function IPDisclosureForm() {
   // Get active IP types, using live checkbox state on the applicants tab,
   // and saved store data once navigating away.
   const activeIpTypes: IpTypes = useMemo(() => {
-    if (activeApplication?.ipType) {
-      return derivedIpTypes;
-    }
     if (activeTab === "applicants-information") {
       return selectedIpTypes;
     }
@@ -193,6 +200,15 @@ export function IPDisclosureForm() {
         other: Boolean(applicantsInfo.ipTypes.other),
         notSure: Boolean(applicantsInfo.ipTypes.notSure),
       };
+    }
+    const hasSelected =
+      selectedIpTypes &&
+      Object.values(selectedIpTypes).some((value) => value === true);
+    if (hasSelected) {
+      return selectedIpTypes;
+    }
+    if (activeApplication?.ipType) {
+      return derivedIpTypes;
     }
     return selectedIpTypes;
   }, [

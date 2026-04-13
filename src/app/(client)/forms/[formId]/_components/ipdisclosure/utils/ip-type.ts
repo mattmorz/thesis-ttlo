@@ -36,7 +36,6 @@ export const deriveIpTypesFromApplicationIpType = (
       break;
     case "industrial_design":
       nextIpTypes.industrialDesign = true;
-      nextIpTypes.utilityModel = true;
       break;
     case "trade_secret":
       nextIpTypes.tradeSecret = true;

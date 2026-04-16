@@ -149,7 +149,12 @@ export function IPDisclosureForm() {
   const derivedIpTypes = useMemo(
     () => {
       if (activeApplication?.selectedIpTypes) {
-        return normalizeIpTypes(activeApplication.selectedIpTypes);
+        const normalizedFromApp = normalizeIpTypes(activeApplication.selectedIpTypes);
+        // Some endpoints may return jsonb as a JSON string or otherwise malformed shape.
+        // Only trust the application value if it actually contains selected flags.
+        if (hasSelectedIpTypes(normalizedFromApp)) {
+          return normalizedFromApp;
+        }
       }
       if (hasSelectedIpTypes(localStorageIpTypes)) {
         return normalizeIpTypes(localStorageIpTypes);

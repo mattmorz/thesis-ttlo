@@ -56,7 +56,7 @@ export default function Page() {
     null
   );
 
-  const channel: "email" = "email";
+  const channel = "email" as const;
 
   const canSendOtp = useMemo(() => {
     const hasTracking = Boolean(trackingCode.trim());

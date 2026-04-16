@@ -16,10 +16,11 @@ import {
   type NormalizedIpTypes,
   deriveIpTypesFromApplicationIpType,
   getPrimaryApplicationIpType,
+  hasSelectedIpTypes,
   normalizeIpTypes,
 } from "@/lib/utils/ip-types";
 
-const normalizeSelectedIpTypes = (value: unknown) => {
+const normalizeSelectedIpTypes = (value: unknown): NormalizedIpTypes | null => {
   const parseValue = (input: unknown): Record<string, unknown> | null => {
     if (!input) return null;
     if (typeof input === "string") {
@@ -42,9 +43,8 @@ const normalizeSelectedIpTypes = (value: unknown) => {
     parseValue(parsed?.selectedIpTypes) ??
     parsed;
 
-  return normalizeIpTypes(
-    rawTypes as Partial<NormalizedIpTypes> | null
-  );
+  const normalized = normalizeIpTypes(rawTypes as Partial<NormalizedIpTypes> | null);
+  return hasSelectedIpTypes(normalized) ? normalized : null;
 };
 
 export const formIntegrationRouter = router({
@@ -108,9 +108,7 @@ export const formIntegrationRouter = router({
 
           return apps.map((app: any) => {
             const normalizedApplicationIpTypes = app.selectedIpTypes
-              ? normalizeIpTypes(
-                  app.selectedIpTypes as Partial<NormalizedIpTypes>
-                )
+              ? normalizeSelectedIpTypes(app.selectedIpTypes)
               : null;
 
             return {

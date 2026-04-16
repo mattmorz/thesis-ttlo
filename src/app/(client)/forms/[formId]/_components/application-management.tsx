@@ -695,7 +695,11 @@ export function ApplicationManagement({
     if (selectedTypes.length > 0) {
       return selectedTypes.map((type) => (
         <div key={`${application.id}-${type}`}>
-          {getIpTypeBadge(type)}
+          {getIpTypeBadge(
+            type === "other" && application.ipType !== "other"
+              ? application.ipType
+              : type
+          )}
         </div>
       ));
     }

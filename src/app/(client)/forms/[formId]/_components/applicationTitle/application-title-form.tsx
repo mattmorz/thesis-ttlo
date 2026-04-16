@@ -74,6 +74,8 @@ const formSchema = z.object({
 });
 
 export function ApplicationTitleForm() {
+  const getIpTypeStorageKey = (applicationId: string) =>
+    `application-selected-ip-types-${applicationId}`;
   const router = useRouter();
   const { activeApplication, refetchApplications, setApplications } =
     useActiveApplication();
@@ -180,6 +182,12 @@ export function ApplicationTitleForm() {
       ...(applicantsInfo ?? {}),
       ipTypes: nextIpTypes,
     });
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        getIpTypeStorageKey(activeApplication.id),
+        JSON.stringify(nextIpTypes)
+      );
+    }
 
     updateApplicationMutation.mutate({
       applicationId: activeApplication.id,

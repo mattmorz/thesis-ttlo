@@ -97,6 +97,8 @@ const tabs = [
 ];
 
 export function IPDisclosureForm() {
+  const getIpTypeStorageKey = (applicationId: string) =>
+    `application-selected-ip-types-${applicationId}`;
   const {
     selectedIpTypes,
     setSelectedIpTypes,
@@ -128,17 +130,40 @@ export function IPDisclosureForm() {
     refreshData,
   } = useApplicationIpDisclosure();
 
+  const localStorageIpTypes = useMemo(() => {
+    if (!activeApplicationId || typeof window === "undefined") {
+      return null;
+    }
+    try {
+      const raw = window.localStorage.getItem(
+        getIpTypeStorageKey(activeApplicationId)
+      );
+      if (!raw) return null;
+      return normalizeIpTypes(JSON.parse(raw));
+    } catch (error) {
+      console.error("Failed to parse stored application IP types:", error);
+      return null;
+    }
+  }, [activeApplicationId]);
+
   const derivedIpTypes = useMemo(
     () => {
       if (activeApplication?.selectedIpTypes) {
         return normalizeIpTypes(activeApplication.selectedIpTypes);
+      }
+      if (hasSelectedIpTypes(localStorageIpTypes)) {
+        return normalizeIpTypes(localStorageIpTypes);
       }
 
       return deriveIpTypesFromApplicationIpType(
         activeApplication?.ipType ?? undefined
       ).ipTypes;
     },
-    [activeApplication?.ipType, activeApplication?.selectedIpTypes]
+    [
+      activeApplication?.ipType,
+      activeApplication?.selectedIpTypes,
+      localStorageIpTypes,
+    ]
   );
 
   useEffect(() => {

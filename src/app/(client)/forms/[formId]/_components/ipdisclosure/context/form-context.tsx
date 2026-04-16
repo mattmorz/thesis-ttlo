@@ -10,6 +10,7 @@ import {
 import { useHydratedIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
 import type { IpTypes } from "@/lib/store/ip-disclosure-store";
 import { useRouter } from "next/navigation";
+import { areIpTypesEqual, normalizeIpTypes } from "../utils/ip-type";
 
 // Global logging control
 const DEBUG = false;
@@ -55,7 +56,10 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
   // Only run this effect once after hydration
   useEffect(() => {
     if (isHydrated && applicantsInfo?.ipTypes) {
-      setSelectedIpTypes(applicantsInfo.ipTypes);
+      setSelectedIpTypes((prev) => {
+        const nextTypes = normalizeIpTypes(applicantsInfo.ipTypes);
+        return areIpTypesEqual(prev, nextTypes) ? prev : nextTypes;
+      });
     }
   }, [isHydrated]); // Remove applicantsInfo from dependencies to prevent loops
 
@@ -173,21 +177,13 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // IMPORTANT: Check if at least one IP type is true, and force hasChanges to true
-        // to ensure the update propagates
-        const hasTrueValues = Object.values(newTypes).some((v) => v === true);
-
         // Log diagnostic information
         console.log("Updated IP types:", {
           newTypes,
           hasChanges,
-          hasTrueValues,
-          forceUpdate: hasTrueValues && !hasChanges,
         });
 
-        // Force update if we have true values but hasChanges is false
-        // This ensures changes are always detected when IP types are selected
-        return hasTrueValues || hasChanges ? newTypes : prev;
+        return hasChanges && !areIpTypesEqual(prev, newTypes) ? newTypes : prev;
       });
     },
     [isHydrated]

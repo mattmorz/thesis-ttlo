@@ -96,6 +96,7 @@ import { IPDisclosureForm } from "./ipdisclosure/ip-disclosure-form";
 import { DeedAssignmentForm } from "./deedofassignment/deed-assignment-form";
 import { SubstantialUseForm } from "./substantialuse/substantial-use-form";
 import { OtherDocumentsSection } from "./otherDocuments";
+import { getSelectedApplicationIpTypes } from "@/lib/utils/ip-types";
 
 // Add icons to the navigation config
 const sidebarItems = formNavigationConfig.map((item) => {
@@ -1898,6 +1899,11 @@ export function PageContent() {
   const displayedApplication = activeApplication || applications[0] || null;
   const displayedApplicationId =
     activeApplicationId || applications[0]?.id || null;
+  const displayedApplicationTypes = displayedApplication?.selectedIpTypes
+    ? getSelectedApplicationIpTypes(displayedApplication.selectedIpTypes)
+    : displayedApplication?.ipType
+      ? [displayedApplication.ipType]
+      : [];
 
   return (
     <div className="w-full">
@@ -1976,12 +1982,15 @@ export function PageContent() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-white text-xs border-gray-200"
-                  >
-                    {displayedApplication.ipType?.replace("_", " ")}
-                  </Badge>
+                  {displayedApplicationTypes.map((type) => (
+                    <Badge
+                      key={type}
+                      variant="outline"
+                      className="bg-white text-xs border-gray-200"
+                    >
+                      {type.replace(/_/g, " ")}
+                    </Badge>
+                  ))}
                   {getStatusBadge(displayedApplication.status)}
                   <div className="flex items-center bg-gray-100/80 px-2 py-0.5 rounded border border-gray-200/80">
                     <span className="text-xs text-gray-600 mr-1.5">ID:</span>

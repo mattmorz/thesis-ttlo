@@ -31,7 +31,11 @@ import {
 } from "@/lib/store/ip-disclosure-store";
 import { useFormContext } from "./context/form-context";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
-import { deriveIpTypesFromApplicationIpType } from "./utils/ip-type";
+import {
+  deriveIpTypesFromApplicationIpType,
+  hasSelectedIpTypes,
+  normalizeIpTypes,
+} from "./utils/ip-type";
 
 // Global logging control
 const DEBUG = false;
@@ -174,24 +178,33 @@ export function ApplicantsInformation() {
     defaultValues: formData,
   });
   const derivedIpTypesResult = React.useMemo(
-    () =>
-      deriveIpTypesFromApplicationIpType(
+    () => {
+      if (activeApplication?.selectedIpTypes) {
+        return {
+          ipTypes: normalizeIpTypes(activeApplication.selectedIpTypes),
+          otherIpType: "",
+        };
+      }
+
+      return deriveIpTypesFromApplicationIpType(
         activeApplication?.ipType ?? undefined
-      ),
-    [activeApplication?.ipType]
+      );
+    },
+    [activeApplication?.ipType, activeApplication?.selectedIpTypes]
   );
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (!activeApplication?.ipType) return;
     if (
       applicantsInfo?.ipTypes &&
-      Object.values(applicantsInfo.ipTypes).some((value) => value === true)
+      hasSelectedIpTypes(applicantsInfo.ipTypes)
     ) {
       return;
     }
+    if (!hasSelectedIpTypes(derivedIpTypesResult.ipTypes)) return;
 
-    const { ipTypes, otherIpType } = derivedIpTypesResult;
+    const ipTypes = normalizeIpTypes(derivedIpTypesResult.ipTypes);
+    const { otherIpType } = derivedIpTypesResult;
     form.setValue("ipTypes", ipTypes, { shouldValidate: true });
     form.setValue("otherIpType", otherIpType, { shouldValidate: true });
 
@@ -1238,9 +1251,7 @@ export function ApplicantsInformation() {
   const watchedInventors = form.watch("inventors");
   const watchedEmail = form.watch("email");
   const watchedIsRightfulOwner = form.watch("isRightfulOwner");
-  const hasSelectedIpType = activeApplication?.ipType
-    ? Object.values(derivedIpTypesResult.ipTypes).some((value) => value === true)
-    : Object.values(watchedIpTypes || {}).some((value) => value === true);
+  const hasSelectedIpType = hasSelectedIpTypes(watchedIpTypes);
   const hasApplicantNames =
     (watchedApplicants?.length ?? 0) > 0 &&
     watchedApplicants.every(
@@ -1263,7 +1274,6 @@ export function ApplicantsInformation() {
     !hasApplicantNames ||
     !hasInventorNames ||
     !hasSelectedIpType ||
-    !activeApplication?.ipType ||
     !watchedIsRightfulOwner;
 
   useEffect(() => {
@@ -1428,7 +1438,7 @@ export function ApplicantsInformation() {
               Please provide information about the applicants and intellectual
               property type
             </p>
-            {!activeApplication?.ipType && (
+            {!hasSelectedIpType && (
               <p className="text-sm text-red-600">
                 Please select an IP type in Application Title before continuing.
               </p>

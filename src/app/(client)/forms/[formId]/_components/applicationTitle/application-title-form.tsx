@@ -23,6 +23,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
+import {
+  buildIpTypesFromApplicationValues,
+  getPrimaryApplicationIpType,
+  getSelectedApplicationIpTypes,
+  type ApplicationIpTypeValue,
+} from "@/lib/utils/ip-types";
 
 const IP_TYPE_VALUES = [
   "patent",
@@ -93,6 +99,8 @@ export function ApplicationTitleForm() {
                       ? variables.description
                       : app.description,
                   ipType: variables.ipType ?? app.ipType,
+                  selectedIpTypes:
+                    variables.selectedIpTypes ?? app.selectedIpTypes,
                 }
               : app
           )
@@ -127,6 +135,9 @@ export function ApplicationTitleForm() {
 
   const getInitialIpTypes = () => {
     if (storedIpSelections.length > 0) return storedIpSelections;
+    if (activeApplication?.selectedIpTypes) {
+      return getSelectedApplicationIpTypes(activeApplication.selectedIpTypes);
+    }
     if (activeApplication?.ipType) return [activeApplication.ipType];
     return [];
   };
@@ -161,28 +172,9 @@ export function ApplicationTitleForm() {
       return;
     }
 
-    const selectedIpTypes = values.ipTypes;
-    const primaryIpType =
-      IP_TYPE_OPTIONS.find((option) =>
-        selectedIpTypes.includes(option.value)
-      )?.value ?? "other";
-
-    const nextIpTypes = IP_TYPE_OPTIONS.reduce(
-      (acc, option) => {
-        acc[option.key as IpTypeKey] = selectedIpTypes.includes(option.value);
-        return acc;
-      },
-      {
-        copyright: false,
-        patent: false,
-        utilityModel: false,
-        industrialDesign: false,
-        trademark: false,
-        tradeSecret: false,
-        other: false,
-        notSure: false,
-      } as Record<IpTypeKey, boolean>
-    );
+    const selectedIpTypes = values.ipTypes as ApplicationIpTypeValue[];
+    const nextIpTypes = buildIpTypesFromApplicationValues(selectedIpTypes);
+    const primaryIpType = getPrimaryApplicationIpType(nextIpTypes);
 
     setApplicantsInfo({
       ...(applicantsInfo ?? {}),
@@ -194,6 +186,7 @@ export function ApplicationTitleForm() {
       title: values.title,
       description: values.description,
       ipType: primaryIpType,
+      selectedIpTypes: nextIpTypes,
     });
   }
 

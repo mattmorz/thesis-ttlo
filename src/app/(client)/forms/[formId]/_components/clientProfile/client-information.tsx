@@ -249,6 +249,7 @@ export function ClientInformation({
       collegeName: "",
       departmentName: "",
       occupation: "",
+      occupationOther: "",
       affiliationType: "company",
     },
   });
@@ -2420,9 +2421,6 @@ export function ClientInformation({
                           <option value="Health Technologist or Technician">
                             Health Technologist or Technician
                           </option>
-                          <option value="Other Healthcare Practitioner">
-                            Other Healthcare Practitioner
-                          </option>
                         </optgroup>
                         <optgroup label="Healthcare Support Occupations">
                           <option value="Nursing Aide">
@@ -2430,9 +2428,6 @@ export function ClientInformation({
                           </option>
                           <option value="Therapy Assistant">
                             Occupational / Physical Therapy Assistant
-                          </option>
-                          <option value="Other Healthcare Support">
-                            Other Healthcare Support Occupation
                           </option>
                         </optgroup>
                         <optgroup label="Business and Management Occupations">
@@ -2446,9 +2441,6 @@ export function ClientInformation({
                           <option value="IT Manager">IT / HR Manager</option>
                           <option value="Accountant">Accountant / Auditor</option>
                           <option value="Business Owner">Business Owner</option>
-                          <option value="Other Business Occupation">
-                            Other Business Occupation
-                          </option>
                         </optgroup>
                         <optgroup label="Education Occupations">
                           <option value="College Professor">
@@ -2463,14 +2455,21 @@ export function ClientInformation({
                           <option value="Military">Military</option>
                           <option value="Homemaker">Homemaker</option>
                           <option value="Student">Student</option>
-                          <option value="Dont Know">Don't Know</option>
-                          <option value="Not Applicable">Not Applicable</option>
+                          <option value="Other">Other (please specify)</option>
                         </optgroup>
                       </select>
                     </FormControl>
                     <FormDescription>
                       Select your occupation. Scroll to see more options.
                     </FormDescription>
+                   {field.value === "Other" && (
+                    <input
+                      type="text"
+                      placeholder="Enter your occupation"
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm mt-2"
+                      onChange={(e) => form.setValue("occupationOther", e.target.value)}
+                    />
+                  )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -2554,7 +2553,7 @@ export function ClientInformation({
 
                       <SelectContent>
                         <SelectItem value="company">
-                          Company / Institution
+                          Company / Non Academic
                         </SelectItem>
                         <SelectItem value="academic">
                           Academic Institution
@@ -2694,6 +2693,24 @@ export function ClientInformation({
               {/* ACADEMIC FIELDS */}
               {form.watch("affiliationType") === "academic" && (
                 <div className="space-y-6">
+
+                <FormField
+                    control={form.control}
+                    name="InstitutionName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name of Institution</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Enter your institution name"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="collegeName"

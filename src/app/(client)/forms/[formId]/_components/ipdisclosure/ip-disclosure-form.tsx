@@ -55,13 +55,13 @@ const tabs = [
      icon: Sparkles,
     showIf: (types: IpTypes) => types.patent || types.utilityModel,
   },
-  {
-    id: "patent-search",
-    label: "Patent Search Report",
-    component: PatentSearchForm,
-    icon: Sparkles,
-    showIf: (types: IpTypes) => types.patent || types.utilityModel,
-  },
+ // {
+  //  id: "patent-search",
+    //label: "Patent Search Report",
+   // component: PatentSearchForm,
+   // icon: Sparkles,
+    //showIf: (types: IpTypes) => types.patent || types.utilityModel,
+  //},
   {
     id: "copyright-application",
     label: "Copyright Application",

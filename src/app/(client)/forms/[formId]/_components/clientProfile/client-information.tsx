@@ -2558,7 +2558,7 @@ export function ClientInformation({
                         <SelectItem value="academic">
                           Academic Institution
                         </SelectItem>
-                        <SelectItem value="none">No Application</SelectItem>
+                        <SelectItem value="none">No Affiliation</SelectItem>
                       </SelectContent>
                     </Select>
 

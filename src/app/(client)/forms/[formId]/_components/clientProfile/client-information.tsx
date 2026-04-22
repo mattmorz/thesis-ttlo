@@ -89,6 +89,8 @@ const formSchema = z.object({
   companyCityMunicipality: z.string().optional(),
   companyProvince: z.string().optional(),
   companyEmail: z.string().email("Invalid email address").optional(),
+  institutionName: z.string().optional(),
+  isCSUAffiliated: z.boolean().nullable().optional(),
   collegeName: z.string().optional(),
   departmentName: z.string().optional(),
   occupation: z.string().min(1, "Occupation is required"),
@@ -246,6 +248,8 @@ export function ClientInformation({
       companyCityMunicipality: "",
       companyProvince: "",
       companyEmail: "",
+      institutionName: "",
+      isCSUAffiliated: null,
       collegeName: "",
       departmentName: "",
       occupation: "",
@@ -273,6 +277,8 @@ export function ClientInformation({
   const companyCityMunicipality = form.watch("companyCityMunicipality");
   const companyProvince = form.watch("companyProvince");
   const companyEmail = form.watch("companyEmail");
+  const institutionName = form.watch("institutionName");
+  const isCSUAffiliated = form.watch("isCSUAffiliated");
   const collegeName = form.watch("collegeName");
   const departmentName = form.watch("departmentName");
 
@@ -297,7 +303,12 @@ export function ClientInformation({
 
   if (affiliationType === "academic") {
     isNextDisabled =
-      isNextDisabled || !collegeName?.trim() || !departmentName?.trim();
+      isNextDisabled ||
+      !collegeName?.trim() ||
+      !departmentName?.trim() ||
+      isCSUAffiliated === null ||
+      isCSUAffiliated === undefined ||
+      (!isCSUAffiliated && !institutionName?.trim());
   }
 
   // Add effect to respond to hasCompany changes
@@ -388,6 +399,8 @@ export function ClientInformation({
           companyCityMunicipality: "",
           companyProvince: "",
           companyEmail: "",
+          institutionName: "",
+          isCSUAffiliated: null,
           collegeName: "",
           departmentName: "",
           occupation: "",
@@ -473,6 +486,26 @@ export function ClientInformation({
 
       if (formattedData.affiliationType) {
         formattedData.hasCompany = formattedData.affiliationType === "company";
+      }
+
+      if (formattedData.affiliationType !== "academic") {
+        formattedData.isCSUAffiliated = null;
+        formattedData.institutionName = "";
+      } else {
+        const normalizedInstitutionName =
+          typeof formattedData.institutionName === "string"
+            ? formattedData.institutionName
+            : "";
+        const inferredIsCSUAffiliated =
+          typeof formattedData.isCSUAffiliated === "boolean"
+            ? formattedData.isCSUAffiliated
+            : normalizedInstitutionName.trim().toLowerCase() ===
+              "caraga state university";
+
+        formattedData.isCSUAffiliated = inferredIsCSUAffiliated;
+        formattedData.institutionName = inferredIsCSUAffiliated
+          ? "Caraga State University"
+          : normalizedInstitutionName;
       }
 
       // Now always save the merged data back to localStorage to keep it in sync
@@ -783,6 +816,16 @@ export function ClientInformation({
         companyProvince: values.companyProvince || undefined,
         collegeName: values.collegeName || undefined,
         departmentName: values.departmentName || undefined,
+        institutionName:
+          values.affiliationType === "academic"
+            ? values.isCSUAffiliated
+              ? "Caraga State University"
+              : values.institutionName || undefined
+            : undefined,
+        isCSUAffiliated:
+          values.affiliationType === "academic"
+            ? values.isCSUAffiliated ?? null
+            : null,
         // Fix citizenship data
         citizenship: {
           value: values.citizenship?.value || "filipino",
@@ -860,6 +903,8 @@ export function ClientInformation({
               formattedValues.companyCityMunicipality || "",
             companyProvince: formattedValues.companyProvince || "",
             companyEmail: formattedValues.companyEmail || "",
+            institutionName: "",
+            isCSUAffiliated: null,
             // Explicitly set college fields to empty strings
             collegeName: "",
             departmentName: "",
@@ -884,6 +929,10 @@ export function ClientInformation({
             companyCityMunicipality: "",
             companyProvince: "",
             companyEmail: "",
+            institutionName: formattedValues.isCSUAffiliated
+              ? "Caraga State University"
+              : formattedValues.institutionName || "",
+            isCSUAffiliated: formattedValues.isCSUAffiliated ?? null,
             // College fields
             collegeName: formattedValues.collegeName || "",
             departmentName: formattedValues.departmentName || "",
@@ -1458,6 +1507,16 @@ export function ClientInformation({
         companyProvince: values.companyProvince || undefined,
         collegeName: values.collegeName || undefined,
         departmentName: values.departmentName || undefined,
+        institutionName:
+          values.affiliationType === "academic"
+            ? values.isCSUAffiliated
+              ? "Caraga State University"
+              : values.institutionName || undefined
+            : undefined,
+        isCSUAffiliated:
+          values.affiliationType === "academic"
+            ? values.isCSUAffiliated ?? null
+            : null,
         // Fix citizenship data
         citizenship: {
           value: values.citizenship?.value || "filipino",
@@ -1654,6 +1713,8 @@ export function ClientInformation({
             companyCityMunicipality: personalInfo.companyCityMunicipality || "",
             companyProvince: personalInfo.companyProvince || "",
             companyEmail: personalInfo.companyEmail || "",
+            institutionName: "",
+            isCSUAffiliated: null,
             // Explicitly set college fields to empty strings
             collegeName: "",
             departmentName: "",
@@ -1678,6 +1739,10 @@ export function ClientInformation({
             companyCityMunicipality: "",
             companyProvince: "",
             companyEmail: "",
+            institutionName: personalInfo.isCSUAffiliated
+              ? "Caraga State University"
+              : personalInfo.institutionName || "",
+            isCSUAffiliated: personalInfo.isCSUAffiliated ?? null,
             // College fields
             collegeName: personalInfo.collegeName || "",
             departmentName: personalInfo.departmentName || "",
@@ -1927,6 +1992,8 @@ export function ClientInformation({
         // Always include both sets of fields in localStorage for completeness
         collegeName: formattedValues.collegeName || "",
         departmentName: formattedValues.departmentName || "",
+        institutionName: formattedValues.institutionName || "",
+        isCSUAffiliated: formattedValues.isCSUAffiliated ?? null,
         companyName: formattedValues.companyName || "",
         companyEmail: formattedValues.companyEmail || "",
         companyStreet: formattedValues.companyStreet || "",
@@ -2511,6 +2578,8 @@ export function ClientInformation({
                         });
 
                         if (value === "company") {
+                          form.setValue("institutionName", "");
+                          form.setValue("isCSUAffiliated", null);
                           form.setValue("collegeName", "");
                           form.setValue("departmentName", "");
                         } else if (value === "academic") {
@@ -2520,6 +2589,8 @@ export function ClientInformation({
                           form.setValue("companyCityMunicipality", "");
                           form.setValue("companyProvince", "");
                           form.setValue("companyEmail", "");
+                          form.setValue("institutionName", "");
+                          form.setValue("isCSUAffiliated", null);
                         } else {
                           form.setValue("companyName", "");
                           form.setValue("companyStreet", "");
@@ -2527,6 +2598,8 @@ export function ClientInformation({
                           form.setValue("companyCityMunicipality", "");
                           form.setValue("companyProvince", "");
                           form.setValue("companyEmail", "");
+                          form.setValue("institutionName", "");
+                          form.setValue("isCSUAffiliated", null);
                           form.setValue("collegeName", "");
                           form.setValue("departmentName", "");
                         }
@@ -2693,17 +2766,72 @@ export function ClientInformation({
               {/* ACADEMIC FIELDS */}
               {form.watch("affiliationType") === "academic" && (
                 <div className="space-y-6">
-
-                <FormField
+                  <FormField
                     control={form.control}
-                    name="InstitutionName"
+                    name="isCSUAffiliated"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>
+                          Are you affiliated with CSU?
+                          <span className="text-red-500"> *</span>
+                        </FormLabel>
+
+                        <div className="flex items-center gap-6">
+                          <label className="flex items-center gap-2 cursor-pointer text-sm">
+                            <input
+                              type="radio"
+                              checked={field.value === true}
+                              onChange={() => {
+                                field.onChange(true);
+                                form.setValue(
+                                  "institutionName",
+                                  "Caraga State University",
+                                  {
+                                    shouldDirty: true,
+                                    shouldValidate: true,
+                                  },
+                                );
+                              }}
+                            />
+                            Yes (CSU Student/Employee)
+                          </label>
+
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              checked={field.value === false}
+                              onChange={() => {
+                                field.onChange(false);
+                                form.setValue("institutionName", "", {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                });
+                              }}
+                            />
+                            No (External)
+                          </label>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="institutionName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name of Institution</FormLabel>
+                        <FormLabel>
+                          Name of Institution
+                          {!form.watch("isCSUAffiliated") && (
+                            <span className="text-red-500"> *</span>
+                          )}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             placeholder="Enter your institution name"
+                            disabled={Boolean(form.watch("isCSUAffiliated"))}
                           />
                         </FormControl>
                         <FormMessage />

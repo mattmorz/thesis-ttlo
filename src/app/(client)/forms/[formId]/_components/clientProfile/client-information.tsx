@@ -279,6 +279,14 @@ export function ClientInformation({
   const companyEmail = form.watch("companyEmail");
   const institutionName = form.watch("institutionName");
   const isCSUAffiliated = form.watch("isCSUAffiliated");
+  useEffect(() => {
+  if (isCSUAffiliated !== null && isCSUAffiliated !== undefined) {
+    localStorage.setItem(
+      "isCSUAffiliated",
+      JSON.stringify(isCSUAffiliated)
+    );
+  }
+}, [isCSUAffiliated]);
   const collegeName = form.watch("collegeName");
   const departmentName = form.watch("departmentName");
 

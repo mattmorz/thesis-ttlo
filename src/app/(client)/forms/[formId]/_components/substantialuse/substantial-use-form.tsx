@@ -19,6 +19,7 @@ import { useSession } from "next-auth/react";
 import { getFormPermissions, bypassPermissions } from "@/lib/auth/permissions";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -151,7 +152,6 @@ const fundingResourcesSchema = z
       });
     }
   });
-
 const formSchema = z.object({
   applicants: z
     .array(
@@ -187,6 +187,13 @@ const formSchema = z.object({
 });
 
 export function SubstantialUseForm() {
+    const [isCSU, setIsCSU] = useState<boolean | null>(null);
+  useEffect(() => {
+  const value = localStorage.getItem("isCSUAffiliated");
+  if (value !== null) {
+    setIsCSU(JSON.parse(value));
+  }
+}, []);
   const router = useRouter();
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -1301,7 +1308,7 @@ fetchData();
   // - Only allow editing if user has admin role or is the form owner
   // - Check submission status and user permissions
   // - Add role check: isAdmin || (isOwner && !isSubmitted)
-  const isFormDisabled = false; // Temporarily disabled for testing
+ const isFormDisabled = isCSU === false; // Temporarily disabled for testing
 
   const researchTitle = form.watch("researchTitle");
   const remarks = form.watch("remarks");
@@ -1404,6 +1411,7 @@ fetchData();
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+         <fieldset disabled={isFormDisabled}></fieldset>
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             <p>An error occurred: {error.message}</p>
@@ -1413,10 +1421,13 @@ fetchData();
         {isFormDisabled && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
             <p className="font-bold">Form Already Submitted</p>
-            <p>
-              This form has been submitted and cannot be modified. Contact an
-              administrator if you need to make changes.
-            </p>
+           <p>
+  This form has been submitted and cannot be modified.{" "}
+  <Link href="/contact" className="underline text-blue-600">
+    Contact administrator
+  </Link>{" "}
+  if you need to make changes.
+</p>
           </div>
         )}
 
@@ -1517,7 +1528,7 @@ fetchData();
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit|| isCSU === false}
                           />
                         </FormControl>
                         <FormLabel className="font-normal">
@@ -1539,7 +1550,7 @@ fetchData();
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit || isCSU === false}
                           />
                         </FormControl>
                         <div className="space-y-2 flex-1">
@@ -1577,7 +1588,7 @@ fetchData();
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit || isCSU === false}
                           />
                         </FormControl>
                         <div className="space-y-2 flex-1">
@@ -1662,7 +1673,7 @@ fetchData();
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit || isCSU === false}
                           />
                         </FormControl>
                         <FormLabel className="font-normal">
@@ -1684,7 +1695,7 @@ fetchData();
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit || isCSU === false}
                           />
                         </FormControl>
                         <div className="space-y-2 flex-1">

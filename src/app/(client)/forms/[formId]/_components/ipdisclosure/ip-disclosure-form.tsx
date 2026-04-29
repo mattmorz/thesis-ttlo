@@ -29,7 +29,12 @@ import {
   Bookmark,
   FileType
 } from "lucide-react";
-import { deriveIpTypesFromApplicationIpType } from "./utils/ip-type";
+import {
+  areIpTypesEqual,
+  deriveIpTypesFromApplicationIpType,
+  hasSelectedIpTypes,
+  normalizeIpTypes,
+} from "./utils/ip-type";
 
 // Global logging control
 const DEBUG = false;
@@ -92,6 +97,8 @@ const tabs = [
 ];
 
 export function IPDisclosureForm() {
+  const getIpTypeStorageKey = (applicationId: string) =>
+    `application-selected-ip-types-${applicationId}`;
   const {
     selectedIpTypes,
     setSelectedIpTypes,
@@ -123,19 +130,69 @@ export function IPDisclosureForm() {
     refreshData,
   } = useApplicationIpDisclosure();
 
+  const localStorageIpTypes = useMemo(() => {
+    if (!activeApplicationId || typeof window === "undefined") {
+      return null;
+    }
+    try {
+      const raw = window.localStorage.getItem(
+        getIpTypeStorageKey(activeApplicationId)
+      );
+      if (!raw) return null;
+      return normalizeIpTypes(JSON.parse(raw));
+    } catch (error) {
+      console.error("Failed to parse stored application IP types:", error);
+      return null;
+    }
+  }, [activeApplicationId]);
+
   const derivedIpTypes = useMemo(
-    () =>
-      deriveIpTypesFromApplicationIpType(
+    () => {
+      if (activeApplication?.selectedIpTypes) {
+        const normalizedFromApp = normalizeIpTypes(activeApplication.selectedIpTypes);
+        // Some endpoints may return jsonb as a JSON string or otherwise malformed shape.
+        // Only trust the application value if it actually contains selected flags.
+        if (hasSelectedIpTypes(normalizedFromApp)) {
+          return normalizedFromApp;
+        }
+      }
+      if (hasSelectedIpTypes(localStorageIpTypes)) {
+        return normalizeIpTypes(localStorageIpTypes);
+      }
+
+      return deriveIpTypesFromApplicationIpType(
         activeApplication?.ipType ?? undefined
-      ).ipTypes,
-    [activeApplication?.ipType]
+      ).ipTypes;
+    },
+    [
+      activeApplication?.ipType,
+      activeApplication?.selectedIpTypes,
+      localStorageIpTypes,
+    ]
   );
 
   useEffect(() => {
     if (!formContextHydrated) return;
-    if (!activeApplication?.ipType) return;
-    setSelectedIpTypes(derivedIpTypes);
-  }, [activeApplication?.ipType, derivedIpTypes, formContextHydrated, setSelectedIpTypes]);
+    if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
+      const nextTypes = normalizeIpTypes(applicantsInfo?.ipTypes);
+      if (!areIpTypesEqual(selectedIpTypes, nextTypes)) {
+        setSelectedIpTypes(nextTypes);
+      }
+      return;
+    }
+    if (hasSelectedIpTypes(selectedIpTypes)) return;
+    if (hasSelectedIpTypes(derivedIpTypes)) {
+      if (!areIpTypesEqual(selectedIpTypes, derivedIpTypes)) {
+        setSelectedIpTypes(derivedIpTypes);
+      }
+    }
+  }, [
+    applicantsInfo?.ipTypes,
+    derivedIpTypes,
+    formContextHydrated,
+    selectedIpTypes,
+    setSelectedIpTypes,
+  ]);
 
   // Add error handling
   useEffect(() => {
@@ -176,27 +233,26 @@ export function IPDisclosureForm() {
   // Get active IP types, using live checkbox state on the applicants tab,
   // and saved store data once navigating away.
   const activeIpTypes: IpTypes = useMemo(() => {
-    if (activeApplication?.ipType) {
+    if (activeTab === "applicants-information") {
+      if (hasSelectedIpTypes(selectedIpTypes)) {
+        return normalizeIpTypes(selectedIpTypes);
+      }
+      if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
+        return normalizeIpTypes(applicantsInfo?.ipTypes);
+      }
       return derivedIpTypes;
     }
-    if (activeTab === "applicants-information") {
-      return selectedIpTypes;
+    if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
+      return normalizeIpTypes(applicantsInfo?.ipTypes);
     }
-    if (applicantsInfo?.ipTypes) {
-      return {
-        copyright: Boolean(applicantsInfo.ipTypes.copyright),
-        patent: Boolean(applicantsInfo.ipTypes.patent),
-        utilityModel: Boolean(applicantsInfo.ipTypes.utilityModel),
-        industrialDesign: Boolean(applicantsInfo.ipTypes.industrialDesign),
-        trademark: Boolean(applicantsInfo.ipTypes.trademark),
-        tradeSecret: Boolean(applicantsInfo.ipTypes.tradeSecret),
-        other: Boolean(applicantsInfo.ipTypes.other),
-        notSure: Boolean(applicantsInfo.ipTypes.notSure),
-      };
+    if (hasSelectedIpTypes(selectedIpTypes)) {
+      return normalizeIpTypes(selectedIpTypes);
     }
-    return selectedIpTypes;
+    if (hasSelectedIpTypes(derivedIpTypes)) {
+      return derivedIpTypes;
+    }
+    return normalizeIpTypes(selectedIpTypes);
   }, [
-    activeApplication?.ipType,
     activeTab,
     applicantsInfo?.ipTypes,
     derivedIpTypes,

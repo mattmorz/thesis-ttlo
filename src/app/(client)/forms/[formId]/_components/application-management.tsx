@@ -72,6 +72,10 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Upload } from "lucide-react";
 import { OtherDocumentsSection } from "./otherDocuments";
+import {
+  getSelectedApplicationIpTypes,
+  type NormalizedIpTypes,
+} from "@/lib/utils/ip-types";
 
 interface Application {
   id: string;
@@ -81,6 +85,7 @@ interface Application {
   progress: number;
   createdAt: string | null;
   ipType: string;
+  selectedIpTypes?: NormalizedIpTypes | null;
 }
 
 interface ApplicationManagementProps {
@@ -121,6 +126,35 @@ export function ApplicationManagement({
   const [isGuideCollapsed, setIsGuideCollapsed] = useState(false);
   const [otherIpType, setOtherIpType] = useState("");
   const [showDocuments, setShowDocuments] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleApplicationTitleUpdate = () => {
+      refetchApplications();
+      trpcUtils.formIntegration.getUserApplications.invalidate();
+    };
+
+    window.addEventListener(
+      "applicationTitleFormCompleted",
+      handleApplicationTitleUpdate as EventListener
+    );
+    window.addEventListener(
+      "formProgressRefresh",
+      handleApplicationTitleUpdate as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "applicationTitleFormCompleted",
+        handleApplicationTitleUpdate as EventListener
+      );
+      window.removeEventListener(
+        "formProgressRefresh",
+        handleApplicationTitleUpdate as EventListener
+      );
+    };
+  }, [refetchApplications, trpcUtils.formIntegration.getUserApplications]);
 
   // tRPC mutation to create a new application
   const createApplicationMutation =
@@ -653,6 +687,30 @@ export function ApplicationManagement({
     }
   };
 
+  const getSelectedIpTypeBadges = (application: Application) => {
+    const selectedTypes = getSelectedApplicationIpTypes(
+      application.selectedIpTypes
+    );
+
+    if (selectedTypes.length > 0) {
+      return selectedTypes.map((type) => (
+        <div key={`${application.id}-${type}`}>
+          {getIpTypeBadge(
+            type === "other" && application.ipType !== "other"
+              ? application.ipType
+              : type
+          )}
+        </div>
+      ));
+    }
+
+    return [
+      <div key={`${application.id}-${application.ipType}`}>
+        {getIpTypeBadge(application.ipType)}
+      </div>,
+    ];
+  };
+
   // Format date for display
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";
@@ -815,8 +873,8 @@ export function ApplicationManagement({
               </div>
 
               <div className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div>{getIpTypeBadge(application.ipType)}</div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  {getSelectedIpTypeBadges(application)}
                 </div>
 
                 <div className="flex justify-between items-center">

@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import { trpc } from "@/trpc/client";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { toast } from "sonner";
+import type { NormalizedIpTypes } from "@/lib/utils/ip-types";
 
 interface Application {
   id: string;
@@ -12,6 +13,7 @@ interface Application {
   progress: number;
   createdAt: string | null;
   ipType: string;
+  selectedIpTypes?: NormalizedIpTypes | null;
 }
 
 type UseActiveApplicationReturn = {

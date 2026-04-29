@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { FormTabs } from "@/app/(client)/forms/[formId]/_components/form-navigation";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { getSelectedApplicationIpTypes } from "@/lib/utils/ip-types";
 
 interface ApplicationSelectorProps {
   onChange?: () => void;
@@ -241,6 +242,24 @@ export function ApplicationSelector({
     }
   };
 
+  const getApplicationTypeBadges = (application: (typeof applications)[number]) => {
+    const selectedTypes = getSelectedApplicationIpTypes(
+      application.selectedIpTypes
+    );
+
+    if (selectedTypes.length > 0) {
+      return selectedTypes.map((type) => (
+        <span key={`${application.id}-${type}`}>{getTypeBadge(type)}</span>
+      ));
+    }
+
+    return [
+      <span key={`${application.id}-${application.ipType}`}>
+        {getTypeBadge(application.ipType)}
+      </span>,
+    ];
+  };
+
   // If not authenticated or loading session
   if (status === "loading" || !session) {
     return (
@@ -357,7 +376,9 @@ export function ApplicationSelector({
                 )}
               </div>
               <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
-                {getTypeBadge(app.ipType)}
+                <div className="flex flex-wrap gap-1">
+                  {getApplicationTypeBadges(app)}
+                </div>
                 {getStatusBadge(app.status)}
               </div>
             </DropdownMenuItem>

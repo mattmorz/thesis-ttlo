@@ -1780,14 +1780,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-copyright"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-copyright"
+                            className="font-normal cursor-pointer"
+                          >
                             Copyright
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1799,12 +1803,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-patent"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">Patent</FormLabel>
+                          <label
+                            htmlFor="ip-exp-type-patent"
+                            className="font-normal cursor-pointer"
+                          >
+                            Patent
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1816,14 +1826,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-utility-model"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-utility-model"
+                            className="font-normal cursor-pointer"
+                          >
                             Utility Model
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1835,14 +1849,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-industrial-design"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-industrial-design"
+                            className="font-normal cursor-pointer"
+                          >
                             Industrial Design
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1854,14 +1872,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-trademark"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-trademark"
+                            className="font-normal cursor-pointer"
+                          >
                             Trademark
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1873,14 +1895,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-other"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-other"
+                            className="font-normal cursor-pointer"
+                          >
                             Others, specify:
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />

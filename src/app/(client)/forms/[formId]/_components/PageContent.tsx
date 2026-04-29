@@ -96,6 +96,10 @@ import { IPDisclosureForm } from "./ipdisclosure/ip-disclosure-form";
 import { DeedAssignmentForm } from "./deedofassignment/deed-assignment-form";
 import { SubstantialUseForm } from "./substantialuse/substantial-use-form";
 import { OtherDocumentsSection } from "./otherDocuments";
+import {
+  getSelectedApplicationIpTypes,
+  hasSelectedIpTypes,
+} from "@/lib/utils/ip-types";
 
 // Add icons to the navigation config
 const sidebarItems = formNavigationConfig.map((item) => {
@@ -1004,6 +1008,47 @@ export function PageContent() {
     "deed-assignment": "deedAssignment",
   };
 
+  const isApplicationTitleComplete = useCallback(() => {
+    const title =
+      typeof activeApplication?.title === "string"
+        ? activeApplication.title.trim()
+        : "";
+
+    if (!title || title.toLowerCase() === "untitled application") {
+      return false;
+    }
+
+    return (
+      Boolean(activeApplication?.ipType) ||
+      hasSelectedIpTypes(activeApplication?.selectedIpTypes)
+    );
+  }, [activeApplication]);
+
+  const isTabComplete = useCallback(
+    (tabId: string) => {
+      if (!activeApplicationId) return false;
+
+      const statusKey = formTypeMapping[tabId];
+      const knownStatus =
+        statusKey &&
+        knownApplicationStatus[activeApplicationId]?.status?.[
+          statusKey as keyof FormStatus
+        ];
+
+      if (tabId === FormTabs.Application_Title) {
+        return Boolean(knownStatus) || isApplicationTitleComplete();
+      }
+
+      return Boolean(knownStatus);
+    },
+    [
+      activeApplicationId,
+      formTypeMapping,
+      isApplicationTitleComplete,
+      knownApplicationStatus,
+    ]
+  );
+
   // check what tab is active
   const isTabEnabled = (tabId: string) => {
     if (!activeApplicationId) return false; // no application selected
@@ -1018,9 +1063,7 @@ export function PageContent() {
     const prevTabId = sidebarItems[tabIndex - 1].id;
 
     // Check if previous tab is completed
-    return knownApplicationStatus[activeApplicationId]?.status?.[
-      formTypeMapping[prevTabId]
-    ];
+    return isTabComplete(prevTabId);
   };
 
   const getLastEnabledTab = () => {
@@ -1029,10 +1072,7 @@ export function PageContent() {
     let lastEnabled = sidebarItems[0]?.id ?? FormTabs.CLIENT_PROFILE;
     for (let index = 1; index < sidebarItems.length; index += 1) {
       const prevTabId = sidebarItems[index - 1].id;
-      const isPrevComplete =
-        knownApplicationStatus[activeApplicationId]?.status?.[
-          formTypeMapping[prevTabId]
-        ];
+      const isPrevComplete = isTabComplete(prevTabId);
       if (!isPrevComplete) {
         break;
       }
@@ -1898,6 +1938,11 @@ export function PageContent() {
   const displayedApplication = activeApplication || applications[0] || null;
   const displayedApplicationId =
     activeApplicationId || applications[0]?.id || null;
+  const displayedApplicationTypes = displayedApplication?.selectedIpTypes
+    ? getSelectedApplicationIpTypes(displayedApplication.selectedIpTypes)
+    : displayedApplication?.ipType
+      ? [displayedApplication.ipType]
+      : [];
 
   return (
     <div className="w-full">
@@ -1976,12 +2021,15 @@ export function PageContent() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-white text-xs border-gray-200"
-                  >
-                    {displayedApplication.ipType?.replace("_", " ")}
-                  </Badge>
+                  {displayedApplicationTypes.map((type) => (
+                    <Badge
+                      key={type}
+                      variant="outline"
+                      className="bg-white text-xs border-gray-200"
+                    >
+                      {type.replace(/_/g, " ")}
+                    </Badge>
+                  ))}
                   {getStatusBadge(displayedApplication.status)}
                   <div className="flex items-center bg-gray-100/80 px-2 py-0.5 rounded border border-gray-200/80">
                     <span className="text-xs text-gray-600 mr-1.5">ID:</span>

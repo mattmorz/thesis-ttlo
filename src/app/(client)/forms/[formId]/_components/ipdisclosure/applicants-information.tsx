@@ -31,7 +31,11 @@ import {
 } from "@/lib/store/ip-disclosure-store";
 import { useFormContext } from "./context/form-context";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
-import { deriveIpTypesFromApplicationIpType } from "./utils/ip-type";
+import {
+  deriveIpTypesFromApplicationIpType,
+  hasSelectedIpTypes,
+  normalizeIpTypes,
+} from "./utils/ip-type";
 
 // Global logging control
 const DEBUG = false;
@@ -172,27 +176,35 @@ export function ApplicantsInformation() {
     mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: formData,
-    values: formData, // Explicitly set values from our state
   });
   const derivedIpTypesResult = React.useMemo(
-    () =>
-      deriveIpTypesFromApplicationIpType(
+    () => {
+      if (activeApplication?.selectedIpTypes) {
+        return {
+          ipTypes: normalizeIpTypes(activeApplication.selectedIpTypes),
+          otherIpType: "",
+        };
+      }
+
+      return deriveIpTypesFromApplicationIpType(
         activeApplication?.ipType ?? undefined
-      ),
-    [activeApplication?.ipType]
+      );
+    },
+    [activeApplication?.ipType, activeApplication?.selectedIpTypes]
   );
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (!activeApplication?.ipType) return;
     if (
       applicantsInfo?.ipTypes &&
-      Object.values(applicantsInfo.ipTypes).some((value) => value === true)
+      hasSelectedIpTypes(applicantsInfo.ipTypes)
     ) {
       return;
     }
+    if (!hasSelectedIpTypes(derivedIpTypesResult.ipTypes)) return;
 
-    const { ipTypes, otherIpType } = derivedIpTypesResult;
+    const ipTypes = normalizeIpTypes(derivedIpTypesResult.ipTypes);
+    const { otherIpType } = derivedIpTypesResult;
     form.setValue("ipTypes", ipTypes, { shouldValidate: true });
     form.setValue("otherIpType", otherIpType, { shouldValidate: true });
 
@@ -216,22 +228,7 @@ export function ApplicantsInformation() {
     setApplicantsInfo,
     setSelectedIpTypes,
   ]);
-  useEffect(() => {
-  if (formData) {
-    form.reset(formData);
-
-    setTimeout(() => {
-      form.trigger(); // trigger validation after reset
-    }, 100);
-  }
-}, [formData, form]);
-  // Update the form whenever formData changes
-  useEffect(() => {
-    if (formData) {
-      form.reset(formData);
-      console.log("Form reset with data:", formData);
-    }
-  }, [formData, form]);
+  // Avoid resetting the form on every formData change.
 
   const {
     fields: applicantFields,
@@ -258,6 +255,7 @@ export function ApplicantsInformation() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const applicantsSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const prevActiveTabRef = useRef<string | null>(null);
 
   // Simplified function to load data from disclosure or existing data
   useEffect(() => {
@@ -563,9 +561,12 @@ export function ApplicantsInformation() {
 
   // Add a new effect to handle when navigating back to the applicants tab
   useEffect(() => {
-    // This effect should run when the activeTab is 'applicants-information'
-    // and the store already has data (after navigating back from another tab)
+    const wasOnDifferentTab = prevActiveTabRef.current !== activeTab;
+    prevActiveTabRef.current = activeTab;
+
+    // Only refresh when we navigate back to this tab (avoid resetting while typing)
     if (
+      wasOnDifferentTab &&
       activeTab === "applicants-information" &&
       applicantsInfo &&
       isHydrated &&
@@ -1250,9 +1251,7 @@ export function ApplicantsInformation() {
   const watchedInventors = form.watch("inventors");
   const watchedEmail = form.watch("email");
   const watchedIsRightfulOwner = form.watch("isRightfulOwner");
-  const hasSelectedIpType = activeApplication?.ipType
-    ? Object.values(derivedIpTypesResult.ipTypes).some((value) => value === true)
-    : Object.values(watchedIpTypes || {}).some((value) => value === true);
+  const hasSelectedIpType = hasSelectedIpTypes(watchedIpTypes);
   const hasApplicantNames =
     (watchedApplicants?.length ?? 0) > 0 &&
     watchedApplicants.every(
@@ -1275,7 +1274,6 @@ export function ApplicantsInformation() {
     !hasApplicantNames ||
     !hasInventorNames ||
     !hasSelectedIpType ||
-    !activeApplication?.ipType ||
     !watchedIsRightfulOwner;
 
   useEffect(() => {
@@ -1440,7 +1438,7 @@ export function ApplicantsInformation() {
               Please provide information about the applicants and intellectual
               property type
             </p>
-            {!activeApplication?.ipType && (
+            {!hasSelectedIpType && (
               <p className="text-sm text-red-600">
                 Please select an IP type in Application Title before continuing.
               </p>
@@ -1598,7 +1596,7 @@ export function ApplicantsInformation() {
                       Add Inventor
                     </Button>
                   </div>
-                  <FormField
+                  {/* <FormField
                     control={form.control}
                     name="isApplicantAlsoInventor"
                     render={({ field }) => (
@@ -1619,7 +1617,7 @@ export function ApplicantsInformation() {
                         </div>
                       </FormItem>
                     )}
-                  />
+                  /> */}
                   {inventorFields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
                       <div className="flex-1 flex gap-2">
@@ -1759,11 +1757,15 @@ export function ApplicantsInformation() {
                     <div className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
                         <Checkbox
+                          id="isRightfulOwner"
                           checked={field.value}
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <div className="space-y-1 leading-none">
+                      <label
+                        htmlFor="isRightfulOwner"
+                        className="space-y-1 leading-none cursor-pointer"
+                      >
                         <FormDescription className="font-semibold text-foreground">
                           Applicant&apos;s Right and Ownership
                           <span className="ml-2 text-red-600">*</span>
@@ -1771,7 +1773,7 @@ export function ApplicantsInformation() {
                           authorized representative
                         </FormDescription>
                         <FormLabel className="text-sm text-muted-foreground" />
-                      </div>
+                      </label>
                     </div>
                     <FormMessage />
                   </FormItem>

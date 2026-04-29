@@ -128,6 +128,16 @@ interface ApplicantsInformationProps {
 }
 
 export function ApplicantsInformation() {
+
+   const getCreatorLabel = () => {
+  if (derivedIpTypesResult.ipTypes.patent || derivedIpTypesResult.ipTypes.utilityModel) {
+    return "Inventor";
+  } else if (derivedIpTypesResult.ipTypes.copyright) {
+    return "Author";
+  } else {
+    return "Creator";
+  }
+};
   const { setSelectedIpTypes, isHydrated } = useFormContext();
   const { activeApplication } = useActiveApplication();
   const {
@@ -161,7 +171,6 @@ export function ApplicantsInformation() {
       industrialDesign: false,
       trademark: false,
       tradeSecret: false,
-      other: false,
       notSure: false,
     },
     otherIpType: "",
@@ -1592,8 +1601,8 @@ export function ApplicantsInformation() {
                       }
                       className="border-green-200 text-green-700 hover:bg-green-50"
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Inventor
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add {getCreatorLabel()}
                     </Button>
                   </div>
                   {/* <FormField

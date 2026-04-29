@@ -42,7 +42,7 @@ const formSchema = z.object({
     planned: z.boolean().default(false),
     notApplicable: z.boolean().default(false),
   }),
-  futureWork: z.string().min(1, "Future Work is required"),
+  futureWork: z.string().optional().or(z.literal("")),
   confirmationDeclaration: z.boolean().refine(
   (val) => val === true,
   {
@@ -1322,7 +1322,9 @@ export function DisclosureConfirmation() {
                 name="futureWork"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Future Work<span className="text-red-500"> *</span></FormLabel>
+                    <FormLabel className="text-base after:content-none">
+                      Future Work
+                    </FormLabel>
                     <FormDescription>
                       Please describe any planned future work or developments
                     </FormDescription>

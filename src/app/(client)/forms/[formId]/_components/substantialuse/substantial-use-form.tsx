@@ -941,19 +941,37 @@ fetchData();
     }
   }, [activeApplicationId, form, resetFormWithDefaults]);
 
-  // Dispatch event when form is completed
+  // Dispatch events when form is completed (UI + registry + progress tracking)
   const dispatchFormCompleted = (substantialUseId?: string) => {
-    if (typeof window !== "undefined" && activeApplicationId) {
-      const event = new CustomEvent("form_completed", {
+    if (typeof window === "undefined" || !activeApplicationId) return;
+
+    // Update the page-level status cache (enables next tab immediately)
+    if (typeof window.updateIPFormStatus === "function") {
+      window.updateIPFormStatus("substantial_use", true, activeApplicationId);
+    }
+
+    // Standard event (used by some progress trackers / listeners)
+    window.dispatchEvent(
+      new CustomEvent("form_completed", {
         detail: {
           formType: "substantial_use",
           completed: true,
           applicationId: activeApplicationId,
-          ...(substantialUseId && { substantialUseId }), // Include substantialUseId if available
+          ...(substantialUseId && { substantialUseId }),
         },
-      });
-      window.dispatchEvent(event); 
-    }
+      })
+    );
+
+    // PageContent listens to this to update gated navigation + registry insertion
+    window.dispatchEvent(
+      new CustomEvent("substantialUseFormCompleted", {
+        detail: {
+          completed: true,
+          applicationId: activeApplicationId,
+          ...(substantialUseId && { substantialUseId }),
+        },
+      })
+    );
   };
 
   // Handle form submission
@@ -985,9 +1003,7 @@ fetchData();
         laboratoryFacilities: values.laboratoryFacilities,
         fundingResources: values.fundingResources,
         remarks: values.remarks?.trim(),
-        status: "draft", // Default for new submissions
         applicationId: activeApplicationId, // Add the application ID
-
         status: "submitted",
       };
 
@@ -1103,6 +1119,9 @@ fetchData();
           // Set form status to submitted
           setFormStatus("submitted");
 
+          // Mark substantial use as completed before navigating (tab gating relies on this)
+          dispatchFormCompleted(substantialUseId);
+ 
          
 
           toast.success("Form Submitted", {
@@ -1229,8 +1248,6 @@ fetchData();
         id: updateToastId,
         description: "Your substantial use form has been saved as a draft.",
       });
-      dispatchFormCompleted();
-
 
     } catch (error) {
       console.error("[Substantial Use Form] Error updating form:", error);

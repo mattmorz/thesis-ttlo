@@ -1051,6 +1051,7 @@ export const ipApplication = pgTable(
     title: varchar({ length: 255 }).notNull(),
     description: text(),
     ipType: applicationType("ip_type").notNull(),
+    selectedIpTypes: jsonb("selected_ip_types"),
     status: applicationStatus().default("draft"),
     progress: integer().default(0),
     inventors: text().array(),

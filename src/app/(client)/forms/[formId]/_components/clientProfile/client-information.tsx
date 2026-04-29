@@ -56,7 +56,8 @@ import {
  * 4. Company/Institution or Academic Information
  */
 
-const formSchema = z.object({
+const formSchema = z
+  .object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   middleName: z.string().optional(),
@@ -97,7 +98,70 @@ const formSchema = z.object({
   affiliationType: z.enum(["company", "academic", "none"], {
     required_error: "Affiliation type is required",
   }),
-});
+})
+  .superRefine((data, ctx) => {
+    if (data.affiliationType === "company") {
+      if (!data.companyName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Company name is required",
+          path: ["companyName"],
+        });
+      }
+      if (!data.companyStreet?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Street is required",
+          path: ["companyStreet"],
+        });
+      }
+      if (!data.companyBarangay?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Barangay is required",
+          path: ["companyBarangay"],
+        });
+      }
+      if (!data.companyCityMunicipality?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "City / Municipality is required",
+          path: ["companyCityMunicipality"],
+        });
+      }
+      if (!data.companyProvince?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Province is required",
+          path: ["companyProvince"],
+        });
+      }
+      if (!data.companyEmail?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Company email is required",
+          path: ["companyEmail"],
+        });
+      }
+    }
+
+    if (data.affiliationType === "academic") {
+      if (!data.collegeName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "College name is required",
+          path: ["collegeName"],
+        });
+      }
+      if (!data.departmentName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Department is required",
+          path: ["departmentName"],
+        });
+      }
+    }
+  });
 
 const getLocalDateInputValue = (date: Date): string => {
   const year = date.getFullYear();
@@ -227,11 +291,8 @@ export function ClientInformation({
     showToasts: false, // We'll handle toasts ourselves
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    defaultValues: {
+  const defaultValues: z.infer<typeof formSchema> & { contactNumber?: string } =
+    {
       firstName: "",
       lastName: "",
       middleName: "",
@@ -255,7 +316,13 @@ export function ClientInformation({
       occupation: "",
       occupationOther: "",
       affiliationType: "company",
-    },
+    };
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    defaultValues,
   });
 
   // Watch the hasCompany field to respond to changes
@@ -575,8 +642,28 @@ export function ClientInformation({
 
         // Ensure the form is reset with the correct data
         setTimeout(() => {
-          form.reset(formattedData);
-          setFormData(formattedData);
+          const normalizedData = {
+            ...defaultValues,
+            ...formattedData,
+            gender: {
+              value:
+                formattedData.gender?.value ??
+                defaultValues.gender.value ??
+                "",
+            },
+            citizenship: {
+              value:
+                formattedData.citizenship?.value ??
+                defaultValues.citizenship.value,
+              otherValue:
+                formattedData.citizenship?.value === "other"
+                  ? formattedData.citizenship.otherValue ?? ""
+                  : null,
+            },
+          };
+
+          form.reset(normalizedData);
+          setFormData(normalizedData);
           form.trigger(undefined, { shouldFocus: false });
 
           if (typeof formattedData.birthDate === "string") {
@@ -2624,6 +2711,21 @@ export function ClientInformation({
                             }),
                           );
                         }
+
+                        form.trigger(
+                          [
+                            "affiliationType",
+                            "companyName",
+                            "companyStreet",
+                            "companyBarangay",
+                            "companyCityMunicipality",
+                            "companyProvince",
+                            "companyEmail",
+                            "collegeName",
+                            "departmentName",
+                          ],
+                          { shouldFocus: false },
+                        );
                       }}
                     >
                       <FormControl>

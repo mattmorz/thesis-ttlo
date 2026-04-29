@@ -23,6 +23,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
+import {
+  buildIpTypesFromApplicationValues,
+  getPrimaryApplicationIpType,
+  getSelectedApplicationIpTypes,
+  type ApplicationIpTypeValue,
+} from "@/lib/utils/ip-types";
 
 const IP_TYPE_VALUES = [
   "patent",
@@ -68,6 +74,8 @@ const formSchema = z.object({
 });
 
 export function ApplicationTitleForm() {
+  const getIpTypeStorageKey = (applicationId: string) =>
+    `application-selected-ip-types-${applicationId}`;
   const router = useRouter();
   const { activeApplication, refetchApplications, setApplications } =
     useActiveApplication();
@@ -93,6 +101,8 @@ export function ApplicationTitleForm() {
                       ? variables.description
                       : app.description,
                   ipType: variables.ipType ?? app.ipType,
+                  selectedIpTypes:
+                    variables.selectedIpTypes ?? app.selectedIpTypes,
                 }
               : app
           )
@@ -127,6 +137,9 @@ export function ApplicationTitleForm() {
 
   const getInitialIpTypes = () => {
     if (storedIpSelections.length > 0) return storedIpSelections;
+    if (activeApplication?.selectedIpTypes) {
+      return getSelectedApplicationIpTypes(activeApplication.selectedIpTypes);
+    }
     if (activeApplication?.ipType) return [activeApplication.ipType];
     return [];
   };
@@ -161,39 +174,27 @@ export function ApplicationTitleForm() {
       return;
     }
 
-    const selectedIpTypes = values.ipTypes;
-    const primaryIpType =
-      IP_TYPE_OPTIONS.find((option) =>
-        selectedIpTypes.includes(option.value)
-      )?.value ?? "other";
-
-    const nextIpTypes = IP_TYPE_OPTIONS.reduce(
-      (acc, option) => {
-        acc[option.key as IpTypeKey] = selectedIpTypes.includes(option.value);
-        return acc;
-      },
-      {
-        copyright: false,
-        patent: false,
-        utilityModel: false,
-        industrialDesign: false,
-        trademark: false,
-        tradeSecret: false,
-        other: false,
-        notSure: false,
-      } as Record<IpTypeKey, boolean>
-    );
+    const selectedIpTypes = values.ipTypes as ApplicationIpTypeValue[];
+    const nextIpTypes = buildIpTypesFromApplicationValues(selectedIpTypes);
+    const primaryIpType = getPrimaryApplicationIpType(nextIpTypes);
 
     setApplicantsInfo({
       ...(applicantsInfo ?? {}),
       ipTypes: nextIpTypes,
     });
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        getIpTypeStorageKey(activeApplication.id),
+        JSON.stringify(nextIpTypes)
+      );
+    }
 
     updateApplicationMutation.mutate({
       applicationId: activeApplication.id,
       title: values.title,
       description: values.description,
       ipType: primaryIpType,
+      selectedIpTypes: nextIpTypes,
     });
   }
 
@@ -288,13 +289,27 @@ export function ApplicationTitleForm() {
                     <div className="space-y-3">
                       {IP_TYPE_OPTIONS.map((option) => {
                         const checked = field.value?.includes(option.value);
+                        const isNotSureSelected =
+                          field.value?.includes("not_sure") ?? false;
+                        const isAnyOtherSelected =
+                          (field.value ?? []).some(
+                            (value: string) => value !== "not_sure"
+                          );
+                        const isDisabled =
+                          option.value === "not_sure"
+                            ? isAnyOtherSelected
+                            : isNotSureSelected;
+                        const checkboxId = `ipType-${option.value}`;
                         return (
                           <label
                             key={option.value}
-                            className="flex items-center gap-3"
+                            htmlFor={checkboxId}
+                            className="flex items-center gap-3 cursor-pointer"
                           >
                             <Checkbox
+                              id={checkboxId}
                               checked={checked}
+                              disabled={isDisabled}
                               onCheckedChange={(nextChecked) => {
                                 const current = field.value ?? [];
                                 const next = nextChecked
@@ -308,7 +323,13 @@ export function ApplicationTitleForm() {
                                 form.trigger();
                               }}
                             />
-                            <span>{option.label}</span>
+                            <span
+                              className={
+                                isDisabled ? "text-muted-foreground" : undefined
+                              }
+                            >
+                              {option.label}
+                            </span>
                           </label>
                         );
                       })}

@@ -4,8 +4,6 @@ import { userAccount } from "@/drizzle/migrations/schema";
 import { eq } from "drizzle-orm";
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
-const DRIVE_UPLOAD_URL =
-  "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink";
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files";
 
 export const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;
@@ -26,6 +24,47 @@ type DriveFileResult = {
 type DriveFolderResult = {
   folderId: string;
 };
+
+function getDriveStorageEmail() {
+  return process.env.GOOGLE_DRIVE_STORAGE_EMAIL?.trim().toLowerCase() || null;
+}
+
+function getDriveRootFolderId() {
+  return process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID?.trim() || null;
+}
+
+function getDriveSharedDriveId() {
+  return process.env.GOOGLE_DRIVE_SHARED_DRIVE_ID?.trim() || null;
+}
+
+function buildDriveRequestUrl(
+  baseUrl: string,
+  params: Record<string, string | undefined>
+) {
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      searchParams.set(key, value);
+    }
+  }
+  const sharedDriveId = getDriveSharedDriveId();
+  if (sharedDriveId) {
+    searchParams.set("supportsAllDrives", "true");
+    searchParams.set("includeItemsFromAllDrives", "true");
+  }
+  const query = searchParams.toString();
+  return query ? `${baseUrl}?${query}` : baseUrl;
+}
+
+function buildDriveUploadUrl() {
+  return buildDriveRequestUrl(
+    "https://www.googleapis.com/upload/drive/v3/files",
+    {
+      uploadType: "multipart",
+      fields: "id,webViewLink,webContentLink",
+    }
+  );
+}
 
 async function refreshAccessToken(refreshToken: string) {
   const clientId = process.env.AUTH_GOOGLE_ID;
@@ -71,10 +110,17 @@ async function refreshAccessToken(refreshToken: string) {
   return { accessToken: data.access_token, expiresAt };
 }
 
-async function getDriveAccessToken(userId: string) {
+async function getDriveAccount(userId: string) {
+  const storageEmail = getDriveStorageEmail();
+  const resolvedEmail = storageEmail || null;
+
   const user = await db.query.userAccount.findFirst({
-    where: eq(userAccount.id, userId),
+    where: resolvedEmail
+      ? eq(userAccount.email, resolvedEmail)
+      : eq(userAccount.id, userId),
     columns: {
+      id: true,
+      email: true,
       googleAccessToken: true,
       googleRefreshToken: true,
       googleTokenExpiresAt: true,
@@ -83,8 +129,20 @@ async function getDriveAccessToken(userId: string) {
 
   if (!user?.googleRefreshToken) {
     throw new DriveAuthError(
-      "Google Drive is not connected for this account. Please reconnect."
+      storageEmail
+        ? `Google Drive is not connected for ${storageEmail}. Please sign in with that account and reconnect.`
+        : "Google Drive is not connected for this account. Please reconnect."
     );
+  }
+
+  return user;
+}
+
+async function getDriveAccessToken(userId: string) {
+  const user = await getDriveAccount(userId);
+  const refreshToken = user.googleRefreshToken;
+  if (!refreshToken) {
+    throw new DriveAuthError("Google Drive refresh token is missing.");
   }
 
   const expiresAt = user.googleTokenExpiresAt
@@ -96,7 +154,7 @@ async function getDriveAccessToken(userId: string) {
     return user.googleAccessToken as string;
   }
 
-  const refreshed = await refreshAccessToken(user.googleRefreshToken);
+  const refreshed = await refreshAccessToken(refreshToken);
 
   await db
     .update(userAccount)
@@ -104,7 +162,7 @@ async function getDriveAccessToken(userId: string) {
       googleAccessToken: refreshed.accessToken,
       googleTokenExpiresAt: refreshed.expiresAt,
     })
-    .where(eq(userAccount.id, userId));
+    .where(eq(userAccount.id, user.id));
 
   return refreshed.accessToken;
 }
@@ -161,9 +219,11 @@ async function findFolderId({
   ].join(" and ");
 
   const response = await fetch(
-    `${DRIVE_FILES_URL}?q=${encodeURIComponent(
-      query
-    )}&fields=files(id,name)&pageSize=1`,
+    buildDriveRequestUrl(DRIVE_FILES_URL, {
+      q: query,
+      fields: "files(id,name)",
+      pageSize: "1",
+    }),
     {
       method: "GET",
       headers: {
@@ -193,7 +253,7 @@ async function createFolder({
   name: string;
   parentId: string;
 }) {
-  const response = await fetch(DRIVE_FILES_URL, {
+  const response = await fetch(buildDriveRequestUrl(DRIVE_FILES_URL, {}), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -244,7 +304,7 @@ export async function ensureDriveFolderPath({
   pathSegments: string[];
 }): Promise<DriveFolderResult> {
   const accessToken = await getDriveAccessToken(userId);
-  let parentId = "root";
+  let parentId = getDriveRootFolderId() || "root";
 
   for (const segment of pathSegments) {
     const safeName = sanitizeDriveName(segment);
@@ -281,7 +341,7 @@ export async function uploadFileToDrive({
     mimeType || "application/octet-stream"
   );
 
-  const uploadResponse = await fetch(DRIVE_UPLOAD_URL, {
+  const uploadResponse = await fetch(buildDriveUploadUrl(), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -311,7 +371,10 @@ export async function uploadFileToDrive({
   }
 
   const permissionResponse = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${data.id}/permissions`,
+    buildDriveRequestUrl(
+      `https://www.googleapis.com/drive/v3/files/${data.id}/permissions`,
+      {}
+    ),
     {
       method: "POST",
       headers: {

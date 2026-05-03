@@ -312,9 +312,24 @@ To work on the admin interface:
 DATABASE_URL=postgres://user:password@localhost:5432/ttlo_db
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your_secret_key
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+AUTH_GOOGLE_ID=your_google_client_id
+AUTH_GOOGLE_SECRET=your_google_client_secret
+GOOGLE_DRIVE_STORAGE_EMAIL=balanghigdave@gmail.com
+GOOGLE_DRIVE_ROOT_FOLDER_ID=optional_root_folder_id
+GOOGLE_DRIVE_SHARED_DRIVE_ID=optional_shared_drive_id
 ```
+
+## Google Drive Upload Setup
+
+Use the following flow for the current personal Drive setup:
+
+1. Set `GOOGLE_DRIVE_STORAGE_EMAIL` to the Google account that should own all uploaded files.
+2. Leave `GOOGLE_DRIVE_SHARED_DRIVE_ID` empty for now since the Shared Drive is not available yet.
+3. Optionally set `GOOGLE_DRIVE_ROOT_FOLDER_ID` if you want uploads to start inside an existing top-level folder instead of the Drive root.
+4. Sign in once to the app using `balanghigdave@gmail.com` so its Google refresh token is stored in the database.
+5. Enable the Google Drive API in the Google Cloud project connected to `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`.
+
+The app will still require the uploaded files to be authenticated through the portal, but the Drive files themselves are set to `reader` access for anyone with the link.
 
 ## Related Documentation
 

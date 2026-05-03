@@ -128,6 +128,7 @@ const sidebarItems = formNavigationConfig.map((item) => {
   return { ...item, icon };
 });
 
+
 // Add the missing getStatusBadge function near other utility functions
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -195,7 +196,6 @@ const INITIAL_FORM_STATUS: FormStatus = {
   substantialUse: false,
   deedAssignment: false,
 };
-
 const GettingStartedGuide = ({
   isCollapsed,
   setIsCollapsed,
@@ -207,6 +207,14 @@ const GettingStartedGuide = ({
   formStatus?: FormStatus;
   onStepClick?: (tabId: FormTabId) => void;
 }) => {
+  const [isCSU, setIsCSU] = useState<boolean | null>(null);
+
+useEffect(() => {
+  const value = localStorage.getItem("isCSUAffiliated");
+  if (value !== null) {
+    setIsCSU(JSON.parse(value));
+  }
+}, []);
   const steps = [
     {
       label: "Client Profile",
@@ -233,9 +241,9 @@ const GettingStartedGuide = ({
       tabId: FormTabs.DEED_ASSIGNMENT,
       statusKey: "deedAssignment",
     },
-  ] as const;
+    ] as const;
 
-  const completedCount = steps.reduce((count, step) => {
+    const completedCount = steps.reduce((count, step) => {
     return count + (formStatus?.[step.statusKey] ? 1 : 0);
   }, 0);
 
@@ -366,7 +374,13 @@ const GettingStartedGuide = ({
                   </ul>
                 </div>
 
-                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                <div
+  className={`rounded-lg border p-4 relative ${
+    isCSU === false
+      ? "bg-gray-100 opacity-50 pointer-events-none"
+      : "bg-[#1B5E20]/5"
+  }`}
+>
                   <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
                     Step 4
                   </div>
@@ -396,7 +410,13 @@ const GettingStartedGuide = ({
                   </ul>
                 </div>
 
-                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                <div
+  className={`rounded-lg border p-4 relative ${
+    isCSU === false
+      ? "bg-gray-100 opacity-50 pointer-events-none"
+      : "bg-[#1B5E20]/5"
+  }`}
+>
                   <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
                     Step 5
                   </div>
@@ -426,12 +446,21 @@ const GettingStartedGuide = ({
                   </ul>
                 </div>
               </div>
+             
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <h5 className="font-medium text-green-700">
+                    Substantial Use and Deed of Assignment are only required for CSU-Affiliated users.
+                  </h5>
+                </div>
+              </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h5 className="font-medium text-blue-800">
+                    <h5 className="font-medium text-blue-8 00">
                       Important Note
                     </h5>
                     <p className="text-xs text-blue-700 mt-0.5">
@@ -545,6 +574,15 @@ const GettingStartedGuide = ({
 };
 
 export function PageContent() {
+const [isCSU, setIsCSU] = useState<boolean | null>(null);
+
+useEffect(() => {
+  const value = localStorage.getItem("isCSUAffiliated");
+  if (value !== null) {
+    setIsCSU(JSON.parse(value));
+  }
+}, []);
+
   const [progress, setProgress] = useState({
     clientProfile: false,
     applicationTitle: false,

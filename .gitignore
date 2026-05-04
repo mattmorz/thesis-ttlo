@@ -8,7 +8,7 @@ lerna-debug.log*
 .pnpm-debug.log*
 # Google secret
 itso-495223-a5996aef81f8.json
-google_information.txt
+google_informations.txt
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

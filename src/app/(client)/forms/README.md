@@ -1,6 +1,6 @@
 # Form Navigation System
 
-This directory contains the forms system for the TTLO application. The forms are organized with a shared navigation system.
+This diretory contains the forms system for the TTLO application. The forms are organized with a shared navigation system.
 
 ## Directory Structure
 

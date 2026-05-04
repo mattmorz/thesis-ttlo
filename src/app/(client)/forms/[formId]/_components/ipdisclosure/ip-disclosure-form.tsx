@@ -505,16 +505,6 @@ const getNextTab = (currentTabId: string) => {
         );
         setActiveTab("trade-secret");
       }
-      // If trying to navigate to trademark-confirmation, check if we have a trademark-application tab
-      else if (
-        tabId === "trademark-confirmation" &&
-        visibleTabComponents.some((tab) => tab.id === "trademark-application")
-      ) {
-        console.log(
-          "IP Disclosure Form - Redirecting from 'trademark-confirmation' to 'trademark-application'"
-        );
-        setActiveTab("trademark-application");
-      }
     }
   };
 

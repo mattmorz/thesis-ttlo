@@ -501,7 +501,7 @@ export function TrademarkApplication() {
     const values = form.getValues();
     setTrademarkApplication(values);
 
-    // Navigate to the confirmation tab
+    // Navigate to the main disclosure confirmation tab
     console.log("Navigating to confirmation tab");
     setActiveTab("confirmation");
   };

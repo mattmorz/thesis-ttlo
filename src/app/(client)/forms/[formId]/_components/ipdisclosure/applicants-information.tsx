@@ -171,6 +171,7 @@ export function ApplicantsInformation() {
       industrialDesign: false,
       trademark: false,
       tradeSecret: false,
+      other: false,
       notSure: false,
     },
     otherIpType: "",

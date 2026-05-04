@@ -264,7 +264,7 @@ export function TrademarkConfirmation() {
   useEffect(() => {
     // If no trademark application data exists, redirect to application tab
     if (!trademarkApplication && !isLoading) {
-      setActiveTab("trademark-application");
+      setActiveTab("trademark");
     }
   }, [trademarkApplication, setActiveTab, isLoading]);
 
@@ -325,22 +325,22 @@ export function TrademarkConfirmation() {
   }
 
   const handleEdit = () => {
-    setActiveTab("trademark-application");
+    setActiveTab("trademark");
   };
 
   const handlePrevious = () => {
     // Navigate back to the application tab
-    setActiveTab("trademark-application");
+    setActiveTab("trademark");
   };
 
   const handleNext = async () => {
     // Check if trademark application data exists
-    if (!trademarkApplication) {
-      console.error("No trademark application data to save");
-      toast.error("No trademark application data to save");
-      setActiveTab("trademark-application");
-      return;
-    }
+      if (!trademarkApplication) {
+        console.error("No trademark application data to save");
+        toast.error("No trademark application data to save");
+      setActiveTab("trademark");
+        return;
+      }
 
     // Save the trademark application to the database
     console.log("Saving trademark application to database...");
@@ -424,18 +424,18 @@ export function TrademarkConfirmation() {
     <div className="space-y-8">
       <div className="flex flex-col space-y-1.5 p-6 bg-slate-50 rounded-t-lg">
         <h3 className="font-semibold tracking-tight text-xl text-[#1B5E20]">
-          REVIEW YOUR TRADEMARK APPLICATION
+          REVIEW YOUR TRADEMARK DISCLOSURE
         </h3>
         <p className="text-sm text-muted-foreground">
-          Please review the information below before submitting your trademark
-          application
+          Please review the trademark details below before moving to the final
+          confirmation step
         </p>
       </div>
 
       <Alert className="bg-green-50 border-green-200">
         <Check className="h-4 w-4 text-green-800" />
         <AlertDescription className="text-green-800">
-          Review your trademark application details below. You can go back to
+          Review your trademark disclosure details below. You can go back to
           make changes if needed.
         </AlertDescription>
       </Alert>

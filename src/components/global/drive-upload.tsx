@@ -72,12 +72,24 @@ export async function uploadFilesToDrive(
   console.log("[DriveUpload] Upload response status:", response.status);
 
   const responseText = await response.text();
-  console.log("[DriveUpload] Upload response text:", responseText);
   let result: any = null;
   try {
     result = JSON.parse(responseText);
   } catch {
     // Response may not be JSON; handled below.
+  }
+
+  if (!response.ok) {
+    console.error(
+      `[DriveUpload] Upload failed: status=${response.status}, error=${
+        result?.error || "none"
+      }, details=${result?.details || "none"}, raw=${responseText}`
+    );
+  } else {
+    console.log(
+      "[DriveUpload] Upload response payload:",
+      JSON.stringify(result)
+    );
   }
 
   if (!response.ok) {

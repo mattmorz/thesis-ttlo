@@ -48,7 +48,6 @@ export async function POST(request: Request) {
       formName || "General Uploads",
     ];
     const { folderId } = await ensureDriveFolderPath({
-      userId: session.user.id,
       pathSegments: folderPath,
     });
 
@@ -62,7 +61,6 @@ export async function POST(request: Request) {
       }
 
       const driveFile = await uploadFileToDrive({
-        userId: session.user.id,
         file,
         fileName: `${projectId}-${file.name}`,
         mimeType: file.type || "application/octet-stream",

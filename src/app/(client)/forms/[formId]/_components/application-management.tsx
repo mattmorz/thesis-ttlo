@@ -202,6 +202,7 @@ export function ApplicationManagement({
     trpc.formIntegration.deleteApplication.useMutation({
       onSuccess: () => {
         const deletedId = deleteTargetRef.current;
+        toast.dismiss("deleting-app");
         toast.success("Application deleted successfully");
         deleteTargetRef.current = null;
         let remainingApps: Application[] = [];
@@ -234,6 +235,7 @@ export function ApplicationManagement({
         }
       },
       onError: (error) => {
+        toast.dismiss("deleting-app");
         toast.error(`Failed to delete application: ${error.message}`);
         console.error("Error deleting application:", error);
       },

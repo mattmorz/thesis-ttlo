@@ -1,10 +1,9 @@
 import { randomUUID } from "crypto";
-import { db } from "@/drizzle/db";
-import { userAccount } from "@/drizzle/migrations/schema";
-import { eq } from "drizzle-orm";
+import { readFile } from "fs/promises";
+import { google } from "googleapis";
 
-const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
 
 export const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;
 
@@ -25,8 +24,21 @@ type DriveFolderResult = {
   folderId: string;
 };
 
-function getDriveStorageEmail() {
-  return process.env.GOOGLE_DRIVE_STORAGE_EMAIL?.trim().toLowerCase() || null;
+type ServiceAccountCredentials = {
+  client_email?: string;
+  private_key?: string;
+};
+
+let driveAuthClientPromise:
+  | Promise<InstanceType<typeof google.auth.JWT>>
+  | null = null;
+
+function getDriveServiceAccountJsonPath() {
+  return process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim() || null;
+}
+
+function getDriveServiceAccountJsonInline() {
+  return process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON?.trim() || null;
 }
 
 function getDriveRootFolderId() {
@@ -66,105 +78,72 @@ function buildDriveUploadUrl() {
   );
 }
 
-async function refreshAccessToken(refreshToken: string) {
-  const clientId = process.env.AUTH_GOOGLE_ID;
-  const clientSecret = process.env.AUTH_GOOGLE_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new DriveAuthError("Google OAuth credentials are not configured.");
+async function loadServiceAccountCredentials() {
+  const inlineJson = getDriveServiceAccountJsonInline();
+  if (inlineJson) {
+    try {
+      return JSON.parse(inlineJson) as ServiceAccountCredentials;
+    } catch {
+      throw new DriveAuthError(
+        "GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON is not valid JSON."
+      );
+    }
   }
 
-  const body = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-    grant_type: "refresh_token",
-  });
-
-  const response = await fetch(GOOGLE_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
+  const credentialsPath = getDriveServiceAccountJsonPath();
+  if (!credentialsPath) {
     throw new DriveAuthError(
-      `Failed to refresh Google access token: ${text || response.status}`
+      "Set GOOGLE_APPLICATION_CREDENTIALS to a service account JSON file path or provide GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON."
     );
   }
 
-  const data = (await response.json()) as {
-    access_token?: string;
-    expires_in?: number;
-  };
-
-  if (!data.access_token) {
-    throw new DriveAuthError("Google token refresh response missing access.");
+  try {
+    const raw = await readFile(credentialsPath, "utf8");
+    return JSON.parse(raw) as ServiceAccountCredentials;
+  } catch (error) {
+    throw new DriveAuthError(
+      `Failed to load the Google service account JSON from ${credentialsPath}.`
+    );
   }
-
-  const expiresAt = data.expires_in
-    ? new Date(Date.now() + data.expires_in * 1000).toISOString()
-    : null;
-
-  return { accessToken: data.access_token, expiresAt };
 }
 
-async function getDriveAccount(userId: string) {
-  const storageEmail = getDriveStorageEmail();
-  const resolvedEmail = storageEmail || null;
+async function getDriveAuthClient() {
+  if (!driveAuthClientPromise) {
+    driveAuthClientPromise = (async () => {
+      const credentials = await loadServiceAccountCredentials();
+      if (!credentials.client_email || !credentials.private_key) {
+        throw new DriveAuthError(
+          "The service account JSON must include client_email and private_key."
+        );
+      }
 
-  const user = await db.query.userAccount.findFirst({
-    where: resolvedEmail
-      ? eq(userAccount.email, resolvedEmail)
-      : eq(userAccount.id, userId),
-    columns: {
-      id: true,
-      email: true,
-      googleAccessToken: true,
-      googleRefreshToken: true,
-      googleTokenExpiresAt: true,
-    },
-  });
+      const client = new google.auth.JWT(
+        credentials.client_email,
+        undefined,
+        credentials.private_key,
+        [DRIVE_SCOPE]
+      );
+      await client.authorize();
+      return client;
+    })();
+  }
 
-  if (!user?.googleRefreshToken) {
+  return driveAuthClientPromise;
+}
+
+async function getDriveAccessToken() {
+  const authClient = await getDriveAuthClient();
+  const accessToken = await authClient.getAccessToken();
+  const token =
+    typeof accessToken === "string" ? accessToken : accessToken?.token;
+
+  if (!token) {
     throw new DriveAuthError(
-      storageEmail
-        ? `Google Drive is not connected for ${storageEmail}. Please sign in with that account and reconnect.`
-        : "Google Drive is not connected for this account. Please reconnect."
+      "Google Drive access token could not be generated from the service account."
     );
   }
 
-  return user;
-}
-
-async function getDriveAccessToken(userId: string) {
-  const user = await getDriveAccount(userId);
-  const refreshToken = user.googleRefreshToken;
-  if (!refreshToken) {
-    throw new DriveAuthError("Google Drive refresh token is missing.");
-  }
-
-  const expiresAt = user.googleTokenExpiresAt
-    ? new Date(user.googleTokenExpiresAt).getTime()
-    : 0;
-  const isValid = user.googleAccessToken && Date.now() < expiresAt - 60_000;
-
-  if (isValid) {
-    return user.googleAccessToken as string;
-  }
-
-  const refreshed = await refreshAccessToken(refreshToken);
-
-  await db
-    .update(userAccount)
-    .set({
-      googleAccessToken: refreshed.accessToken,
-      googleTokenExpiresAt: refreshed.expiresAt,
-    })
-    .where(eq(userAccount.id, user.id));
-
-  return refreshed.accessToken;
+  return token;
 }
 
 function buildMultipartBody(
@@ -297,14 +276,19 @@ async function getOrCreateFolder({
 }
 
 export async function ensureDriveFolderPath({
-  userId,
   pathSegments,
 }: {
-  userId: string;
   pathSegments: string[];
 }): Promise<DriveFolderResult> {
-  const accessToken = await getDriveAccessToken(userId);
-  let parentId = getDriveRootFolderId() || "root";
+  const accessToken = await getDriveAccessToken();
+  const rootFolderId = getDriveRootFolderId();
+  if (!rootFolderId) {
+    throw new DriveAuthError(
+      "GOOGLE_DRIVE_ROOT_FOLDER_ID is required. Share the target Drive folder with the service account email from the JSON key."
+    );
+  }
+
+  let parentId = rootFolderId;
 
   for (const segment of pathSegments) {
     const safeName = sanitizeDriveName(segment);
@@ -319,19 +303,17 @@ export async function ensureDriveFolderPath({
 }
 
 export async function uploadFileToDrive({
-  userId,
   file,
   fileName,
   mimeType,
   parentId,
 }: {
-  userId: string;
   file: File;
   fileName: string;
   mimeType: string;
   parentId?: string;
 }): Promise<DriveFileResult> {
-  const accessToken = await getDriveAccessToken(userId);
+  const accessToken = await getDriveAccessToken();
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 

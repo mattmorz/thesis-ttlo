@@ -53,12 +53,26 @@ export async function uploadFilesToDrive(
     }
   });
 
+  console.log("[DriveUpload] Sending upload request", {
+    formId,
+    ipApplicationId,
+    formName,
+    category,
+    description,
+    fileCount: files.length,
+    fileNames: files.map((file) => file.name),
+  });
+
   const response = await fetch("/api/documents/other/upload", {
     method: "POST",
+    credentials: "include",
     body: formData,
   });
 
+  console.log("[DriveUpload] Upload response status:", response.status);
+
   const responseText = await response.text();
+  console.log("[DriveUpload] Upload response text:", responseText);
   let result: any = null;
   try {
     result = JSON.parse(responseText);

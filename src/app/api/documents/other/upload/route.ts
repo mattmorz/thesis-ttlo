@@ -23,6 +23,13 @@ export async function POST(req: NextRequest) {
   console.log("[API/documents/other/upload] Received upload request");
   try {
     const session = await auth();
+    console.log("[API/documents/other/upload] Session lookup result:", {
+      hasSession: Boolean(session),
+      hasUser: Boolean(session?.user),
+      userId: session?.user?.id ?? null,
+      email: session?.user?.email ?? null,
+      role: (session?.user as { role?: string } | undefined)?.role ?? null,
+    });
     if (!session?.user?.id) {
       console.error("[API/documents/other/upload] Unauthorized - no session");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -166,10 +173,7 @@ export async function POST(req: NextRequest) {
       (formData.get("formName") as string | null) ||
       (formId ? `Form ${formId}` : "Other Documents");
     const folderPath = ["TTLO", applicationTitle, formName];
-    const { folderId } = await ensureDriveFolderPath({
-      userId,
-      pathSegments: folderPath,
-    });
+    const { folderId } = await ensureDriveFolderPath({ pathSegments: folderPath });
 
     // Process each file
     const uploadedFiles = [];
@@ -219,7 +223,6 @@ export async function POST(req: NextRequest) {
       }
 
       const driveFile = await uploadFileToDrive({
-        userId,
         file,
         fileName,
         mimeType: fileType,

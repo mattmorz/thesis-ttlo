@@ -53,6 +53,17 @@ const formSchema = z.object({
 
 export function DisclosureConfirmation() {
   const router = useRouter();
+
+const [isCSU, setIsCSU] = useState<boolean | null>(null);
+
+useEffect(() => {
+  const value = localStorage.getItem("isCSUAffiliated");
+  if (value !== null) {
+    setIsCSU(JSON.parse(value));
+  }
+}, []);
+const [showCSUModal, setShowCSUModal] = useState(false);
+
   const {
     applicantsInfo,
     validateSection,
@@ -99,19 +110,27 @@ export function DisclosureConfirmation() {
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
 
   const handleSubmissionSuccess = () => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent("ipDisclosureFormCompleted", {
-          detail: {
-            completed: true,
-            applicationId,
-            disclosureId,
-          },
-        })
-      );
-    }
-    router.push("/forms?tab=substantial-use");
-  };
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("ipDisclosureFormCompleted", {
+        detail: {
+          completed: true,
+          applicationId,
+          disclosureId,
+        },
+      })
+    );
+  }
+
+  // 🔥 CHECK CSU
+  if (isCSU === false) {
+    setShowCSUModal(true);
+    return;
+  }
+
+  // ✅ Proceed if CSU
+  router.push("/forms?tab=substantial-use");
+};
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -1594,6 +1613,28 @@ export function DisclosureConfirmation() {
           </div>
         )}
       </form>
+      {showCSUModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-md text-center">
+      <h2 className="text-lg font-semibold text-green-600 mb-2">
+        Submission Completed!
+      </h2>
+      <p className="text-sm text-gray-600 mb-4">
+        Your application has been submitted.
+        <br></br>
+However, since you are not affiliated with CSU, you cannot proceed to the next step.
+<br></br>
+Please contact the administrator for further assistance.
+      </p>
+      <button
+        onClick={() => setShowCSUModal(false)}
+        className="px-4 py-2 bg-[#1B5E20] text-white rounded"
+      >
+        OK
+      </button>
+    </div>
+  </div>
+)}
     </Form>
   );
 }

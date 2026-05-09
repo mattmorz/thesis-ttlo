@@ -199,7 +199,7 @@ For more detailed information, refer to component-specific documentation.
 ## Dev Migration Recovery (When History Is Missing)
 
 If `drizzle:migrate` fails due to missing migration files or enum-already-exists errors, follow this dev-only workflow:
-
+n
 1. Add no-op migration files if missing:
    - `src/drizzle/migrations/0010_tired_madame_hydra.sql`
    - `src/drizzle/migrations/0011_puzzling_shen.sql`

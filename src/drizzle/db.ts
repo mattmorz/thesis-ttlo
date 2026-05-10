@@ -1,9 +1,9 @@
-import "dotenv/config";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "@/drizzle/schema";
 import * as relations from "@/drizzle/relations";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import "dotenv/config";
 
 // Define the full DB type for better type safety
 export type DB = PostgresJsDatabase<typeof schema & typeof relations>;

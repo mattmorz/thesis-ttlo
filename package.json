@@ -12,7 +12,7 @@
     "drizzle:push": "drizzle-kit push",
     "drizzle:generate": "drizzle-kit generate",
     "db:seed": "tsx src/drizzle/seed.ts",
-    "drizzle:migrate": "drizzle-kit migrate"
+    "drizzle:migrate": "tsx src/drizzle/bootstrap-migrations.ts && drizzle-kit migrate"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",

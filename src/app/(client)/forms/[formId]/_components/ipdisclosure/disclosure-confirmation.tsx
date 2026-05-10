@@ -1099,7 +1099,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
       "matrix-sample",
       "patent-search",
       "copyright-application",
-      "trademark-application", // Match the id used in the parent (both "trademark" and "trademark-application" render the same component)
+      "trademark-application", // Back-compat alias for the trademark application step
       "trade-secret",
       "confirmation",
     ];
@@ -1536,7 +1536,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
                   </span>
                   <div className="text-xs text-gray-700 ml-2">
                     <span className="block">
-                      Trademark Application: Completed
+                      Trademark Application and Disclosure: Completed
                     </span>
                   </div>
                 </div>

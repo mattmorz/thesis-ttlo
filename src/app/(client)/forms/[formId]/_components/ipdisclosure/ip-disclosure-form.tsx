@@ -505,16 +505,6 @@ const getNextTab = (currentTabId: string) => {
         );
         setActiveTab("trade-secret");
       }
-      // If trying to navigate to trademark-confirmation, check if we have a trademark-application tab
-      else if (
-        tabId === "trademark-confirmation" &&
-        visibleTabComponents.some((tab) => tab.id === "trademark-application")
-      ) {
-        console.log(
-          "IP Disclosure Form - Redirecting from 'trademark-confirmation' to 'trademark-application'"
-        );
-        setActiveTab("trademark-application");
-      }
     }
   };
 
@@ -555,9 +545,9 @@ const getNextTab = (currentTabId: string) => {
         <Alert className="bg-green-50 border-green-200">
           <AlertTitle className="text-green-800 flex items-center">
             Active Application: {activeApplication.title}
-            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+            {/* <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
               {activeApplication.ipType}
-            </span>
+            </span> */}
           </AlertTitle>
           <AlertDescription className="text-green-700">
             {activeApplication.description || "No description provided."}

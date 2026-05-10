@@ -97,6 +97,7 @@ import { DeedAssignmentForm } from "./deedofassignment/deed-assignment-form";
 import { SubstantialUseForm } from "./substantialuse/substantial-use-form";
 import { OtherDocumentsSection } from "./otherDocuments";
 import {
+  buildIpTypesFromApplicationValues,
   getSelectedApplicationIpTypes,
   hasSelectedIpTypes,
 } from "@/lib/utils/ip-types";
@@ -1907,7 +1908,7 @@ useEffect(() => {
   const handleCreateFirstApplication = () => {
     if (
       isCreatingFirstApplication ||
-      createApplicationMutation.isLoading ||
+      createApplicationMutation.isPending ||
       isCreateCooldown
     ) {
       return;
@@ -1926,7 +1927,8 @@ useEffect(() => {
     createApplicationMutation.mutate({
       userId: session.user.id,
       title: "Untitled Application", // Default title as requested
-      ipType: "not_sure", // Safe default
+      ipType: "patent", // Default to a visible type instead of unsure
+      selectedIpTypes: buildIpTypesFromApplicationValues(["patent"]),
       // Ensure button state resets even if mutation errors before callbacks
     });
   };
@@ -2263,14 +2265,14 @@ useEffect(() => {
                     <Button
                       onClick={handleCreateFirstApplication}
                       disabled={
-                        createApplicationMutation.isLoading ||
+                        createApplicationMutation.isPending ||
                         isCreatingFirstApplication ||
                         isCreateCooldown
                       }
                       className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
                     >
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      {createApplicationMutation.isLoading ||
+                      {createApplicationMutation.isPending ||
                       isCreatingFirstApplication ||
                       isCreateCooldown
                         ? "Creating..."

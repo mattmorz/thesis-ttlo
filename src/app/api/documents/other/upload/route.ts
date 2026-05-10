@@ -21,8 +21,27 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   console.log("[API/documents/other/upload] Received upload request");
+  console.log("[API/documents/other/upload] Runtime context:", {
+    cwd: process.cwd(),
+    hasGoogleDriveStorageEmail: Boolean(
+      process.env.GOOGLE_DRIVE_STORAGE_EMAIL?.trim()
+    ),
+    hasGoogleDriveRootFolderId: Boolean(
+      process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID?.trim()
+    ),
+    hasGoogleDriveSharedDriveId: Boolean(
+      process.env.GOOGLE_DRIVE_SHARED_DRIVE_ID?.trim()
+    ),
+  });
   try {
     const session = await auth();
+    console.log("[API/documents/other/upload] Session lookup result:", {
+      hasSession: Boolean(session),
+      hasUser: Boolean(session?.user),
+      userId: session?.user?.id ?? null,
+      email: session?.user?.email ?? null,
+      role: (session?.user as { role?: string } | undefined)?.role ?? null,
+    });
     if (!session?.user?.id) {
       console.error("[API/documents/other/upload] Unauthorized - no session");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -161,14 +180,21 @@ export async function POST(req: NextRequest) {
       ipApplicationId
     );
 
-    const applicationTitle = ipApplicationExists?.[0]?.title || ipApplicationId;
+    const applicationFolderId = ipApplicationId;
     const formName =
       (formData.get("formName") as string | null) ||
       (formId ? `Form ${formId}` : "Other Documents");
-    const folderPath = ["TTLO", applicationTitle, formName];
+    // Use the configured Drive root folder directly; do not add an extra TTLO parent.
+    const folderPath = [applicationFolderId, formName];
+    console.log("[API/documents/other/upload] Drive folder path:", {
+      folderPath,
+      rootFolderHint: process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID?.trim() || null,
+    });
     const { folderId } = await ensureDriveFolderPath({
-      userId,
       pathSegments: folderPath,
+    });
+    console.log("[API/documents/other/upload] Drive folder resolved:", {
+      folderId,
     });
 
     // Process each file
@@ -219,11 +245,16 @@ export async function POST(req: NextRequest) {
       }
 
       const driveFile = await uploadFileToDrive({
-        userId,
         file,
         fileName,
         mimeType: fileType,
         parentId: folderId,
+      });
+      console.log("[API/documents/other/upload] Drive file uploaded:", {
+        fileName,
+        driveFileId: driveFile.fileId,
+        hasWebViewLink: Boolean(driveFile.webViewLink),
+        hasWebContentLink: Boolean(driveFile.webContentLink),
       });
 
       const fileUrl =
@@ -459,6 +490,13 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[API/documents/other/upload] Error uploading files:", error);
     if (error instanceof DriveAuthError) {
+      console.error(
+        "[API/documents/other/upload] Drive auth failure:",
+        {
+          message: error.message,
+          stack: error.stack,
+        }
+      );
       return NextResponse.json(
         { error: error.message },
         { status: 401 }

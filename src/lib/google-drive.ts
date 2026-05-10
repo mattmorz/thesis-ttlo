@@ -1,12 +1,12 @@
 import { randomUUID } from "crypto";
+import { google } from "googleapis";
 import { db } from "@/drizzle/db";
-import { userAccount } from "@/drizzle/migrations/schema";
+import { userAccount } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
-const DRIVE_UPLOAD_URL =
-  "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink";
 const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
+const DRIVE_DEBUG_PREFIX = "[GoogleDrive]";
 
 export const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;
 
@@ -27,86 +27,188 @@ type DriveFolderResult = {
   folderId: string;
 };
 
-async function refreshAccessToken(refreshToken: string) {
-  const clientId = process.env.AUTH_GOOGLE_ID;
-  const clientSecret = process.env.AUTH_GOOGLE_SECRET;
+type DriveStorageAccountCredentials = {
+  email: string;
+  accessToken: string | null;
+  refreshToken: string | null;
+  expiryDate: number | null;
+};
 
-  if (!clientId || !clientSecret) {
-    throw new DriveAuthError("Google OAuth credentials are not configured.");
+let driveAuthClientPromise:
+  | Promise<InstanceType<typeof google.auth.OAuth2>>
+  | null = null;
+
+function logDriveDebug(message: string, details?: Record<string, unknown>) {
+  if (details) {
+    console.log(DRIVE_DEBUG_PREFIX, message, details);
+    return;
   }
 
-  const body = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-    grant_type: "refresh_token",
-  });
+  console.log(DRIVE_DEBUG_PREFIX, message);
+}
 
-  const response = await fetch(GOOGLE_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
+function getDriveRootFolderId() {
+  const rawValue = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID?.trim() || null;
+  if (!rawValue) {
+    return null;
+  }
 
-  if (!response.ok) {
-    const text = await response.text();
+  const folderMatch = rawValue.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (folderMatch?.[1]) {
+    return folderMatch[1];
+  }
+
+  return rawValue;
+}
+
+function getDriveSharedDriveId() {
+  return process.env.GOOGLE_DRIVE_SHARED_DRIVE_ID?.trim() || null;
+}
+
+function buildDriveRequestUrl(
+  baseUrl: string,
+  params: Record<string, string | undefined>
+) {
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      searchParams.set(key, value);
+    }
+  }
+  const sharedDriveId = getDriveSharedDriveId();
+  if (sharedDriveId) {
+    searchParams.set("supportsAllDrives", "true");
+    searchParams.set("includeItemsFromAllDrives", "true");
+  }
+  const query = searchParams.toString();
+  return query ? `${baseUrl}?${query}` : baseUrl;
+}
+
+function buildDriveUploadUrl() {
+  return buildDriveRequestUrl(
+    "https://www.googleapis.com/upload/drive/v3/files",
+    {
+      uploadType: "multipart",
+      fields: "id,webViewLink,webContentLink",
+    }
+  );
+}
+
+async function getDriveAuthClient() {
+  if (!driveAuthClientPromise) {
+    driveAuthClientPromise = (async () => {
+      logDriveDebug("Creating storage-account Drive auth client");
+      const { clientId, clientSecret, redirectUri } = getGoogleOAuthConfig();
+      const credentials = await loadStorageAccountCredentials();
+
+      const client = new google.auth.OAuth2(
+        clientId,
+        clientSecret,
+        redirectUri || undefined
+      );
+
+      client.setCredentials({
+        access_token: credentials.accessToken || undefined,
+        refresh_token: credentials.refreshToken || undefined,
+        expiry_date: credentials.expiryDate || undefined,
+      });
+
+      logDriveDebug("Storage-account Drive client initialized", {
+        storageEmail: credentials.email,
+        hasAccessToken: Boolean(credentials.accessToken),
+        hasRefreshToken: Boolean(credentials.refreshToken),
+        expiryDate: credentials.expiryDate || null,
+      });
+
+      return client;
+    })();
+  }
+
+  return driveAuthClientPromise;
+}
+
+function getGoogleOAuthConfig() {
+  const clientId = process.env.AUTH_GOOGLE_ID?.trim() || null;
+  const clientSecret = process.env.AUTH_GOOGLE_SECRET?.trim() || null;
+  const redirectUri = process.env.AUTH_GOOGLE_REDIRECT_URI?.trim() || null;
+
+  if (!clientId || !clientSecret) {
     throw new DriveAuthError(
-      `Failed to refresh Google access token: ${text || response.status}`
+      "AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET are required for Drive uploads."
     );
   }
 
-  const data = (await response.json()) as {
-    access_token?: string;
-    expires_in?: number;
+  return {
+    clientId,
+    clientSecret,
+    redirectUri,
   };
-
-  if (!data.access_token) {
-    throw new DriveAuthError("Google token refresh response missing access.");
-  }
-
-  const expiresAt = data.expires_in
-    ? new Date(Date.now() + data.expires_in * 1000).toISOString()
-    : null;
-
-  return { accessToken: data.access_token, expiresAt };
 }
 
-async function getDriveAccessToken(userId: string) {
-  const user = await db.query.userAccount.findFirst({
-    where: eq(userAccount.id, userId),
+async function loadStorageAccountCredentials(): Promise<DriveStorageAccountCredentials> {
+  const storageEmail = process.env.GOOGLE_DRIVE_STORAGE_EMAIL?.trim() || null;
+  if (!storageEmail) {
+    throw new DriveAuthError(
+      "GOOGLE_DRIVE_STORAGE_EMAIL is required and must point to the Google account that owns the Drive files."
+    );
+  }
+
+  const record = await db.query.userAccount.findFirst({
+    where: eq(userAccount.email, storageEmail),
     columns: {
+      email: true,
       googleAccessToken: true,
       googleRefreshToken: true,
       googleTokenExpiresAt: true,
     },
   });
 
-  if (!user?.googleRefreshToken) {
+  if (!record) {
     throw new DriveAuthError(
-      "Google Drive is not connected for this account. Please reconnect."
+      `Could not find a user_account row for GOOGLE_DRIVE_STORAGE_EMAIL (${storageEmail}). Sign in with that Google account once so its tokens are stored.`
     );
   }
 
-  const expiresAt = user.googleTokenExpiresAt
-    ? new Date(user.googleTokenExpiresAt).getTime()
-    : 0;
-  const isValid = user.googleAccessToken && Date.now() < expiresAt - 60_000;
-
-  if (isValid) {
-    return user.googleAccessToken as string;
+  if (!record.googleRefreshToken) {
+    throw new DriveAuthError(
+      `No Google refresh token is stored for ${storageEmail}. Sign out and sign back in with that account after granting Drive access.`
+    );
   }
 
-  const refreshed = await refreshAccessToken(user.googleRefreshToken);
+  const expiryDate = record.googleTokenExpiresAt
+    ? new Date(record.googleTokenExpiresAt).getTime()
+    : null;
 
-  await db
-    .update(userAccount)
-    .set({
-      googleAccessToken: refreshed.accessToken,
-      googleTokenExpiresAt: refreshed.expiresAt,
-    })
-    .where(eq(userAccount.id, userId));
+  logDriveDebug("Loaded storage account credentials", {
+    storageEmail,
+    hasAccessToken: Boolean(record.googleAccessToken),
+    hasRefreshToken: Boolean(record.googleRefreshToken),
+    expiryDate,
+  });
 
-  return refreshed.accessToken;
+  return {
+    email: record.email,
+    accessToken: record.googleAccessToken,
+    refreshToken: record.googleRefreshToken,
+    expiryDate,
+  };
+}
+
+async function getDriveAccessToken() {
+  const authClient = await getDriveAuthClient();
+  logDriveDebug("Requesting Drive access token");
+  const accessToken = await authClient.getAccessToken();
+  const token =
+    typeof accessToken === "string" ? accessToken : accessToken?.token;
+
+  if (!token) {
+    throw new DriveAuthError(
+      "Google Drive access token could not be generated from the storage account."
+    );
+  }
+
+  logDriveDebug("Received Drive access token");
+  return token;
 }
 
 function buildMultipartBody(
@@ -159,11 +261,18 @@ async function findFolderId({
     "trashed=false",
     `'${parentId}' in parents`,
   ].join(" and ");
+  logDriveDebug("Searching for Drive folder", {
+    name,
+    parentId,
+    query,
+  });
 
   const response = await fetch(
-    `${DRIVE_FILES_URL}?q=${encodeURIComponent(
-      query
-    )}&fields=files(id,name)&pageSize=1`,
+    buildDriveRequestUrl(DRIVE_FILES_URL, {
+      q: query,
+      fields: "files(id,name)",
+      pageSize: "1",
+    }),
     {
       method: "GET",
       headers: {
@@ -174,12 +283,23 @@ async function findFolderId({
 
   if (!response.ok) {
     const text = await response.text();
+    logDriveDebug("Drive folder lookup failed", {
+      name,
+      parentId,
+      status: response.status,
+      responseText: text,
+    });
     throw new Error(`Drive folder lookup failed: ${text || response.status}`);
   }
 
   const data = (await response.json()) as {
     files?: Array<{ id: string; name: string }>;
   };
+  logDriveDebug("Drive folder lookup response", {
+    name,
+    parentId,
+    foundId: data.files?.[0]?.id || null,
+  });
 
   return data.files?.[0]?.id ?? null;
 }
@@ -193,7 +313,11 @@ async function createFolder({
   name: string;
   parentId: string;
 }) {
-  const response = await fetch(DRIVE_FILES_URL, {
+  logDriveDebug("Creating Drive folder", {
+    name,
+    parentId,
+  });
+  const response = await fetch(buildDriveRequestUrl(DRIVE_FILES_URL, {}), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -208,6 +332,12 @@ async function createFolder({
 
   if (!response.ok) {
     const text = await response.text();
+    logDriveDebug("Drive folder create failed", {
+      name,
+      parentId,
+      status: response.status,
+      responseText: text,
+    });
     throw new Error(`Drive folder create failed: ${text || response.status}`);
   }
 
@@ -216,6 +346,11 @@ async function createFolder({
     throw new Error("Drive folder create did not return a folder ID.");
   }
 
+  logDriveDebug("Drive folder created", {
+    name,
+    parentId,
+    folderId: data.id,
+  });
   return data.id;
 }
 
@@ -237,17 +372,32 @@ async function getOrCreateFolder({
 }
 
 export async function ensureDriveFolderPath({
-  userId,
   pathSegments,
 }: {
-  userId: string;
   pathSegments: string[];
 }): Promise<DriveFolderResult> {
-  const accessToken = await getDriveAccessToken(userId);
-  let parentId = "root";
+  const accessToken = await getDriveAccessToken();
+  const rootFolderId = getDriveRootFolderId();
+  if (!rootFolderId) {
+    throw new DriveAuthError(
+      "GOOGLE_DRIVE_ROOT_FOLDER_ID is required. Share the target Drive folder with the storage account that owns the files."
+    );
+  }
+
+  logDriveDebug("Ensuring Drive folder path", {
+    rootFolderId,
+    pathSegments,
+  });
+
+  let parentId = rootFolderId;
 
   for (const segment of pathSegments) {
     const safeName = sanitizeDriveName(segment);
+    logDriveDebug("Processing folder path segment", {
+      original: segment,
+      sanitized: safeName,
+      parentId,
+    });
     parentId = await getOrCreateFolder({
       accessToken,
       name: safeName,
@@ -259,21 +409,25 @@ export async function ensureDriveFolderPath({
 }
 
 export async function uploadFileToDrive({
-  userId,
   file,
   fileName,
   mimeType,
   parentId,
 }: {
-  userId: string;
   file: File;
   fileName: string;
   mimeType: string;
   parentId?: string;
 }): Promise<DriveFileResult> {
-  const accessToken = await getDriveAccessToken(userId);
+  const accessToken = await getDriveAccessToken();
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
+  logDriveDebug("Uploading file to Drive", {
+    fileName,
+    mimeType,
+    parentId: parentId || null,
+    sizeBytes: buffer.length,
+  });
 
   const { body, contentType } = buildMultipartBody(
     parentId ? { name: fileName, parents: [parentId] } : { name: fileName },
@@ -281,7 +435,7 @@ export async function uploadFileToDrive({
     mimeType || "application/octet-stream"
   );
 
-  const uploadResponse = await fetch(DRIVE_UPLOAD_URL, {
+  const uploadResponse = await fetch(buildDriveUploadUrl(), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -292,9 +446,15 @@ export async function uploadFileToDrive({
 
   if (!uploadResponse.ok) {
     const text = await uploadResponse.text();
+    logDriveDebug("Drive upload failed", {
+      fileName,
+      parentId: parentId || null,
+      status: uploadResponse.status,
+      responseText: text,
+    });
     if (uploadResponse.status === 401 || uploadResponse.status === 403) {
       throw new DriveAuthError(
-        "Google Drive authorization expired. Please reconnect your Drive."
+        `Google Drive upload rejected the request with status ${uploadResponse.status}: ${text || "no response body"}`
       );
     }
     throw new Error(`Drive upload failed: ${text || uploadResponse.status}`);
@@ -305,13 +465,22 @@ export async function uploadFileToDrive({
     webViewLink?: string;
     webContentLink?: string;
   };
+  logDriveDebug("Drive upload response", {
+    fileName,
+    fileId: data.id || null,
+    hasWebViewLink: Boolean(data.webViewLink),
+    hasWebContentLink: Boolean(data.webContentLink),
+  });
 
   if (!data.id) {
     throw new Error("Drive upload did not return a file ID.");
   }
 
   const permissionResponse = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${data.id}/permissions`,
+    buildDriveRequestUrl(
+      `https://www.googleapis.com/drive/v3/files/${data.id}/permissions`,
+      {}
+    ),
     {
       method: "POST",
       headers: {
@@ -327,15 +496,24 @@ export async function uploadFileToDrive({
 
   if (!permissionResponse.ok) {
     const text = await permissionResponse.text();
+    logDriveDebug("Drive permission update failed", {
+      fileId: data.id,
+      status: permissionResponse.status,
+      responseText: text,
+    });
     if (permissionResponse.status === 401 || permissionResponse.status === 403) {
       throw new DriveAuthError(
-        "Google Drive authorization expired. Please reconnect your Drive."
+        `Google Drive permission update rejected the request with status ${permissionResponse.status}: ${text || "no response body"}`
       );
     }
     throw new Error(
       `Failed to set Drive permission: ${text || permissionResponse.status}`
     );
   }
+
+  logDriveDebug("Drive permission update succeeded", {
+    fileId: data.id,
+  });
 
   return {
     fileId: data.id,

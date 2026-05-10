@@ -53,10 +53,23 @@ export async function uploadFilesToDrive(
     }
   });
 
+  console.log("[DriveUpload] Sending upload request", {
+    formId,
+    ipApplicationId,
+    formName,
+    category,
+    description,
+    fileCount: files.length,
+    fileNames: files.map((file) => file.name),
+  });
+
   const response = await fetch("/api/documents/other/upload", {
     method: "POST",
+    credentials: "include",
     body: formData,
   });
+
+  console.log("[DriveUpload] Upload response status:", response.status);
 
   const responseText = await response.text();
   let result: any = null;
@@ -64,6 +77,19 @@ export async function uploadFilesToDrive(
     result = JSON.parse(responseText);
   } catch {
     // Response may not be JSON; handled below.
+  }
+
+  if (!response.ok) {
+    console.error(
+      `[DriveUpload] Upload failed: status=${response.status}, error=${
+        result?.error || "none"
+      }, details=${result?.details || "none"}, raw=${responseText}`
+    );
+  } else {
+    console.log(
+      "[DriveUpload] Upload response payload:",
+      JSON.stringify(result)
+    );
   }
 
   if (!response.ok) {

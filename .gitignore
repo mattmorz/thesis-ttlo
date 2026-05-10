@@ -6,6 +6,13 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
+# Google secret
+ttlo-485505-9fce6901a0ca.json
+itso-495223-a5996aef81f8.json
+google_informations.txt
+
+# Doc
+may 6.md
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

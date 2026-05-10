@@ -308,13 +308,38 @@ To work on the admin interface:
 
 ## Environment Variables
 
+For local development, put secrets in `.env.local` instead of `.env`.
+The repository already ignores `.env.local`, so it is the safer file for
+machine-specific values like Drive credentials.
+
 ```
 DATABASE_URL=postgres://user:password@localhost:5432/ttlo_db
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your_secret_key
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+AUTH_GOOGLE_ID=your_google_client_id
+AUTH_GOOGLE_SECRET=your_google_client_secret
+GOOGLE_DRIVE_STORAGE_EMAIL=balanghigdave@gmail.com
+GOOGLE_DRIVE_ROOT_FOLDER_ID=optional_root_folder_id
+GOOGLE_DRIVE_SHARED_DRIVE_ID=optional_shared_drive_id
 ```
+
+## Google Drive Upload Setup
+
+Use the following flow for the current central personal Drive setup:
+
+1. Set `GOOGLE_DRIVE_STORAGE_EMAIL` to the dedicated Google account that should own all uploaded files.
+2. Sign in once to the app with that account so its Google refresh token is stored in the database.
+3. Optionally set `GOOGLE_DRIVE_ROOT_FOLDER_ID` if you want uploads to start inside an existing top-level folder instead of the Drive root.
+4. Leave `GOOGLE_DRIVE_SHARED_DRIVE_ID` empty for now if you are still using a personal Drive.
+5. Enable the Google Drive API in the Google Cloud project connected to `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`.
+
+For future Shared Drive support:
+
+1. Put the storage folder inside the Shared Drive.
+2. Set `GOOGLE_DRIVE_SHARED_DRIVE_ID` to the Shared Drive ID.
+3. Keep the storage account as the uploader until you switch the backend to a Shared Drive-aware flow.
+
+The app will still require the uploaded files to be authenticated through the portal, but the Drive files themselves are set to `reader` access for anyone with the link.
 
 ## Related Documentation
 

@@ -231,17 +231,21 @@ useEffect(() => {
       tabId: FormTabs.IP_DISCLOSURE,
       statusKey: "ipDisclosure",
     },
-    {
-      label: "Substantial Use",
-      tabId: FormTabs.SUBSTANTIAL_USE,
-      statusKey: "substantialUse",
-    },
-    {
-      label: "Deed of Assignment",
-      tabId: FormTabs.DEED_ASSIGNMENT,
-      statusKey: "deedAssignment",
-    },
-    ] as const;
+     ...(isCSU !== false
+    ? [
+        {
+          label: "Substantial Use",
+          tabId: FormTabs.SUBSTANTIAL_USE,
+          statusKey: "substantialUse",
+        },
+        {
+          label: "Deed of Assignment",
+          tabId: FormTabs.DEED_ASSIGNMENT,
+          statusKey: "deedAssignment",
+        },
+      ]
+    : []),
+];
 
     const completedCount = steps.reduce((count, step) => {
     return count + (formStatus?.[step.statusKey] ? 1 : 0);
@@ -578,9 +582,7 @@ const [isCSU, setIsCSU] = useState<boolean | null>(null);
 
 useEffect(() => {
   const value = localStorage.getItem("isCSUAffiliated");
-  if (value !== null) {
-    setIsCSU(JSON.parse(value));
-  }
+  setIsCSU(value ? JSON.parse(value) : null);
 }, []);
 
   const [progress, setProgress] = useState({

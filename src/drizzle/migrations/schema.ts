@@ -426,29 +426,29 @@ export const contactMessage = pgTable(
   ]
 );
 
-// export const account = pgTable(
-//   "account",
-//   {
-//     userId: uuid().notNull(),
-//     type: text().notNull(),
-//     provider: text().notNull(),
-//     providerAccountId: text().notNull(),
-//     refreshToken: text("refresh_token"),
-//     accessToken: text("access_token"),
-//     expiresAt: integer("expires_at"),
-//     tokenType: text("token_type"),
-//     scope: text(),
-//     idToken: text("id_token"),
-//     sessionState: text("session_state"),
-//   },
-//   (table) => [
-//     foreignKey({
-//       columns: [table.userId],
-//       foreignColumns: [userAccount.id],
-//       name: "account_userId_user_id_fk",
-//     }).onDelete("cascade"),
-//   ]
-// );
+export const account = pgTable(
+  "account",
+  {
+    userId: uuid().notNull(),
+    type: text().notNull(),
+    provider: text().notNull(),
+    providerAccountId: text().notNull(),
+    refreshToken: text("refresh_token"),
+    accessToken: text("access_token"),
+    expiresAt: integer("expires_at"),
+    tokenType: text("token_type"),
+    scope: text(),
+    idToken: text("id_token"),
+    sessionState: text("session_state"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [userAccount.id],
+      name: "account_userId_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
 
 export const deedOfAssignment = pgTable(
   "deed_of_assignment",

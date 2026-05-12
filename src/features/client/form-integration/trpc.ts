@@ -8,10 +8,8 @@ import { db } from "@/drizzle/db";
 // Import from the real schema
 import {
   ipApplication,
-  applicationPhase,
-  ipDisclosure,
 } from "@/drizzle/migrations/schema";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import {
   type NormalizedIpTypes,
   deriveIpTypesFromApplicationIpType,
@@ -80,32 +78,6 @@ export const formIntegrationRouter = router({
             // Remove the phases relation temporarily to avoid the error
           });
 
-          const appIds = apps.map((app: any) => app.id);
-          const disclosures =
-            appIds.length > 0
-              ? await db
-                  .select({
-                    applicationId: ipDisclosure.applicationId,
-                    selectedIpTypes: ipDisclosure.selectedIpTypes,
-                  })
-                  .from(ipDisclosure)
-                  .where(inArray(ipDisclosure.applicationId, appIds))
-                  .orderBy(desc(ipDisclosure.updatedAt))
-              : [];
-
-          const selectedIpTypesByApplication = new Map<string, ReturnType<typeof normalizeSelectedIpTypes>>();
-          for (const disclosure of disclosures) {
-            if (
-              disclosure.applicationId &&
-              !selectedIpTypesByApplication.has(disclosure.applicationId)
-            ) {
-              selectedIpTypesByApplication.set(
-                disclosure.applicationId,
-                normalizeSelectedIpTypes(disclosure.selectedIpTypes)
-              );
-            }
-          }
-
           return apps.map((app: any) => {
             const normalizedApplicationIpTypes = app.selectedIpTypes
               ? normalizeSelectedIpTypes(app.selectedIpTypes)
@@ -123,7 +95,6 @@ export const formIntegrationRouter = router({
               ipType: app.ipType,
               selectedIpTypes:
                 normalizedApplicationIpTypes ??
-                selectedIpTypesByApplication.get(app.id) ??
                 deriveIpTypesFromApplicationIpType(app.ipType).ipTypes,
             };
           });

@@ -80,6 +80,8 @@ import {
   type NormalizedIpTypes,
 } from "@/lib/utils/ip-types";
 
+const DEBUG_APPLICATION_MANAGEMENT = process.env.NODE_ENV === "development";
+
 interface Application {
   id: string;
   title: string;
@@ -94,11 +96,34 @@ interface Application {
 interface ApplicationManagementProps {
   hideCreateButton?: boolean;
   onCreateClick?: () => void;
+  applications?: Application[];
+  activeApplicationId?: string | null;
+  activeApplication?: Application | null;
+  isLoading?: boolean;
+  setApplications?: React.Dispatch<React.SetStateAction<Application[]>>;
+  setActiveApplicationId?: (
+    id: string | null,
+    options?: {
+      clearFormData?: boolean;
+      emitEvent?: boolean;
+      skipReload?: boolean;
+    }
+  ) => void;
+  refetchApplications?: () => Promise<void>;
+  clearFormData?: () => void;
 }
 
 export function ApplicationManagement({
   hideCreateButton = false,
   onCreateClick,
+  applications: applicationsProp,
+  activeApplicationId: activeApplicationIdProp,
+  activeApplication: activeApplicationProp,
+  isLoading: isLoadingProp,
+  setApplications: setApplicationsProp,
+  setActiveApplicationId: setActiveApplicationIdProp,
+  refetchApplications: refetchApplicationsProp,
+  clearFormData: clearFormDataProp,
 }: ApplicationManagementProps) {
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -106,15 +131,26 @@ export function ApplicationManagement({
   const trpcUtils = trpc.useUtils();
 
   const {
-    activeApplicationId,
-    setActiveApplicationId,
-    activeApplication,
-    isLoading,
-    applications,
-    setApplications,
-    refetchApplications,
-    clearFormData,
+    activeApplicationId: hookActiveApplicationId,
+    setActiveApplicationId: hookSetActiveApplicationId,
+    activeApplication: hookActiveApplication,
+    isLoading: hookIsLoading,
+    applications: hookApplications,
+    setApplications: hookSetApplications,
+    refetchApplications: hookRefetchApplications,
+    clearFormData: hookClearFormData,
   } = useActiveApplication();
+
+  const activeApplicationId =
+    activeApplicationIdProp ?? hookActiveApplicationId;
+  const setActiveApplicationId =
+    setActiveApplicationIdProp ?? hookSetActiveApplicationId;
+  const activeApplication = activeApplicationProp ?? hookActiveApplication;
+  const isLoading = isLoadingProp ?? hookIsLoading;
+  const applications = applicationsProp ?? hookApplications;
+  const setApplications = setApplicationsProp ?? hookSetApplications;
+  const refetchApplications = refetchApplicationsProp ?? hookRefetchApplications;
+  const clearFormData = clearFormDataProp ?? hookClearFormData;
 
   const [isNewAppDialogOpen, setIsNewAppDialogOpen] = useState(false);
   const [newAppTitle, setNewAppTitle] = useState("");
@@ -728,7 +764,32 @@ export function ApplicationManagement({
     });
   };
 
-  if (!userId) {
+  const hasApplicationData = applications.length > 0 || Boolean(activeApplicationId);
+
+  useEffect(() => {
+    if (DEBUG_APPLICATION_MANAGEMENT) {
+      console.log("[ApplicationManagement] render state", {
+        userId,
+        isLoading,
+        activeApplicationId,
+        applicationsCount: applications.length,
+        hasApplicationData,
+        activeApplicationTitle: activeApplication?.title ?? null,
+      });
+    }
+  }, [
+    userId,
+    isLoading,
+    activeApplicationId,
+    applications.length,
+    hasApplicationData,
+    activeApplication?.title,
+  ]);
+
+  if (!userId && !hasApplicationData && !isLoading) {
+    if (DEBUG_APPLICATION_MANAGEMENT) {
+      console.log("[ApplicationManagement] showing auth-required fallback");
+    }
     return (
       <Alert variant="destructive">
         <AlertCircleIcon className="h-4 w-4" />

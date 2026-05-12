@@ -25,6 +25,7 @@ import {
   ChevronRight,
   FolderOpenDot,
   LucideFolderOpen,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,8 @@ import {
   getSelectedApplicationIpTypes,
   hasSelectedIpTypes,
 } from "@/lib/utils/ip-types";
+
+const DEBUG_PAGE_CONTENT = process.env.NODE_ENV === "development";
 
 // Add icons to the navigation config
 const sidebarItems = formNavigationConfig.map((item) => {
@@ -634,6 +637,7 @@ useEffect(() => {
     setApplications,
     setActiveApplicationId,
     refetchApplications,
+    clearFormData,
     isLoading: isApplicationsLoading,
   } = useActiveApplication();
 
@@ -742,7 +746,7 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    if (applications.length === 1) {
+    if (applications.length > 0) {
       setIsApplicationsExpanded(true);
     }
   }, [applications.length]);
@@ -1643,6 +1647,45 @@ useEffect(() => {
     );
   };
 
+  const displayedApplication = activeApplication || applications[0] || null;
+  const displayedApplicationId =
+    activeApplicationId || applications[0]?.id || null;
+  const displayedApplicationTypes = displayedApplication?.selectedIpTypes
+    ? getSelectedApplicationIpTypes(displayedApplication.selectedIpTypes)
+    : displayedApplication?.ipType
+      ? [displayedApplication.ipType]
+      : [];
+  const shouldShowApplicationLoader =
+    isApplicationsLoading && applications.length === 0;
+
+  useEffect(() => {
+    if (DEBUG_PAGE_CONTENT) {
+      console.log("[PageContent] Application shell state", {
+        formId,
+        tabParam,
+        mounted,
+        activeApplicationId,
+        applicationsCount: applications.length,
+        isApplicationsLoading,
+        activeApplicationTitle: activeApplication?.title ?? null,
+        displayedApplicationId,
+        shouldShowApplicationLoader,
+        isApplicationsExpanded,
+      });
+    }
+  }, [
+    formId,
+    tabParam,
+    mounted,
+    activeApplicationId,
+    applications.length,
+    isApplicationsLoading,
+    activeApplication?.title,
+    displayedApplicationId,
+    shouldShowApplicationLoader,
+    isApplicationsExpanded,
+  ]);
+
   // Create a simple placeholder for server-side rendering that matches structure
   if (!mounted && typeof window !== "undefined") {
     return (
@@ -1847,6 +1890,34 @@ useEffect(() => {
     );
   }
 
+  if (shouldShowApplicationLoader) {
+    if (DEBUG_PAGE_CONTENT) {
+      console.log("[PageContent] Rendering application loader", {
+        activeApplicationId,
+        applicationsCount: applications.length,
+      });
+    }
+    return (
+      <div className="w-full">
+        <main className="container mx-auto max-w-7xl pb-12 px-4 md:px-6">
+          <div className="rounded-lg border bg-white shadow-sm p-8">
+            <div className="flex items-center gap-3 text-[#1B5E20]">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <div>
+                <h2 className="text-lg font-semibold">
+                  Loading your IP applications
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Please wait while we fetch your submitted applications.
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   // Additional help content based on current form
   // const getContextualHelp = () => {
   //   switch (activeForm) {
@@ -1977,18 +2048,17 @@ useEffect(() => {
     }
   };
 
-  const displayedApplication = activeApplication || applications[0] || null;
-  const displayedApplicationId =
-    activeApplicationId || applications[0]?.id || null;
-  const displayedApplicationTypes = displayedApplication?.selectedIpTypes
-    ? getSelectedApplicationIpTypes(displayedApplication.selectedIpTypes)
-    : displayedApplication?.ipType
-      ? [displayedApplication.ipType]
-      : [];
-
   return (
     <div className="w-full">
       <main className="container mx-auto max-w-7xl pb-12">
+        {DEBUG_PAGE_CONTENT && (
+          <DebugRenderLog
+            activeApplicationId={activeApplicationId}
+            applicationsCount={applications.length}
+            activeApplicationTitle={activeApplication?.title ?? null}
+            activeForm={activeForm}
+          />
+        )}
         {/* Application Selection Header - Simplified and compact */}
         <div className="bg-white border rounded-lg shadow-sm mb-6 overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b bg-gray-50">
@@ -2114,6 +2184,14 @@ useEffect(() => {
               <ApplicationManagement
                 hideCreateButton={false}
                 onCreateClick={handleCreateFirstApplication}
+                applications={applications}
+                activeApplicationId={activeApplicationId}
+                activeApplication={activeApplication}
+                isLoading={isApplicationsLoading}
+                setApplications={setApplications}
+                setActiveApplicationId={setActiveApplicationId}
+                refetchApplications={refetchApplications}
+                clearFormData={clearFormData}
               />
             </div>
           )}
@@ -2359,4 +2437,27 @@ useEffect(() => {
       )}
     </div>
   );
+}
+
+function DebugRenderLog({
+  activeApplicationId,
+  applicationsCount,
+  activeApplicationTitle,
+  activeForm,
+}: {
+  activeApplicationId: string | null;
+  applicationsCount: number;
+  activeApplicationTitle: string | null;
+  activeForm: string;
+}) {
+  useEffect(() => {
+    console.log("[PageContent] Rendering application manager", {
+      activeApplicationId,
+      applicationsCount,
+      activeApplicationTitle,
+      activeForm,
+    });
+  }, [activeApplicationId, applicationsCount, activeApplicationTitle, activeForm]);
+
+  return null;
 }

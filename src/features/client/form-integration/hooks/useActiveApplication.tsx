@@ -5,6 +5,8 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { toast } from "sonner";
 import type { NormalizedIpTypes } from "@/lib/utils/ip-types";
 
+const DEBUG_APPLICATIONS = process.env.NODE_ENV === "development";
+
 interface Application {
   id: string;
   title: string;
@@ -319,11 +321,48 @@ export function useActiveApplication(): UseActiveApplicationReturn {
   } = trpc.formIntegration.getUserApplications.useQuery(
     { userId: userId || "" },
     {
-      enabled: !!userId && status === "authenticated",
+      // Allow the query to run as soon as the session is authenticated.
+      // Some session payloads on the client do not expose `user.id`, but the
+      // server-side tRPC context still has the authenticated user ID and can
+      // resolve it from there.
+      enabled: status === "authenticated",
       retry: 2,
       retryDelay: 1000,
     }
   );
+
+  useEffect(() => {
+    if (DEBUG_APPLICATIONS) {
+      console.log("[useActiveApplication] snapshot", {
+        sessionStatus: status,
+        userId,
+        activeApplicationId,
+        storedActiveApplicationId:
+          typeof window !== "undefined"
+            ? localStorage.getItem("activeApplicationId")
+            : null,
+        storedActiveApplicationIdSetAt:
+          typeof window !== "undefined"
+            ? localStorage.getItem("activeApplicationIdSetAt")
+            : null,
+        applicationsCount: applications.length,
+        isLoadingApplications,
+        hasApplicationsData: Array.isArray(applicationsData),
+        applicationsDataCount: Array.isArray(applicationsData)
+          ? applicationsData.length
+          : null,
+        applicationsError: applicationsError?.message ?? null,
+      });
+    }
+  }, [
+    status,
+    userId,
+    activeApplicationId,
+    applications.length,
+    isLoadingApplications,
+    applicationsData,
+    applicationsError,
+  ]);
 
   // Handle application errors
   useEffect(() => {
@@ -362,12 +401,37 @@ export function useActiveApplication(): UseActiveApplicationReturn {
   // Handle successful data fetch
   useEffect(() => {
     if (applicationsData) {
+      if (DEBUG_APPLICATIONS) {
+        console.log("[useActiveApplication] applicationsData received", {
+          activeApplicationId,
+          applicationsDataCount: Array.isArray(applicationsData)
+            ? applicationsData.length
+            : null,
+          applicationsData,
+        });
+      }
+
       // Ensure we have a valid array of applications
       if (Array.isArray(applicationsData)) {
-        setApplications(applicationsData as Application[]);
+        const nextApplications = applicationsData as Application[];
+        const hasExistingApplications = applications.length > 0;
+
+        if (nextApplications.length === 0 && hasExistingApplications) {
+          if (DEBUG_APPLICATIONS) {
+            console.log(
+              "[useActiveApplication] Preserving existing applications because the refetch returned an empty list",
+              {
+                existingApplicationsCount: applications.length,
+                activeApplicationId,
+              }
+            );
+          }
+        } else {
+          setApplications(nextApplications);
+        }
 
         if (activeApplicationId) {
-          const exists = applicationsData.some(
+          const exists = nextApplications.some(
             (app) => app.id === activeApplicationId
           );
 
@@ -379,7 +443,24 @@ export function useActiveApplication(): UseActiveApplicationReturn {
             const setAt = setAtRaw ? Number(setAtRaw) : 0;
             const isRecent = setAt > 0 && Date.now() - setAt < 5000;
 
-            if (!isRecent) {
+            if (DEBUG_APPLICATIONS) {
+              console.log(
+                "[useActiveApplication] active application missing from query result",
+                {
+                  activeApplicationId,
+                  setAtRaw,
+                  isRecent,
+                  applicationsDataCount: nextApplications.length,
+                }
+              );
+            }
+
+            if (!isRecent && nextApplications.length > 0) {
+              if (DEBUG_APPLICATIONS) {
+                console.log(
+                  "[useActiveApplication] Clearing stale active application after reload"
+                );
+              }
               clearFormData({ emitEvent: false });
               setActiveApplicationIdInternal(null);
               return;
@@ -388,8 +469,21 @@ export function useActiveApplication(): UseActiveApplicationReturn {
         }
 
         // If there's no active application but there are applications, set the first one as active
-        if (!activeApplicationId && applicationsData.length > 0) {
-          setActiveApplicationIdInternal(applicationsData[0].id);
+        if (!activeApplicationId && nextApplications.length > 0) {
+          if (DEBUG_APPLICATIONS) {
+            console.log(
+              "[useActiveApplication] No active application stored, selecting first application from query",
+              nextApplications[0]?.id
+            );
+          }
+          setActiveApplicationIdInternal(nextApplications[0].id);
+        }
+        if (nextApplications.length === 0) {
+          if (DEBUG_APPLICATIONS) {
+            console.log(
+              "[useActiveApplication] Query returned zero applications for current user"
+            );
+          }
         }
       } else {
         console.error("Applications data is not an array:", applicationsData);
@@ -420,7 +514,18 @@ export function useActiveApplication(): UseActiveApplicationReturn {
       // Check if the result contains data
       if (result.data) {
         if (Array.isArray(result.data)) {
-          setApplications(result.data as Application[]);
+          const nextApplications = result.data as Application[];
+          if (nextApplications.length === 0 && applications.length > 0) {
+            console.log(
+              "[useActiveApplication] Refetch returned an empty list, keeping current applications in memory",
+              {
+                existingApplicationsCount: applications.length,
+                activeApplicationId,
+              }
+            );
+          } else {
+            setApplications(nextApplications);
+          }
         } else {
           console.warn("Refetched data is not an array:", result.data);
           setApplications([]);
@@ -448,10 +553,21 @@ export function useActiveApplication(): UseActiveApplicationReturn {
         activeApplicationId &&
         !applications.some((app) => app.id === activeApplicationId)
       ) {
+        console.log(
+          "[useActiveApplication] Active application not in local applications list, switching to first item",
+          {
+            activeApplicationId,
+            firstApplicationId: applications[0]?.id ?? null,
+          }
+        );
         setActiveApplicationIdInternal(applications[0].id);
       }
       // If there's no active application ID but there are applications, set the first one
       else if (!activeApplicationId) {
+        console.log(
+          "[useActiveApplication] Local applications list has items but no active application, selecting first",
+          applications[0]?.id ?? null
+        );
         setActiveApplicationIdInternal(applications[0].id);
       }
     }

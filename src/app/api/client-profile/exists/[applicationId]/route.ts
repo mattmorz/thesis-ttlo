@@ -7,6 +7,18 @@ import { formSubmissionRegistry } from "@/drizzle/migrations/schema";
 
 export const dynamic = "force-dynamic";
 
+async function safeFindFirst<T>(
+  label: string,
+  fn: () => Promise<T>
+): Promise<T | null> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.error(`❌ ${label} failed:`, error);
+    return null;
+  }
+}
+
 /**
  * API endpoint to check if a client profile exists for a specific application
  * @param request - The NextRequest object
@@ -34,15 +46,30 @@ export async function GET(
     }
 
     const applicationId = params.applicationId;
+    if (!applicationId || typeof applicationId !== "string") {
+      return NextResponse.json(
+        {
+          error: "Invalid application ID",
+          detail: "applicationId is required",
+          exists: false,
+          applicationValid: false,
+        },
+        { status: 400 }
+      );
+    }
     console.log(
       `🔍 Checking client profile for application ID: ${applicationId}, User ID: ${session.user.id}`
     );
 
     // VALIDATE APPLICATION ID: First check if the application exists in the database
-    const applicationExists = await db.query.ipApplication.findFirst({
-      where: eq(ipApplication.id, applicationId),
-      columns: { id: true },
-    });
+    const applicationExists = await safeFindFirst(
+      "Application existence check",
+      () =>
+        db.query.ipApplication.findFirst({
+          where: eq(ipApplication.id, applicationId),
+          columns: { id: true },
+        })
+    );
 
     if (!applicationExists) {
       console.error(
@@ -65,12 +92,14 @@ export async function GET(
 
     // FIRST METHOD: Check if there's a client profile directly linked to this IP application
     // This is the most direct and reliable method
-    const directProfile = await db.query.clientProfile.findFirst({
-      where: and(
-        eq(clientProfile.ipApplicationId, applicationId),
-        eq(clientProfile.userId, session.user.id)
-      ),
-    });
+    const directProfile = await safeFindFirst("Direct profile lookup", () =>
+      db.query.clientProfile.findFirst({
+        where: and(
+          eq(clientProfile.ipApplicationId, applicationId),
+          eq(clientProfile.userId, session.user.id)
+        ),
+      })
+    );
 
     if (directProfile) {
       console.log("👤 Direct profile check result:", {
@@ -92,13 +121,17 @@ export async function GET(
       };
 
       // For backward compatibility, also check if there's a registry entry
-      const registryEntry = await db.query.formSubmissionRegistry.findFirst({
-        where: and(
-          eq(formSubmissionRegistry.ipApplicationId, applicationId),
-          eq(formSubmissionRegistry.sourceType, "client_profile"),
-          eq(formSubmissionRegistry.sourceId, directProfile.clientId)
-        ),
-      });
+      const registryEntry = await safeFindFirst(
+        "Direct profile registry lookup",
+        () =>
+          db.query.formSubmissionRegistry.findFirst({
+            where: and(
+              eq(formSubmissionRegistry.ipApplicationId, applicationId),
+              eq(formSubmissionRegistry.sourceType, "client_profile"),
+              eq(formSubmissionRegistry.sourceId, directProfile.clientId)
+            ),
+          })
+      );
 
       if (registryEntry) {
         responseData.registryId = registryEntry.registryId;
@@ -114,13 +147,15 @@ export async function GET(
     // SECOND METHOD (backward compatibility): Check for registry-based mapping
     // First check if there's a form submission registry entry linking this application
     // to a client profile form submission
-    const formRegistry = await db.query.formSubmissionRegistry.findFirst({
-      where: and(
-        eq(formSubmissionRegistry.ipApplicationId, applicationId),
-        eq(formSubmissionRegistry.sourceType, "client_profile"),
-        eq(formSubmissionRegistry.userId, session.user.id)
-      ),
-    });
+    const formRegistry = await safeFindFirst("Registry lookup", () =>
+      db.query.formSubmissionRegistry.findFirst({
+        where: and(
+          eq(formSubmissionRegistry.ipApplicationId, applicationId),
+          eq(formSubmissionRegistry.sourceType, "client_profile"),
+          eq(formSubmissionRegistry.userId, session.user.id)
+        ),
+      })
+    );
 
     console.log("📋 Form registry check result:", {
       found: !!formRegistry,
@@ -131,9 +166,11 @@ export async function GET(
 
     // If we found a registry entry for this application, check if the client profile exists
     if (formRegistry?.sourceId) {
-      const profile = await db.query.clientProfile.findFirst({
-        where: eq(clientProfile.clientId, formRegistry.sourceId),
-      });
+      const profile = await safeFindFirst("Registry profile lookup", () =>
+        db.query.clientProfile.findFirst({
+          where: eq(clientProfile.clientId, formRegistry.sourceId),
+        })
+      );
 
       console.log("👤 Registry-based profile check result:", {
         profileExists: !!profile,

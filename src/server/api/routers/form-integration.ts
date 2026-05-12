@@ -76,10 +76,24 @@ export const formIntegrationRouter = createTRPCRouter({
     .query(async (opts) => {
       const { ctx, input } = opts;
       try {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[server:getUserApplications] query start", {
+            requestedUserId: input.userId,
+            sessionUserId: ctx.session?.user?.id ?? null,
+          });
+        }
         const apps = await db.query.ipApplication.findMany({
           where: eq(ipApplication.userId, input.userId),
           orderBy: [desc(ipApplication.createdAt)],
         });
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("[server:getUserApplications] query result", {
+            requestedUserId: input.userId,
+            count: apps.length,
+            applicationIds: apps.map((app) => app.id),
+          });
+        }
 
         return apps.map((app) => {
           const selectedIpTypes = app.selectedIpTypes

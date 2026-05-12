@@ -30,8 +30,9 @@ export async function GET(req: NextRequest) {
 
     // Get query parameters
     const url = new URL(req.url);
-    const sourceType = url.searchParams.get("sourceType");
-    const ipApplicationId = url.searchParams.get("ipApplicationId");
+    const sourceType = url.searchParams.get("sourceType") ?? url.searchParams.get("formType");
+    const ipApplicationId =
+      url.searchParams.get("ipApplicationId") ?? url.searchParams.get("applicationId");
     const sourceId = url.searchParams.get("sourceId");
 
     // Validate required parameters

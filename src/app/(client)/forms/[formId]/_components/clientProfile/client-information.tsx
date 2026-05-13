@@ -347,13 +347,29 @@ export function ClientInformation({
   const institutionName = form.watch("institutionName");
   const isCSUAffiliated = form.watch("isCSUAffiliated");
   useEffect(() => {
-  if (isCSUAffiliated !== null && isCSUAffiliated !== undefined) {
-    localStorage.setItem(
-      "isCSUAffiliated",
-      JSON.stringify(isCSUAffiliated)
-    );
-  }
-}, [isCSUAffiliated]);
+    if (typeof window === "undefined") return;
+
+    if (isCSUAffiliated !== null && isCSUAffiliated !== undefined) {
+      const serializedValue = JSON.stringify(isCSUAffiliated);
+      localStorage.setItem("isCSUAffiliated", serializedValue);
+
+      if (activeApplicationId) {
+        localStorage.setItem(
+          `isCSUAffiliated-${activeApplicationId}`,
+          serializedValue,
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("clientProfileAffiliationChanged", {
+          detail: {
+            applicationId: activeApplicationId ?? null,
+            isCSUAffiliated,
+          },
+        }),
+      );
+    }
+  }, [activeApplicationId, isCSUAffiliated]);
   const collegeName = form.watch("collegeName");
   const departmentName = form.watch("departmentName");
 

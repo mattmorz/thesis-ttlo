@@ -205,20 +205,14 @@ const GettingStartedGuide = ({
   setIsCollapsed,
   formStatus,
   onStepClick,
+  isCSU,
 }: {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   formStatus?: FormStatus;
   onStepClick?: (tabId: FormTabId) => void;
+  isCSU?: boolean | null;
 }) => {
-  const [isCSU, setIsCSU] = useState<boolean | null>(null);
-
-useEffect(() => {
-  const value = localStorage.getItem("isCSUAffiliated");
-  if (value !== null) {
-    setIsCSU(JSON.parse(value));
-  }
-}, []);
   const steps = [
     {
       label: "Client Profile",
@@ -235,7 +229,7 @@ useEffect(() => {
       tabId: FormTabs.IP_DISCLOSURE,
       statusKey: "ipDisclosure",
     },
-     ...(isCSU !== false
+     ...(isCSU === true
     ? [
         {
           label: "Substantial Use",
@@ -640,6 +634,61 @@ useEffect(() => {
     clearFormData,
     isLoading: isApplicationsLoading,
   } = useActiveApplication();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const readStoredCSU = () => {
+      const scopedKey = activeApplicationId
+        ? `isCSUAffiliated-${activeApplicationId}`
+        : null;
+      const storedValue =
+        (scopedKey && localStorage.getItem(scopedKey)) ||
+        localStorage.getItem("isCSUAffiliated");
+
+      if (storedValue === null) {
+        setIsCSU(null);
+        return;
+      }
+
+      try {
+        setIsCSU(JSON.parse(storedValue));
+      } catch {
+        setIsCSU(null);
+      }
+    };
+
+    readStoredCSU();
+
+    const handleAffiliationChanged = (
+      event: CustomEvent<{
+        applicationId: string | null;
+        isCSUAffiliated: boolean | null;
+      }>,
+    ) => {
+      if (
+        activeApplicationId &&
+        event.detail.applicationId &&
+        event.detail.applicationId !== activeApplicationId
+      ) {
+        return;
+      }
+
+      setIsCSU(event.detail.isCSUAffiliated);
+    };
+
+    window.addEventListener(
+      "clientProfileAffiliationChanged",
+      handleAffiliationChanged as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "clientProfileAffiliationChanged",
+        handleAffiliationChanged as EventListener,
+      );
+    };
+  }, [activeApplicationId]);
 
   const createApplicationMutation =
     trpc.formIntegration.createApplication.useMutation({
@@ -2014,6 +2063,7 @@ useEffect(() => {
               ? knownApplicationStatus[activeApplicationId]?.status
               : undefined
           }
+          isCSU={isCSU}
           onStepClick={(tabId) => handleTabChange(tabId)}
           isCollapsed={isGuideCollapsed}
           setIsCollapsed={(collapsed) => {

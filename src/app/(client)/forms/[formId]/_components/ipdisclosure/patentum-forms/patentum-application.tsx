@@ -129,7 +129,10 @@ export function PatentApplication({
   } = useIpDisclosureStore();
   const { activeApplicationId } = useActiveApplication();
   const params = useParams();
-  const formId = params.formId as string;
+  const routeFormId = Array.isArray(params.formId)
+    ? params.formId[0]
+    : (params.formId as string | undefined);
+  const formId = routeFormId || activeApplicationId || disclosureId || "";
   const { setActiveTab: setPatentTabsActiveTab } = usePatentTabsStore();
   const { savePatentUtilityModelApplication } = useIpDisclosure();
 

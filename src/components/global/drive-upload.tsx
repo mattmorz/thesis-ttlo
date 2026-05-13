@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button, type ButtonProps } from "@/components/ui/button";
 
 type DriveUploadConfig = {
-  formId: string;
+  formId?: string | null;
   ipApplicationId?: string | null;
   formName: string;
   category?: string;
@@ -36,8 +36,16 @@ export async function uploadFilesToDrive(
     };
   }
 
+  const resolvedFormId = formId || ipApplicationId;
+  if (!resolvedFormId) {
+    return {
+      success: false,
+      error: "Please provide a form ID before uploading",
+    };
+  }
+
   const formData = new FormData();
-  formData.append("formId", formId || "");
+  formData.append("formId", resolvedFormId);
   formData.append("ipApplicationId", ipApplicationId);
   formData.append("formName", formName);
 
@@ -54,7 +62,7 @@ export async function uploadFilesToDrive(
   });
 
   console.log("[DriveUpload] Sending upload request", {
-    formId,
+    formId: resolvedFormId,
     ipApplicationId,
     formName,
     category,

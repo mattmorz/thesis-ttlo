@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/drizzle/db";
-import { otherDocuments } from "@/drizzle/migrations/schema";
+import { otherDocuments } from "@/drizzle/schema";
 import { v4 as uuidv4 } from "uuid";
 import { validate as validateUuid } from "uuid";
-import { ipApplication } from "@/drizzle/migrations/schema";
+import { ipApplication } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import {
   DriveAuthError,
@@ -132,6 +132,14 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+    } else {
+      console.error(
+        "[API/documents/other/upload] formId is required but missing"
+      );
+      return NextResponse.json(
+        { error: "Form ID is required" },
+        { status: 400 }
+      );
     }
 
     // Validate ipApplicationId
@@ -281,7 +289,6 @@ export async function POST(req: NextRequest) {
         formId: formId || null,
         userId: userId,
         ipApplicationId,
-        title,
         fileName: fileName.replace(/[^a-zA-Z0-9.-]/g, "_"),
         originalName: fileName,
         filePath: fileUrl,
@@ -340,6 +347,7 @@ export async function POST(req: NextRequest) {
         // Explicitly check all required fields based on schema
         const requiredFields = [
           { field: "documentId", value: newDocument.documentId },
+          { field: "formId", value: newDocument.formId },
           { field: "userId", value: newDocument.userId },
           { field: "ipApplicationId", value: newDocument.ipApplicationId },
           { field: "fileName", value: newDocument.fileName },
@@ -356,11 +364,11 @@ export async function POST(req: NextRequest) {
             missingFields.map((f) => f.field).join(", ")
           );
           return NextResponse.json(
-            {
-              error: "Missing required fields",
-              details: `Fields ${missingFields
-                .map((f) => f.field)
-                .join(", ")} are required`,
+              {
+                error: "Missing required fields",
+                details: `Fields ${missingFields
+                  .map((f) => f.field)
+                  .join(", ")} are required`,
             },
             { status: 400 }
           );

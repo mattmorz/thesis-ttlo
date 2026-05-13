@@ -116,6 +116,60 @@ type TabVisibility = {
 
 type IpTypeKeys = keyof IpTypes;
 
+const createEmptyApplicantsInfoForm = (): ApplicantsInfoFormType => ({
+  email: "",
+  applicants: [{ firstName: "", middleInitial: "", lastName: "" }],
+  inventors: [{ firstName: "", middleInitial: "", lastName: "" }],
+  ipTypes: {
+    copyright: false,
+    patent: false,
+    utilityModel: false,
+    industrialDesign: false,
+    trademark: false,
+    tradeSecret: false,
+    other: false,
+    notSure: false,
+  },
+  otherIpType: "",
+  isRightfulOwner: false,
+  isApplicantAlsoInventor: false,
+  authorizedRepresentative: "",
+});
+
+const hasMeaningfulApplicantsData = (
+  data: Partial<ApplicantsInfoFormType> | ApplicantsInfo | null | undefined
+) => {
+  if (!data) return false;
+
+  const hasText = (value?: string | null) => Boolean(value?.trim());
+  const hasPeople = (
+    people?: Array<{
+      firstName?: string;
+      middleInitial?: string;
+      lastName?: string;
+    }>
+  ) =>
+    Array.isArray(people) &&
+    people.some(
+      (person) =>
+        hasText(person?.firstName) ||
+        hasText(person?.middleInitial) ||
+        hasText(person?.lastName)
+    );
+
+  return (
+    hasText(data.email) ||
+    hasText(data.otherIpType) ||
+    hasText(data.authorizedRepresentative) ||
+    data.isRightfulOwner === true ||
+    data.isApplicantAlsoInventor === true ||
+    hasPeople(data.applicants) ||
+    hasPeople(data.inventors) ||
+    Boolean(data.ipTypes) &&
+      Object.values(data.ipTypes).some((value) => value === true)
+  );
+};
+
 // Define interfaces for person types
 interface PersonInfo {
   firstName: string;
@@ -274,7 +328,17 @@ export function ApplicantsInformation() {
     // 2. We haven't loaded data yet
     // 3. We haven't already attempted to load data (prevents duplicate loads)
     if (isHydrated && !initialDataLoaded && !initialLoadAttemptedRef.current) {
-      // Mark that we've attempted to load data
+      const currentAppId =
+        applicationId || useIpDisclosureStore.getState().applicationId;
+
+      if (!currentAppId) {
+        console.log(
+          "Waiting for application ID before loading applicants information"
+        );
+        return;
+      }
+
+      // Mark that we've attempted to load data only after we know the app context
       initialLoadAttemptedRef.current = true;
 
       console.log("Component is hydrated, checking for existing data");
@@ -283,15 +347,6 @@ export function ApplicantsInformation() {
         try {
           let loadedData = null;
           let sourceOfData = "none";
-
-          // Get the current application ID from the store
-          const currentAppId = useIpDisclosureStore.getState().applicationId;
-
-          if (!currentAppId) {
-            console.warn(
-              "No application ID in store, continuing without appId checks"
-            );
-          }
 
           console.log("Current application ID:", currentAppId);
 
@@ -368,7 +423,7 @@ export function ApplicantsInformation() {
                 useIpDisclosureStore.getState().copyrightApplication,
             };
 
-            if (storeData.applicantsInfo) {
+            if (hasMeaningfulApplicantsData(storeData.applicantsInfo)) {
               // Before using store data, verify it belongs to the current application
               if (
                 currentAppId &&
@@ -532,24 +587,8 @@ export function ApplicantsInformation() {
         console.log(
           "Initializing with default empty values for new application"
         );
-        const defaultValues = {
-          email: "",
-          applicants: [{ firstName: "", middleInitial: "", lastName: "" }],
-          inventors: [{ firstName: "", middleInitial: "", lastName: "" }],
-          ipTypes: {
-            copyright: false,
-            patent: false,
-            utilityModel: false,
-            industrialDesign: false,
-            trademark: false,
-            tradeSecret: false,
-            other: false,
-            notSure: false,
-          },
-          otherIpType: "",
-          isRightfulOwner: false,
-          isApplicantAlsoInventor: false,
-          authorizedRepresentative: "",
+          const defaultValues = {
+          ...createEmptyApplicantsInfoForm(),
         };
         setFormData(defaultValues);
         setSelectedIpTypes(defaultValues.ipTypes);
@@ -576,9 +615,9 @@ export function ApplicantsInformation() {
 
     // Only refresh when we navigate back to this tab (avoid resetting while typing)
     if (
-      wasOnDifferentTab &&
+    wasOnDifferentTab &&
       activeTab === "applicants-information" &&
-      applicantsInfo &&
+      hasMeaningfulApplicantsData(applicantsInfo) &&
       isHydrated &&
       initialDataLoaded
     ) {

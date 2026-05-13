@@ -1,11 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/drizzle/db";
+import { clientProfile as liveClientProfile } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
-import { clientProfile, ipApplication } from "@/drizzle/migrations/schema";
-import { formSubmissionRegistry } from "@/drizzle/migrations/schema";
+import { ipApplication, formSubmissionRegistry } from "@/drizzle/migrations/schema";
 
 export const dynamic = "force-dynamic";
+
+const CLIENT_PROFILE_FIELDS = {
+  clientId: liveClientProfile.clientId,
+  userId: liveClientProfile.userId,
+  firstName: liveClientProfile.firstName,
+  middleName: liveClientProfile.middleName,
+  lastName: liveClientProfile.lastName,
+  contactNumber: liveClientProfile.contactNumber,
+  email: liveClientProfile.email,
+  mailingAddress: liveClientProfile.mailingAddress,
+  companyName: liveClientProfile.companyName,
+  companyEmail: liveClientProfile.companyEmail,
+  occupation: liveClientProfile.occupation,
+  createdAt: liveClientProfile.createdAt,
+  updatedAt: liveClientProfile.updatedAt,
+  age: liveClientProfile.age,
+  companyStreet: liveClientProfile.companyStreet,
+  companyBarangay: liveClientProfile.companyBarangay,
+  companyCityMunicipality: liveClientProfile.companyCityMunicipality,
+  companyProvince: liveClientProfile.companyProvince,
+  degree: liveClientProfile.degree,
+  profession: liveClientProfile.profession,
+  status: liveClientProfile.status,
+  gender: liveClientProfile.gender,
+  citizenship: liveClientProfile.citizenship,
+  highestDegree: liveClientProfile.highestDegree,
+  familiarWithIpRights: liveClientProfile.familiarWithIpRights,
+  ipExperience: liveClientProfile.ipExperience,
+} as const;
 
 async function safeFindFirst<T>(
   label: string,
@@ -90,63 +119,7 @@ export async function GET(
       `✓ Verified application ID ${applicationId} exists in the database`
     );
 
-    // FIRST METHOD: Check if there's a client profile directly linked to this IP application
-    // This is the most direct and reliable method
-    const directProfile = await safeFindFirst("Direct profile lookup", () =>
-      db.query.clientProfile.findFirst({
-        where: and(
-          eq(clientProfile.ipApplicationId, applicationId),
-          eq(clientProfile.userId, session.user.id)
-        ),
-      })
-    );
-
-    if (directProfile) {
-      console.log("👤 Direct profile check result:", {
-        profileExists: true,
-        profileId: directProfile.clientId,
-        userId: directProfile.userId,
-        profileStatus: directProfile.status,
-      });
-
-      const responseData = {
-        exists: true,
-        clientId: directProfile.clientId,
-        userId: directProfile.userId,
-        status: directProfile.status,
-        // Look for registry entry as well for backward compatibility
-        registryId: null as string | null,
-        sourceId: directProfile.clientId,
-        applicationValid: true,
-      };
-
-      // For backward compatibility, also check if there's a registry entry
-      const registryEntry = await safeFindFirst(
-        "Direct profile registry lookup",
-        () =>
-          db.query.formSubmissionRegistry.findFirst({
-            where: and(
-              eq(formSubmissionRegistry.ipApplicationId, applicationId),
-              eq(formSubmissionRegistry.sourceType, "client_profile"),
-              eq(formSubmissionRegistry.sourceId, directProfile.clientId)
-            ),
-          })
-      );
-
-      if (registryEntry) {
-        responseData.registryId = registryEntry.registryId;
-      }
-
-      console.log(
-        "✅ Returning profile exists response (direct):",
-        responseData
-      );
-      return NextResponse.json(responseData);
-    }
-
-    // SECOND METHOD (backward compatibility): Check for registry-based mapping
-    // First check if there's a form submission registry entry linking this application
-    // to a client profile form submission
+    // Registry-based lookup is the source of truth for application linking.
     const formRegistry = await safeFindFirst("Registry lookup", () =>
       db.query.formSubmissionRegistry.findFirst({
         where: and(
@@ -167,9 +140,12 @@ export async function GET(
     // If we found a registry entry for this application, check if the client profile exists
     if (formRegistry?.sourceId) {
       const profile = await safeFindFirst("Registry profile lookup", () =>
-        db.query.clientProfile.findFirst({
-          where: eq(clientProfile.clientId, formRegistry.sourceId),
-        })
+        db
+          .select(CLIENT_PROFILE_FIELDS)
+          .from(liveClientProfile)
+          .where(eq(liveClientProfile.clientId, formRegistry.sourceId))
+          .limit(1)
+          .then((rows) => rows[0] ?? null)
       );
 
       console.log("👤 Registry-based profile check result:", {
@@ -195,7 +171,7 @@ export async function GET(
       return NextResponse.json(responseData);
     }
 
-    // No profile found by either method
+    // No profile found
     console.log("📭 No client profile found for this application");
     const responseData = { exists: false, applicationValid: true };
     console.log("✅ Returning profile does not exist response:", responseData);

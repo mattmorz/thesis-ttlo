@@ -11,8 +11,10 @@ import {
   FileText,
   Globe,
   Bookmark,
+  Image as ImageIcon,
+  Upload,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { debounce } from "lodash";
 
@@ -44,6 +46,16 @@ const formSchema = z.object({
   niceClassifications: z
     .array(z.string())
     .min(1, "At least one NICE classification is required"),
+  trademarkImageDataUrl: z
+    .string()
+    .min(1, "Trademark image is required")
+    .refine(
+      (value) => typeof value === "string" && value.startsWith("data:image/"),
+      {
+        message: "Please upload a valid image file",
+      }
+    ),
+  trademarkImageName: z.string().optional(),
   businessType: z
     .object({
       company: z.boolean(),
@@ -71,6 +83,10 @@ export function TrademarkApplication() {
 
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [dataFetchAttempted, setDataFetchAttempted] = useState(false);
+  const [imageValidationError, setImageValidationError] = useState<
+    string | null
+  >(null);
+  const trademarkImageInputRef = useRef<HTMLInputElement>(null);
 
   const {
     saveTrademarkApplication,
@@ -187,6 +203,8 @@ export function TrademarkApplication() {
         niceClassifications: Array.isArray(result.nice_classifications)
           ? result.nice_classifications
           : [],
+        trademarkImageDataUrl: result.trademarkImageDataUrl || "",
+        trademarkImageName: result.trademarkImageName || "",
         businessType: result.business_type || {
           company: false,
           soleProprietor: false,
@@ -210,6 +228,8 @@ export function TrademarkApplication() {
       description: "",
       translation: "",
       niceClassifications: [],
+      trademarkImageDataUrl: "",
+      trademarkImageName: "",
       businessType: {
         company: false,
         soleProprietor: false,
@@ -294,6 +314,8 @@ export function TrademarkApplication() {
             niceClassifications: Array.isArray(result.nice_classifications)
               ? result.nice_classifications
               : [],
+            trademarkImageDataUrl: result.trademarkImageDataUrl || "",
+            trademarkImageName: result.trademarkImageName || "",
             businessType: result.business_type || {
               company: false,
               soleProprietor: false,
@@ -401,18 +423,20 @@ export function TrademarkApplication() {
 
     // Convert snake_case to camelCase
     const normalized = {
-      trademarkName: data.trademark_name || "",
-      description: data.description || "",
-      translation: data.translation || "",
-      niceClassifications: Array.isArray(data.nice_classifications)
-        ? data.nice_classifications
-        : typeof data.nice_classifications === "string"
-        ? JSON.parse(data.nice_classifications || "[]")
-        : [],
-      businessType: {
-        company: data.business_type?.company || false,
-        soleProprietor: data.business_type?.soleProprietor || false,
-      },
+    trademarkName: data.trademark_name || "",
+    description: data.description || "",
+    translation: data.translation || "",
+    niceClassifications: Array.isArray(data.nice_classifications)
+      ? data.nice_classifications
+      : typeof data.nice_classifications === "string"
+      ? JSON.parse(data.nice_classifications || "[]")
+      : [],
+    trademarkImageDataUrl: data.trademarkImageDataUrl || "",
+    trademarkImageName: data.trademarkImageName || "",
+    businessType: {
+      company: data.business_type?.company || false,
+      soleProprietor: data.business_type?.soleProprietor || false,
+    },
       legalName: data.legal_name || "",
     };
 
@@ -445,6 +469,89 @@ export function TrademarkApplication() {
       currentClassifications.filter((c) => c !== classificationToRemove),
       { shouldDirty: true, shouldValidate: true }
     );
+  };
+
+  const handleTrademarkImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      form.setValue("trademarkImageDataUrl", "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.setValue("trademarkImageName", "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      setImageValidationError(null);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setImageValidationError("Please upload an image file.");
+      toast.error("Please upload an image file");
+      event.target.value = "";
+      return;
+    }
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Failed to read image file"));
+      reader.readAsDataURL(file);
+    });
+
+    const isSquareImage = await new Promise<boolean>((resolve, reject) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const tolerance = 0.02;
+        const ratio = img.width / img.height;
+        resolve(Math.abs(ratio - 1) <= tolerance);
+      };
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = dataUrl;
+    });
+
+    if (!isSquareImage) {
+      const message =
+        "The image must be square to match the 8cm x 8cm requirement.";
+      setImageValidationError(message);
+      form.setError("trademarkImageDataUrl", {
+        type: "manual",
+        message,
+      });
+      toast.error(message);
+      event.target.value = "";
+      return;
+    }
+
+    setImageValidationError(null);
+    form.clearErrors("trademarkImageDataUrl");
+    form.setValue("trademarkImageDataUrl", dataUrl, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue("trademarkImageName", file.name, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const handleClearTrademarkImage = () => {
+    if (trademarkImageInputRef.current) {
+      trademarkImageInputRef.current.value = "";
+    }
+    form.setValue("trademarkImageDataUrl", "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue("trademarkImageName", "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.clearErrors("trademarkImageDataUrl");
+    setImageValidationError(null);
   };
 
   const handlePrevious = () => {
@@ -609,6 +716,95 @@ export function TrademarkApplication() {
                       </FormControl>
                       <Tag className="absolute right-3 top-3 h-5 w-5 text-muted-foreground opacity-70" />
                     </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="border-green-200">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="h-5 w-5 text-green-700" />
+                <h3 className="text-base font-medium text-green-800">
+                  Trademark Image
+                </h3>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="trademarkImageDataUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Upload image<span className="text-red-500"> *</span>
+                    </FormLabel>
+                    <FormDescription>
+                      Upload a square image prepared for an 8cm x 8cm trademark
+                      mark. Non-square images are rejected.
+                    </FormDescription>
+
+                    <div className="rounded-lg border border-dashed border-green-200 bg-green-50/40 p-4 space-y-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <div className="flex-1">
+                          <Input
+                            ref={trademarkImageInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleTrademarkImageChange}
+                            className="border-green-200 focus-visible:ring-green-500"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="border-green-200 text-green-700 hover:bg-green-50"
+                          onClick={handleClearTrademarkImage}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+
+                      <div className="text-xs text-muted-foreground">
+                        Accepted format: image files only. The uploaded artwork
+                        must be square and intended for 8cm x 8cm placement.
+                      </div>
+
+                      {field.value ? (
+                        <div className="space-y-3">
+                          <div className="overflow-hidden rounded-md border border-green-200 bg-white">
+                            <img
+                              src={field.value}
+                              alt="Trademark preview"
+                              className="h-48 w-48 object-contain bg-white mx-auto"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {form.watch("trademarkImageName") || "Selected image"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Square image uploaded for trademark use
+                              </p>
+                            </div>
+                            <Upload className="h-4 w-4 text-green-700 shrink-0" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Upload className="h-4 w-4" />
+                          No image uploaded yet.
+                        </div>
+                      )}
+                    </div>
+
+                    {imageValidationError && (
+                      <p className="text-sm font-medium text-destructive">
+                        {imageValidationError}
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

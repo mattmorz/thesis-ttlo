@@ -34,6 +34,7 @@ import { useActiveApplication } from "@/features/client/form-integration/hooks/u
 import {
   deriveIpTypesFromApplicationIpType,
   hasSelectedIpTypes,
+  getNextVisibleIpDisclosureTab,
   normalizeIpTypes,
 } from "./utils/ip-type";
 
@@ -1216,19 +1217,11 @@ export function ApplicantsInformation() {
         return;
       }
 
-      // Determine the next tab based on selected IP types
-      let nextTab = "";
-      if (resolvedIpTypes.patent || resolvedIpTypes.utilityModel) {
-        nextTab = "patent-application";
-      } else if (resolvedIpTypes.copyright) {
-        nextTab = "copyright-application";
-      } else if (resolvedIpTypes.trademark) {
-        nextTab = "trademark";
-      } else if (resolvedIpTypes.tradeSecret) {
-        nextTab = "trade-secret";
-      } else {
-        nextTab = "confirmation";
-      }
+      // Determine the next tab using the same visible-tab order used by the form layout
+      const nextTab = getNextVisibleIpDisclosureTab(
+        resolvedIpTypes,
+        "applicants-information"
+      );
 
       // Navigate to the next tab
       console.log("Navigating to tab:", nextTab);

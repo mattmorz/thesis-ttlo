@@ -66,6 +66,47 @@ export const areIpTypesEqual = (
   );
 };
 
+export const getVisibleIpDisclosureTabs = (
+  ipTypes?: Partial<NormalizedIpTypes> | null
+): string[] => {
+  const normalized = normalizeIpTypes(ipTypes);
+  const tabs = ["applicants-information"];
+
+  if (normalized.copyright) {
+    tabs.push("copyright-application");
+  }
+
+  if (normalized.patent || normalized.utilityModel) {
+    tabs.push("patent-application", "matrix-sample", "patent-search");
+  }
+
+  if (normalized.trademark) {
+    tabs.push("trademark");
+  }
+
+  if (normalized.tradeSecret) {
+    tabs.push("trade-secret");
+  }
+
+  tabs.push("confirmation");
+
+  return tabs;
+};
+
+export const getNextVisibleIpDisclosureTab = (
+  ipTypes?: Partial<NormalizedIpTypes> | null,
+  currentTab = "applicants-information"
+): string => {
+  const visibleTabs = getVisibleIpDisclosureTabs(ipTypes);
+  const currentIndex = visibleTabs.indexOf(currentTab);
+
+  if (currentIndex === -1) {
+    return visibleTabs[0] || "confirmation";
+  }
+
+  return visibleTabs[currentIndex + 1] || visibleTabs[currentIndex] || "confirmation";
+};
+
 export const deriveIpTypesFromApplicationIpType = (
   ipType?: string | null
 ): { ipTypes: NormalizedIpTypes; otherIpType: string } => {

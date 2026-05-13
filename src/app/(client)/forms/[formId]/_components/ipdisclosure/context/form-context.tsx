@@ -10,7 +10,11 @@ import {
 import { useHydratedIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
 import type { IpTypes } from "@/lib/store/ip-disclosure-store";
 import { useRouter } from "next/navigation";
-import { areIpTypesEqual, normalizeIpTypes } from "../utils/ip-type";
+import {
+  areIpTypesEqual,
+  getVisibleIpDisclosureTabs,
+  normalizeIpTypes,
+} from "../utils/ip-type";
 
 // Global logging control
 const DEBUG = false;
@@ -74,30 +78,7 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
       if (!isHydrated) return;
 
       // Update visible tabs based on selected IP types
-      const visibleTabs = ["applicants-information"];
-
-      if (ipTypes.copyright) {
-        visibleTabs.push("copyright-application");
-      }
-
-      if (ipTypes.patent || ipTypes.utilityModel) {
-        visibleTabs.push(
-          "patent-application",
-          "matrix-sample",
-          "patent-search"
-        );
-      }
-
-      if (ipTypes.trademark) {
-        visibleTabs.push("trademark");
-      }
-
-      if (ipTypes.tradeSecret) {
-        visibleTabs.push("trade-secret");
-      }
-
-      // Always add confirmation tab at the end
-      visibleTabs.push("confirmation");
+      const visibleTabs = getVisibleIpDisclosureTabs(ipTypes);
 
       // Update visible tabs in the store
       setVisibleTabs(visibleTabs);

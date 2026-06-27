@@ -3,11 +3,15 @@
 import { LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { clearAppOwnedLocalStorage } from "@/lib/utils/localStorage-utils";
+import {
+  clearAppOwnedLocalStorage,
+  clearAppOwnedSessionStorage,
+} from "@/lib/utils/localStorage-utils";
 
 export function SignOutButton() {
   const handleSignOut = async () => {
     clearAppOwnedLocalStorage();
+    clearAppOwnedSessionStorage();
     await signOut({ callbackUrl: "/", redirect: true });
   };
 

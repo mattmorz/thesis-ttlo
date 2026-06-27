@@ -39,7 +39,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useSession, signOut } from "next-auth/react";
-import { clearAppOwnedLocalStorage } from "@/lib/utils/localStorage-utils";
+import {
+  clearAppOwnedLocalStorage,
+  clearAppOwnedSessionStorage,
+} from "@/lib/utils/localStorage-utils";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Form,
@@ -218,6 +221,7 @@ export default function SettingsPage() {
 
   const handleSignOut = async () => {
     clearAppOwnedLocalStorage();
+    clearAppOwnedSessionStorage();
     await signOut({ callbackUrl: "/auth/signin" });
   };
 

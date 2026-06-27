@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { LogOut, Loader2 } from "lucide-react";
-import { clearAppOwnedLocalStorage } from "@/lib/utils/localStorage-utils";
+import {
+  clearAppOwnedLocalStorage,
+  clearAppOwnedSessionStorage,
+} from "@/lib/utils/localStorage-utils";
 
 export default function SignOutPage() {
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -20,9 +23,10 @@ export default function SignOutPage() {
 
     const performSignOut = async () => {
       try {
-        // We'll use a more direct approach to reduce duplicate session checks
-          // First, clear app-owned localStorage and cached auth/session data
+        // We'll use a more direct approach to reduce duplicate session checks.
+        // First, clear app-owned storage and cached auth/session data.
         clearAppOwnedLocalStorage();
+        clearAppOwnedSessionStorage();
         localStorage.removeItem("next-auth.session-token");
         localStorage.removeItem("next-auth.callback-url");
         localStorage.removeItem("next-auth.csrf-token");

@@ -61,6 +61,13 @@ export const APP_OWNED_LOCAL_STORAGE_KEYS = [
   "formSubmissionStatus",
 ] as const;
 
+export const APP_OWNED_SESSION_STORAGE_KEYS = [
+  "lastRouteChange",
+  "lastResetStoreTime",
+  "lastCheckExistingDisclosureAndFetch",
+  "lastCheckExistingDisclosureAppId",
+] as const;
+
 // Add navigation awareness if we're in a browser environment
 if (typeof window !== "undefined") {
   // Track when user is navigating between tabs/pages
@@ -316,6 +323,34 @@ export const clearAppOwnedLocalStorage = () => {
   keysToRemove.forEach((key) => {
     previousValues.delete(key);
     window.localStorage.removeItem(key);
+  });
+};
+
+/**
+ * Clears app-owned sessionStorage keys used for runtime throttles, debug state,
+ * and disclosure lookup caches.
+ */
+export const clearAppOwnedSessionStorage = () => {
+  if (typeof window === "undefined") return;
+
+  const keysToRemove = new Set<string>(APP_OWNED_SESSION_STORAGE_KEYS);
+
+  for (let i = 0; i < window.sessionStorage.length; i += 1) {
+    const key = window.sessionStorage.key(i);
+    if (!key) continue;
+
+    if (key.startsWith("debug-toast-")) {
+      keysToRemove.add(key);
+    }
+  }
+
+  // `ipDisclosureNoRecordAppIds` stores a JSON array of app IDs; clear it
+  // entirely so a different user does not inherit the cached "no record" list.
+  keysToRemove.add("ipDisclosureNoRecordAppIds");
+  keysToRemove.add("lastCall_ip-disclosure-storage");
+
+  keysToRemove.forEach((key) => {
+    window.sessionStorage.removeItem(key);
   });
 };
 

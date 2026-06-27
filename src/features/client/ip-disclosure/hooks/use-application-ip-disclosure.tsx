@@ -159,6 +159,47 @@ export function useApplicationIpDisclosure() {
     setFetchAttempted,
   ]);
 
+  // Refresh application metadata when the title form is saved so the
+  // disclosure header shows the latest title/description immediately.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const refreshApplicationMetadata = (event: Event) => {
+      const customEvent = event as CustomEvent<{ applicationId?: string }>;
+      const targetApplicationId = customEvent.detail?.applicationId;
+
+      if (
+        targetApplicationId &&
+        activeApplicationId &&
+        targetApplicationId !== activeApplicationId
+      ) {
+        return;
+      }
+
+      void refetchApplications();
+    };
+
+    window.addEventListener(
+      "applicationTitleFormCompleted",
+      refreshApplicationMetadata as EventListener
+    );
+    window.addEventListener(
+      "formProgressRefresh",
+      refreshApplicationMetadata as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "applicationTitleFormCompleted",
+        refreshApplicationMetadata as EventListener
+      );
+      window.removeEventListener(
+        "formProgressRefresh",
+        refreshApplicationMetadata as EventListener
+      );
+    };
+  }, [activeApplicationId, refetchApplications]);
+
   // Listen for application switch events
   useEffect(() => {
     // Control verbosity of logging

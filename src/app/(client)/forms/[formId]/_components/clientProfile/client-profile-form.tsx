@@ -37,6 +37,7 @@ import { getFormPermissions, bypassPermissions } from "@/lib/auth/permissions";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { safeFetch } from "@/lib/utils";
+import { clearApplicationScopedLocalStorage } from "@/lib/utils/localStorage-utils";
 
 // ✅ Interface for progress tracking prop
 interface ClientProfileFormProps {
@@ -364,7 +365,8 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
 
     const handleFormDataCleared = () => {
       console.log("Form data cleared event received, resetting form state");
-      // Clear localStorage data to prevent data leakage between applications
+      clearApplicationScopedLocalStorage(activeApplicationId);
+      // Clear legacy shared keys as well.
       localStorage.removeItem("clientInformationData");
       localStorage.removeItem("educationalBackgroundData");
       localStorage.removeItem("clientBackgroundIPData");
@@ -373,10 +375,20 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
     };
 
     const handleApplicationSwitched = (event: CustomEvent) => {
+      const nextApplicationId = event.detail?.applicationId ?? null;
+
+      if (nextApplicationId && nextApplicationId === activeApplicationId) {
+        console.log(
+          "Application switched event received for current application, ignoring"
+        );
+        return;
+      }
+
       console.log(
         "Application switched event received, clearing localStorage and reloading form data"
       );
-      // Clear localStorage data to prevent data leakage between applications
+      clearApplicationScopedLocalStorage(activeApplicationId);
+      // Clear shared legacy keys as well.
       localStorage.removeItem("clientInformationData");
       localStorage.removeItem("educationalBackgroundData");
       localStorage.removeItem("clientBackgroundIPData");
@@ -411,7 +423,7 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
         handleApplicationSwitched as EventListener
       );
     };
-  }, []);
+  }, [activeApplicationId]);
 
   // Initialize form with local storage data if available
   useEffect(() => {

@@ -26,6 +26,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { signOut, useSession } from "next-auth/react";
+import { clearAppOwnedLocalStorage } from "@/lib/utils/localStorage-utils";
 
 export function SidebarUser() {
   const { isMobile } = useSidebar();
@@ -100,7 +101,12 @@ export function SidebarUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>
+            <DropdownMenuItem
+              onClick={async () => {
+                clearAppOwnedLocalStorage();
+                await signOut({ callbackUrl: "/", redirect: true });
+              }}
+            >
               <LogOut className="size-4 mr-2" />
               Log out
             </DropdownMenuItem>

@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { LogOut, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { clearAppOwnedLocalStorage } from "@/lib/utils/localStorage-utils";
 
 export default function SignOutPage() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [countdown, setCountdown] = useState(3);
-  const router = useRouter();
 
   useEffect(() => {
     // Track mounted state to prevent state updates after unmount
@@ -22,7 +21,8 @@ export default function SignOutPage() {
     const performSignOut = async () => {
       try {
         // We'll use a more direct approach to reduce duplicate session checks
-          // First, clear any cached session data from localStorage (v4 + v5)
+          // First, clear app-owned localStorage and cached auth/session data
+        clearAppOwnedLocalStorage();
         localStorage.removeItem("next-auth.session-token");
         localStorage.removeItem("next-auth.callback-url");
         localStorage.removeItem("next-auth.csrf-token");
@@ -84,7 +84,7 @@ export default function SignOutPage() {
     return () => {
       isMounted = false;
     };
-  }, [isSigningOut, router]);
+  }, [isSigningOut]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-white to-green-50">

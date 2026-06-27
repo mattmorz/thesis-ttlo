@@ -37,6 +37,30 @@ const APP_SCOPED_STORAGE_PREFIXES = [
   "deed-assignment-storage",
 ] as const;
 
+export const APP_OWNED_LOCAL_STORAGE_KEYS = [
+  "activeApplicationId",
+  "activeApplicationIdSetAt",
+  "clientInformationData",
+  "educationalBackgroundData",
+  "clientBackgroundIPData",
+  "ipDisclosureData",
+  "ipInventorsData",
+  "ip-disclosure-storage",
+  "copyrightApplicationData",
+  "patentApplicationData",
+  "matrixSampleData",
+  "patentSearchData",
+  "trademarkData",
+  "tradeSecretData",
+  "substantialUseData",
+  "substantial-use-storage",
+  "deedAssignmentData",
+  "signatoryData",
+  "royaltyData",
+  "deed-assignment-storage",
+  "formSubmissionStatus",
+] as const;
+
 // Add navigation awareness if we're in a browser environment
 if (typeof window !== "undefined") {
   // Track when user is navigating between tabs/pages
@@ -257,6 +281,34 @@ export const clearApplicationScopedLocalStorage = (
     const matchesPrefix = prefixes.some((prefix) => key.startsWith(prefix));
 
     if (matchesApplication && matchesPrefix) {
+      keysToRemove.add(key);
+    }
+  }
+
+  keysToRemove.forEach((key) => {
+    previousValues.delete(key);
+    window.localStorage.removeItem(key);
+  });
+};
+
+/**
+ * Clears the app-owned localStorage keys that should be removed on logout.
+ * This intentionally leaves unrelated site/browser keys alone.
+ */
+export const clearAppOwnedLocalStorage = () => {
+  if (typeof window === "undefined") return;
+
+  const keysToRemove = new Set<string>(APP_OWNED_LOCAL_STORAGE_KEYS);
+
+  for (let i = 0; i < window.localStorage.length; i += 1) {
+    const key = window.localStorage.key(i);
+    if (!key) continue;
+
+    const matchesAppOwnedPrefix = APP_SCOPED_STORAGE_PREFIXES.some((prefix) =>
+      key.startsWith(prefix)
+    );
+
+    if (matchesAppOwnedPrefix) {
       keysToRemove.add(key);
     }
   }

@@ -4,6 +4,7 @@ import { trpc } from "@/trpc/client";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { toast } from "sonner";
 import type { NormalizedIpTypes } from "@/lib/utils/ip-types";
+import { clearApplicationScopedLocalStorage } from "@/lib/utils/localStorage-utils";
 
 const DEBUG_APPLICATIONS = process.env.NODE_ENV === "development";
 
@@ -125,6 +126,8 @@ export function useActiveApplication(): UseActiveApplicationReturn {
 
     // Only run localStorage operations on the client side
     if (typeof window !== "undefined") {
+      clearApplicationScopedLocalStorage(activeApplicationId);
+
       // Client profile data
       localStorage.removeItem("clientInformationData");
       localStorage.removeItem("educationalBackgroundData");
@@ -414,21 +417,7 @@ export function useActiveApplication(): UseActiveApplicationReturn {
       // Ensure we have a valid array of applications
       if (Array.isArray(applicationsData)) {
         const nextApplications = applicationsData as Application[];
-        const hasExistingApplications = applications.length > 0;
-
-        if (nextApplications.length === 0 && hasExistingApplications) {
-          if (DEBUG_APPLICATIONS) {
-            console.log(
-              "[useActiveApplication] Preserving existing applications because the refetch returned an empty list",
-              {
-                existingApplicationsCount: applications.length,
-                activeApplicationId,
-              }
-            );
-          }
-        } else {
-          setApplications(nextApplications);
-        }
+        setApplications(nextApplications);
 
         if (activeApplicationId) {
           const exists = nextApplications.some(

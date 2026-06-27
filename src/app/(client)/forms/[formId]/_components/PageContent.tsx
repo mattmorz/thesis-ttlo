@@ -1345,16 +1345,17 @@ useEffect(() => {
 
   }, [clientSideAllFormsCompleted, activeApplicationId]);
 
-  // Effect 6: Automatically redirect to client-profile tab if no tab is specified
+  // Effect 6: Keep a tab selected when an application exists, but allow the
+  // welcome state to stay on /forms with no query string when no app is active.
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if (!tabParam) {
+    if (!tabParam && activeApplicationId) {
       router.push(getFormUrl(undefined, FormTabs.CLIENT_PROFILE), {
         scroll: false,
       });
     }
-  }, [tabParam, router]);
+  }, [tabParam, activeApplicationId, router]);
 
   // Effect 7: Set active form on initial load or when URL changes
   useEffect(() => {
@@ -2034,7 +2035,7 @@ useEffect(() => {
       return;
     }
 
-    if (!session?.user?.id) {
+    if (!session?.user) {
       toast.error("You must be logged in to create an application.");
       return;
     }
@@ -2045,7 +2046,7 @@ useEffect(() => {
     toast.loading("Creating new application...", { id: "creating-app-toast" });
 
     createApplicationMutation.mutate({
-      userId: session.user.id,
+      userId: session.user.id ?? "",
       title: "Untitled Application", // Default title as requested
       ipType: "patent", // Default to a visible type instead of unsure
       selectedIpTypes: buildIpTypesFromApplicationValues(["patent"]),

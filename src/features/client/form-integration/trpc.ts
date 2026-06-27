@@ -8,6 +8,7 @@ import { db } from "@/drizzle/db";
 // Import from the real schema
 import {
   ipApplication,
+  applicationPhase,
 } from "@/drizzle/migrations/schema";
 import { eq, desc } from "drizzle-orm";
 import {

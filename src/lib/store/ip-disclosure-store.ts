@@ -34,6 +34,17 @@ const logDebug = (message: string, ...args: any[]) => {
   if (CURRENT_LOG_LEVEL >= LOG_LEVELS.DEBUG) console.log(message, ...args);
 };
 
+const normalizeStorageApplicationId = (value: string | null): string | null => {
+  if (!value) return null;
+
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === "string" ? parsed : value;
+  } catch {
+    return value;
+  }
+};
+
 // Memoization cache for deepMerge operations
 const mergeCache = new Map<string, any>();
 const MAX_CACHE_SIZE = 50;
@@ -1819,8 +1830,8 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
             getItem: (name: string): string | null => {
               try {
                 // Get the active application ID
-                const activeAppId = window.localStorage.getItem(
-                  "activeApplicationId"
+                const activeAppId = normalizeStorageApplicationId(
+                  window.localStorage.getItem("activeApplicationId")
                 );
 
                 // Create a namespace for the IP disclosure storage based on application ID
@@ -1891,8 +1902,8 @@ export const useIpDisclosureStore = create<IpDisclosureState>()(
                 try {
                   // Try to parse the current value and compare it with what's already in localStorage
                   const currentObj = JSON.parse(value);
-                  const activeAppId = window.localStorage.getItem(
-                    "activeApplicationId"
+                  const activeAppId = normalizeStorageApplicationId(
+                    window.localStorage.getItem("activeApplicationId")
                   );
                   const storageKey =
                     activeAppId && name === "ip-disclosure-storage"

@@ -157,6 +157,13 @@ export const formIntegrationRouter = createTRPCRouter({
     .mutation(async (opts) => {
       const { ctx, input } = opts;
       try {
+        const authenticatedUserId = ctx.session?.user?.id;
+        if (!authenticatedUserId) {
+          throw new Error("User not authenticated");
+        }
+
+        const resolvedUserId = authenticatedUserId;
+
         const newAppId = uuid();
 
         const selectedIpTypes = input.selectedIpTypes
@@ -166,7 +173,7 @@ export const formIntegrationRouter = createTRPCRouter({
         // Insert the new application
         await db.insert(ipApplication).values({
           id: newAppId,
-          userId: input.userId,
+          userId: resolvedUserId,
           title: input.title,
           description: input.description || null,
           status: "draft",

@@ -53,7 +53,11 @@ export function useLocalStorage<T>(
 
       // Save to local storage
       if (typeof window !== "undefined") {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        if (valueToStore === null || valueToStore === undefined) {
+          window.localStorage.removeItem(key);
+        } else {
+          window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        }
       }
     } catch (error) {
       console.error("Error writing to localStorage:", error);

@@ -16,6 +16,27 @@ const previousValues = new Map<string, string>();
 let isTabChanging = false;
 const TAB_CHANGE_COOLDOWN = 1000; // 1 second cooldown after tab changes
 
+const APP_SCOPED_STORAGE_PREFIXES = [
+  "clientInformationData",
+  "educationalBackgroundData",
+  "clientBackgroundIPData",
+  "ip-disclosure-storage",
+  "ipDisclosureData",
+  "ipInventorsData",
+  "copyrightApplicationData",
+  "patentApplicationData",
+  "matrixSampleData",
+  "patentSearchData",
+  "trademarkData",
+  "tradeSecretData",
+  "substantialUseData",
+  "substantial-use-storage",
+  "deedAssignmentData",
+  "signatoryData",
+  "royaltyData",
+  "deed-assignment-storage",
+] as const;
+
 // Add navigation awareness if we're in a browser environment
 if (typeof window !== "undefined") {
   // Track when user is navigating between tabs/pages
@@ -205,6 +226,44 @@ export const batchRemoveLocalStorageItems = (keys: string[]) => {
         `Removed batch ${index + 1}/${batches.length} (${batch.length} items)`
       );
     }, index * 50); // Increased delay between batches to 50ms
+  });
+};
+
+/**
+ * Removes all localStorage keys associated with a specific application ID.
+ * This clears both raw and JSON-stringified key variants used by older code.
+ */
+export const clearApplicationScopedLocalStorage = (
+  applicationId: string | null | undefined
+) => {
+  if (typeof window === "undefined" || !applicationId) return;
+
+  const quotedApplicationId = JSON.stringify(applicationId);
+  const prefixes = APP_SCOPED_STORAGE_PREFIXES;
+
+  const keysToRemove = new Set<string>([
+    "activeApplicationId",
+    "activeApplicationIdSetAt",
+    ...prefixes.map((prefix) => `${prefix}-${applicationId}`),
+    ...prefixes.map((prefix) => `${prefix}-${quotedApplicationId}`),
+  ]);
+
+  for (let i = 0; i < window.localStorage.length; i += 1) {
+    const key = window.localStorage.key(i);
+    if (!key) continue;
+
+    const matchesApplication =
+      key.includes(applicationId) || key.includes(quotedApplicationId);
+    const matchesPrefix = prefixes.some((prefix) => key.startsWith(prefix));
+
+    if (matchesApplication && matchesPrefix) {
+      keysToRemove.add(key);
+    }
+  }
+
+  keysToRemove.forEach((key) => {
+    previousValues.delete(key);
+    window.localStorage.removeItem(key);
   });
 };
 

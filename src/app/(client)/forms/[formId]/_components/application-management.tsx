@@ -73,6 +73,7 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Upload } from "lucide-react";
 import { OtherDocumentsSection } from "./otherDocuments";
+import { clearApplicationScopedLocalStorage } from "@/lib/utils/localStorage-utils";
 import {
   buildIpTypesFromApplicationValues,
   getSelectedApplicationIpTypes,
@@ -164,6 +165,7 @@ export function ApplicationManagement({
   );
   const [deleteConfirmApp, setDeleteConfirmApp] = useState<string | null>(null);
   const deleteTargetRef = useRef<string | null>(null);
+  const deleteWasActiveRef = useRef(false);
   const [isGuideCollapsed, setIsGuideCollapsed] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
 
@@ -253,27 +255,32 @@ export function ApplicationManagement({
         refetchApplications();
 
         // If we deleted the active application, switch to the next or clear to show the welcome screen
-        if (deletedId === activeApplicationId) {
+        if (deleteWasActiveRef.current && deletedId) {
+          clearApplicationScopedLocalStorage(deletedId);
           if (remainingApps.length > 0) {
-            handleSwitchApplication(remainingApps[0].id);
+            setTimeout(() => handleSwitchApplication(remainingApps[0].id), 0);
           } else {
-            if (typeof window !== "undefined") {
-              clearFormData();
-              localStorage.removeItem("activeApplicationId");
-              localStorage.removeItem("activeApplicationIdSetAt");
-              const event = new CustomEvent("application-switched", {
-                detail: { applicationId: null },
-              });
-              window.dispatchEvent(event);
-              setTimeout(() => window.location.reload(), 200);
-            }
+            clearFormData();
+            setActiveApplicationId(null, {
+              clearFormData: false,
+              emitEvent: true,
+              skipReload: true,
+            });
+            const event = new CustomEvent("application-switched", {
+              detail: { applicationId: null },
+            });
+            window.dispatchEvent(event);
+            router.replace("/forms");
           }
         }
+
+        deleteWasActiveRef.current = false;
       },
       onError: (error) => {
         toast.dismiss("deleting-app");
         toast.error(`Failed to delete application: ${error.message}`);
         console.error("Error deleting application:", error);
+        deleteWasActiveRef.current = false;
       },
     });
 
@@ -552,6 +559,7 @@ export function ApplicationManagement({
 
     if (!deleteConfirmApp) return;
     deleteTargetRef.current = deleteConfirmApp;
+    deleteWasActiveRef.current = deleteConfirmApp === activeApplicationId;
 
     // Show loading toast
     toast.loading("Deleting application...", { id: "deleting-app" });

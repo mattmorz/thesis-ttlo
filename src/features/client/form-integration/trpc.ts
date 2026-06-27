@@ -6,8 +6,44 @@ import { formIntegrationRouter as serverRouter } from "@/server/api/routers/form
 import { v4 as uuid } from "uuid";
 import { db } from "@/drizzle/db";
 // Import from the real schema
-import { ipApplication, applicationPhase } from "@/drizzle/migrations/schema";
+import {
+  ipApplication,
+} from "@/drizzle/migrations/schema";
 import { eq, desc } from "drizzle-orm";
+import {
+  type NormalizedIpTypes,
+  deriveIpTypesFromApplicationIpType,
+  getPrimaryApplicationIpType,
+  hasSelectedIpTypes,
+  normalizeIpTypes,
+} from "@/lib/utils/ip-types";
+
+const normalizeSelectedIpTypes = (value: unknown): NormalizedIpTypes | null => {
+  const parseValue = (input: unknown): Record<string, unknown> | null => {
+    if (!input) return null;
+    if (typeof input === "string") {
+      try {
+        return JSON.parse(input) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    }
+    if (typeof input === "object") {
+      return input as Record<string, unknown>;
+    }
+    return null;
+  };
+
+  const parsed = parseValue(value);
+  const nestedApplicantsInfo = parseValue(parsed?.applicantsInfo);
+  const rawTypes =
+    parseValue(nestedApplicantsInfo?.ipTypes) ??
+    parseValue(parsed?.selectedIpTypes) ??
+    parsed;
+
+  const normalized = normalizeIpTypes(rawTypes as Partial<NormalizedIpTypes> | null);
+  return hasSelectedIpTypes(normalized) ? normalized : null;
+};
 
 export const formIntegrationRouter = router({
   /**
@@ -42,17 +78,26 @@ export const formIntegrationRouter = router({
             // Remove the phases relation temporarily to avoid the error
           });
 
-          return apps.map((app: any) => ({
-            id: app.id,
-            title: app.title,
-            description: app.description,
-            status: app.status,
-            progress: app.progress,
-            createdAt: app.createdAt
-              ? new Date(app.createdAt).toISOString()
-              : null,
-            ipType: app.ipType,
-          }));
+          return apps.map((app: any) => {
+            const normalizedApplicationIpTypes = app.selectedIpTypes
+              ? normalizeSelectedIpTypes(app.selectedIpTypes)
+              : null;
+
+            return {
+              id: app.id,
+              title: app.title,
+              description: app.description,
+              status: app.status,
+              progress: app.progress,
+              createdAt: app.createdAt
+                ? new Date(app.createdAt).toISOString()
+                : null,
+              ipType: app.ipType,
+              selectedIpTypes:
+                normalizedApplicationIpTypes ??
+                deriveIpTypesFromApplicationIpType(app.ipType).ipTypes,
+            };
+          });
         } catch (error) {
           console.error("Error getting applications from DB:", error);
           return [];
@@ -84,6 +129,18 @@ export const formIntegrationRouter = router({
           "not_sure",
           "other",
         ]),
+        selectedIpTypes: z
+          .object({
+            copyright: z.boolean().default(false),
+            patent: z.boolean().default(false),
+            utilityModel: z.boolean().default(false),
+            industrialDesign: z.boolean().default(false),
+            trademark: z.boolean().default(false),
+            tradeSecret: z.boolean().default(false),
+            other: z.boolean().default(false),
+            notSure: z.boolean().default(false),
+          })
+          .optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -110,6 +167,10 @@ export const formIntegrationRouter = router({
           }
         }
 
+        const selectedIpTypes = input.selectedIpTypes
+          ? normalizeIpTypes(input.selectedIpTypes)
+          : deriveIpTypesFromApplicationIpType(input.ipType).ipTypes;
+
         // Create the application directly with the database
         const newAppId = uuid();
         console.log(
@@ -125,7 +186,8 @@ export const formIntegrationRouter = router({
             description: input.description || null,
             status: "draft" as const,
             progress: 0,
-            ipType: input.ipType,
+            ipType: getPrimaryApplicationIpType(selectedIpTypes),
+            selectedIpTypes,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           });
@@ -158,7 +220,8 @@ export const formIntegrationRouter = router({
             description: input.description || null,
             status: "draft" as const,
             progress: 0,
-            ipType: input.ipType,
+            ipType: getPrimaryApplicationIpType(selectedIpTypes),
+            selectedIpTypes,
             createdAt: new Date().toISOString(),
           };
 

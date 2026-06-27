@@ -19,6 +19,7 @@ import { useSession } from "next-auth/react";
 import { getFormPermissions, bypassPermissions } from "@/lib/auth/permissions";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -62,7 +63,6 @@ declare global {
     ) => void;
   }
 }
-
 const laboratoryFacilitiesSchema = z
   .object({
     experimentalApparatus: z.boolean().default(false),
@@ -152,7 +152,6 @@ const fundingResourcesSchema = z
       });
     }
   });
-
 const formSchema = z.object({
   applicants: z
     .array(
@@ -188,6 +187,13 @@ const formSchema = z.object({
 });
 
 export function SubstantialUseForm() {
+    const [isCSU, setIsCSU] = useState<boolean | null>(null);
+  useEffect(() => {
+  const value = localStorage.getItem("isCSUAffiliated");
+  if (value !== null) {
+    setIsCSU(JSON.parse(value));
+  }
+}, []);
   const router = useRouter();
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -259,10 +265,6 @@ export function SubstantialUseForm() {
       researchTitle: "",
     },
   });
-
-  useEffect(() => {
-  form.trigger();
-}, []);
 
   const {
     fields: applicantFields,
@@ -879,19 +881,22 @@ export function SubstantialUseForm() {
       lastEventTime = now;
 
       // Check if we've recently fetched this application's data
-      const lastSuccessTime = activeApplicationId
-        ? lastSuccessfulFetchRef.current[activeApplicationId] || 0
-        : 0;
-      const CACHE_DURATION = 10000; // 10 seconds for events (shorter than main cache)
+      //const lastSuccessTime = activeApplicationId
+       // ? lastSuccessfulFetchRef.current[activeApplicationId] || 0
+       // : 0;
+     // const CACHE_DURATION = 10000; // 10 seconds for events (shorter than main cache)
 
-      if (activeApplicationId && now - lastSuccessTime < CACHE_DURATION) {
-        console.log(
-          `Skipping form_completed fetch - already fetched data recently (${Math.round(
-            (now - lastSuccessTime) / 1000
-          )}s ago)`
-        );
-        return;
-      }
+     // if (activeApplicationId && now - lastSuccessTime < CACHE_DURATION) {
+       // console.log(
+        //  `Skipping form_completed fetch - already fetched data recently (${Math.round(
+        //    (now - lastSuccessTime) / 1000
+       //   )}s ago)`
+        //);
+       // return;
+     // }
+     // ❌ remove cache blocking
+// ALWAYS fetch fresh data after completion
+fetchData();
 
       console.log("Form completed event", event.detail);
       if (
@@ -936,19 +941,37 @@ export function SubstantialUseForm() {
     }
   }, [activeApplicationId, form, resetFormWithDefaults]);
 
-  // Dispatch event when form is completed
+  // Dispatch events when form is completed (UI + registry + progress tracking)
   const dispatchFormCompleted = (substantialUseId?: string) => {
-    if (typeof window !== "undefined" && activeApplicationId) {
-      const event = new CustomEvent("form_completed", {
+    if (typeof window === "undefined" || !activeApplicationId) return;
+
+    // Update the page-level status cache (enables next tab immediately)
+    if (typeof window.updateIPFormStatus === "function") {
+      window.updateIPFormStatus("substantial_use", true, activeApplicationId);
+    }
+
+    // Standard event (used by some progress trackers / listeners)
+    window.dispatchEvent(
+      new CustomEvent("form_completed", {
         detail: {
           formType: "substantial_use",
           completed: true,
           applicationId: activeApplicationId,
-          ...(substantialUseId && { substantialUseId }), // Include substantialUseId if available
+          ...(substantialUseId && { substantialUseId }),
         },
-      });
-      window.dispatchEvent(event);
-    }
+      })
+    );
+
+    // PageContent listens to this to update gated navigation + registry insertion
+    window.dispatchEvent(
+      new CustomEvent("substantialUseFormCompleted", {
+        detail: {
+          completed: true,
+          applicationId: activeApplicationId,
+          ...(substantialUseId && { substantialUseId }),
+        },
+      })
+    );
   };
 
   // Handle form submission
@@ -980,8 +1003,8 @@ export function SubstantialUseForm() {
         laboratoryFacilities: values.laboratoryFacilities,
         fundingResources: values.fundingResources,
         remarks: values.remarks?.trim(),
-        status: "draft", // Default for new submissions
         applicationId: activeApplicationId, // Add the application ID
+        status: "submitted",
       };
 
       console.log(
@@ -1090,12 +1113,16 @@ export function SubstantialUseForm() {
             );
             // Continue with form submission even if registration fails
           }
+  form.reset({}, { keepValues: false });
+  form.clearErrors();
 
           // Set form status to submitted
           setFormStatus("submitted");
 
-          // Dispatch form completion event
+          // Mark substantial use as completed before navigating (tab gating relies on this)
           dispatchFormCompleted(substantialUseId);
+ 
+         
 
           toast.success("Form Submitted", {
             id: submitToastId,
@@ -1221,6 +1248,7 @@ export function SubstantialUseForm() {
         id: updateToastId,
         description: "Your substantial use form has been saved as a draft.",
       });
+
     } catch (error) {
       console.error("[Substantial Use Form] Error updating form:", error);
       toast.error("Update Failed", {
@@ -1297,7 +1325,7 @@ export function SubstantialUseForm() {
   // - Only allow editing if user has admin role or is the form owner
   // - Check submission status and user permissions
   // - Add role check: isAdmin || (isOwner && !isSubmitted)
-  const isFormDisabled = false; // Temporarily disabled for testing
+ const isFormDisabled = isCSU === false; // Temporarily disabled for testing
 
   const researchTitle = form.watch("researchTitle");
   const remarks = form.watch("remarks");
@@ -1364,17 +1392,17 @@ export function SubstantialUseForm() {
     | undefined;
 
   useEffect(() => {
-    if (isLoading || isSubmitting) return;
+      if (isLoading || isSubmitting || form.formState.isSubmitted) return;
     void form.trigger(["laboratoryFacilities", "fundingResources"]);
   }, [form, isLoading, isSubmitting, formData, activeApplicationId]);
 
   useEffect(() => {
-    if (isLoading || isSubmitting) return;
+      if (isLoading || isSubmitting || form.formState.isSubmitted) return;
     void form.trigger("laboratoryFacilities");
   }, [form, isLoading, isSubmitting, laboratoryFacilities]);
 
   useEffect(() => {
-    if (isLoading || isSubmitting) return;
+      if (isLoading || isSubmitting || form.formState.isSubmitted) return;
     void form.trigger("fundingResources");
   }, [form, isLoading, isSubmitting, fundingResources]);
 
@@ -1393,13 +1421,14 @@ export function SubstantialUseForm() {
   }, [form, isLoading, isSubmitting, fundingResourcesValid]);
 
   useEffect(() => {
-    if (isLoading || isSubmitting) return;
+     if (isLoading || isSubmitting || form.formState.isSubmitted) return;
     void form.trigger(["remarks", "applicants"]);
   }, [form, isLoading, isSubmitting, formData, activeApplicationId]);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+         <fieldset disabled={isFormDisabled}></fieldset>
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             <p>An error occurred: {error.message}</p>
@@ -1409,10 +1438,13 @@ export function SubstantialUseForm() {
         {isFormDisabled && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
             <p className="font-bold">Form Already Submitted</p>
-            <p>
-              This form has been submitted and cannot be modified. Contact an
-              administrator if you need to make changes.
-            </p>
+           <p>
+  This form has been submitted and cannot be modified.{" "}
+  <Link href="/contact" className="underline text-blue-600">
+    Contact administrator
+  </Link>{" "}
+  if you need to make changes.
+</p>
           </div>
         )}
 
@@ -1513,7 +1545,7 @@ export function SubstantialUseForm() {
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit|| isCSU === false}
                           />
                         </FormControl>
                         <FormLabel className="font-normal">
@@ -1535,7 +1567,7 @@ export function SubstantialUseForm() {
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit || isCSU === false}
                           />
                         </FormControl>
                         <div className="space-y-2 flex-1">
@@ -1573,7 +1605,7 @@ export function SubstantialUseForm() {
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit || isCSU === false}
                           />
                         </FormControl>
                         <div className="space-y-2 flex-1">
@@ -1658,7 +1690,7 @@ export function SubstantialUseForm() {
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit || isCSU === false}
                           />
                         </FormControl>
                         <FormLabel className="font-normal">
@@ -1680,7 +1712,7 @@ export function SubstantialUseForm() {
                             checked={field.value}
                             onCheckedChange={field.onChange}
                             className={customCheckboxStyles}
-                            disabled={!canEdit}
+                            disabled={!canEdit || isCSU === false}
                           />
                         </FormControl>
                         <div className="space-y-2 flex-1">
@@ -2053,7 +2085,7 @@ export function SubstantialUseForm() {
               <Button
                 type="submit"
                 className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
-                disabled={!canSubmit || isNextDisabled}
+                disabled={!canSubmit || isNextDisabled || isSubmitting}
               >
                 {isSubmitting ? "Submitting..." : "Submit Form"}
               </Button>

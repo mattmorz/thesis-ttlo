@@ -303,7 +303,7 @@ function ViewDocuments() {
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button
+                          {/* <Button
                             variant="ghost"
                             size="sm"
                             className="text-red-500 hover:text-red-700"
@@ -311,7 +311,7 @@ function ViewDocuments() {
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
                             <span>Delete</span>
-                          </Button>
+                          </Button> */}
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>

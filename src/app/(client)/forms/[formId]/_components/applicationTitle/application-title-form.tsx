@@ -18,17 +18,44 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { trpc } from "@/app/_trpc/client";
 import { toast } from "sonner";
-import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  buildIpTypesFromApplicationValues,
+  getPrimaryApplicationIpType,
+  normalizeIpTypes,
+  type ApplicationIpTypeValue,
+} from "@/lib/utils/ip-types";
 
+const IP_TYPE_VALUES = [
+  "patent",
+  "trademark",
+  "copyright",
+  "industrial_design",
+  "utility_model",
+  "trade_secret",
+  "other",
+  "not_sure",
+] as const;
+
+const IP_TYPE_OPTIONS = [
+  { value: "patent", label: "Patent", key: "patent" },
+  { value: "trademark", label: "Trademark", key: "trademark" },
+  { value: "copyright", label: "Copyright", key: "copyright" },
+  {
+    value: "industrial_design",
+    label: "Industrial Design",
+    key: "industrialDesign",
+  },
+  { value: "utility_model", label: "Utility Model", key: "utilityModel" },
+  { value: "trade_secret", label: "Trade Secret", key: "tradeSecret" },
+  { value: "other", label: "Other", key: "other" },
+  { value: "not_sure", label: "Not Sure", key: "notSure" },
+] as const;
+
+type IpTypeValue = (typeof IP_TYPE_OPTIONS)[number]["value"];
 const formSchema = z.object({
   title: z
     .string()
@@ -38,40 +65,29 @@ const formSchema = z.object({
     .string()
     .min(1, "Description is required")
     .min(5, "Description must be at least 5 characters."),
-  ipType: z
-    .string()
-    .min(1, "IP type is required")
-    .refine(
-      (value) =>
-        [
-          "patent",
-          "copyright",
-          "trademark",
-          "utility_model",
-          "industrial_design",
-          "trade_secret",
-          "not_sure",
-          "other",
-        ].includes(value),
-      "IP type is required"
-    ),
+  ipTypes: z
+    .array(z.enum(IP_TYPE_VALUES))
+    .min(1, "Please select at least one IP type."),
 });
 
 export function ApplicationTitleForm() {
+  const getIpTypeStorageKey = (applicationId: string) =>
+    `application-selected-ip-types-${applicationId}`;
   const router = useRouter();
-  const { activeApplication, refetchApplications, setApplications } =
+  const { activeApplicationId, refetchApplications, setApplications } =
     useActiveApplication();
-  const hasClearedTitleRef = useRef(false);
-  const hasClearedDescriptionRef = useRef(false);
-  const hasClearedIpTypeRef = useRef(false);
+  const applicantsInfo = useIpDisclosureStore((state) => state.applicantsInfo);
+  const setApplicantsInfo = useIpDisclosureStore(
+    (state) => state.setApplicantsInfo
+  );
 
   const updateApplicationMutation = trpc.formIntegration.updateApplication.useMutation({
     onSuccess: (_data, variables) => {
       toast.success("Application updated successfully!");
-      if (activeApplication?.id) {
+      if (activeApplicationId) {
         setApplications((prev) =>
           prev.map((app) =>
-            app.id === activeApplication.id
+            app.id === activeApplicationId
               ? {
                   ...app,
                   title: variables.title ?? app.title,
@@ -80,20 +96,23 @@ export function ApplicationTitleForm() {
                       ? variables.description
                       : app.description,
                   ipType: variables.ipType ?? app.ipType,
+                  selectedIpTypes: variables.selectedIpTypes
+                    ? normalizeIpTypes(variables.selectedIpTypes)
+                    : app.selectedIpTypes,
                 }
               : app
           )
         );
       }
       refetchApplications();
-      if (activeApplication?.id) {
+      if (activeApplicationId) {
         const event = new CustomEvent("applicationTitleFormCompleted", {
-          detail: { completed: true, applicationId: activeApplication.id },
+          detail: { completed: true, applicationId: activeApplicationId },
         });
         window.dispatchEvent(event);
 
         const refreshEvent = new CustomEvent("formProgressRefresh", {
-          detail: { applicationId: activeApplication.id },
+          detail: { applicationId: activeApplicationId },
         });
         window.dispatchEvent(refreshEvent);
       }
@@ -108,46 +127,51 @@ export function ApplicationTitleForm() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    mode: "onBlur",
+    mode: "onChange",
     reValidateMode: "onChange",
     defaultValues: {
-      title: activeApplication?.title || "",
-      description: activeApplication?.description || "",
-      ipType: activeApplication?.ipType || "",
+      title: "",
+      description: "",
+      ipTypes: [],
     },
   });
-  useEffect(() => {
-  form.trigger();
-}, []);
-
-  useEffect(() => {
-    if (activeApplication) {
-      form.reset({
-        title: activeApplication.title || "",
-        description: activeApplication.description || "",
-        ipType: activeApplication.ipType || "",
-      });
-      hasClearedTitleRef.current = false;
-      hasClearedDescriptionRef.current = false;
-      hasClearedIpTypeRef.current = false;
-    }
-  }, [activeApplication, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!activeApplication?.id) {
+    if (!activeApplicationId) {
       toast.error("No active application selected.");
       return;
     }
+
+    const selectedIpTypes = values.ipTypes as ApplicationIpTypeValue[];
+    const nextIpTypes = buildIpTypesFromApplicationValues(selectedIpTypes);
+    const primaryIpType = getPrimaryApplicationIpType(nextIpTypes);
+
+    if (applicantsInfo) {
+      setApplicantsInfo({
+        ...applicantsInfo,
+        ipTypes: nextIpTypes,
+      });
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        getIpTypeStorageKey(activeApplicationId),
+        JSON.stringify(nextIpTypes)
+      );
+    }
+
     updateApplicationMutation.mutate({
-      applicationId: activeApplication.id,
-      ...values,
+      applicationId: activeApplicationId,
+      title: values.title,
+      description: values.description,
+      ipType: primaryIpType,
+      selectedIpTypes: nextIpTypes,
     });
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Application Title and Description</CardTitle>
+        <CardTitle>Application Title and IP Types</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -164,21 +188,7 @@ export function ApplicationTitleForm() {
                     <Input
                       {...field}
                       placeholder="Enter a title for your application"
-                      onFocus={() => {
-                        if (
-                          !hasClearedTitleRef.current &&
-                          field.value === (activeApplication?.title ?? "")
-                        ) {
-                          field.onChange("");
-                          hasClearedTitleRef.current = true;
-                        }
-                      }}
-                      onChange={(e) => {
-                        if (!hasClearedTitleRef.current) {
-                          hasClearedTitleRef.current = true;
-                        }
-                        field.onChange(e);
-                      }}
+                      onChange={field.onChange}
                     />
                   </FormControl>
                   <FormDescription>
@@ -201,21 +211,7 @@ export function ApplicationTitleForm() {
                       placeholder="Provide a brief summary of your application"
                       className="resize-none"
                       {...field}
-                      onFocus={() => {
-                        if (
-                          !hasClearedDescriptionRef.current &&
-                          field.value === (activeApplication?.description ?? "")
-                        ) {
-                          field.onChange("");
-                          hasClearedDescriptionRef.current = true;
-                        }
-                      }}
-                      onChange={(e) => {
-                        if (!hasClearedDescriptionRef.current) {
-                          hasClearedDescriptionRef.current = true;
-                        }
-                        field.onChange(e);
-                      }}
+                      onChange={field.onChange}
                     />
                   </FormControl>
                   <FormDescription>
@@ -227,52 +223,62 @@ export function ApplicationTitleForm() {
             />
             <FormField
               control={form.control}
-              name="ipType"
+              name="ipTypes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>IP Type</FormLabel>
+                  <FormLabel>IP Types</FormLabel>
                   <FormControl>
-                    <Select
-                      value={field.value ?? ""}
-                      onValueChange={(value) => {
-                        if (!hasClearedIpTypeRef.current) {
-                          hasClearedIpTypeRef.current = true;
-                        }
-                        field.onChange(value);
-                      }}
-                      onOpenChange={(open) => {
-                        if (
-                          open &&
-                          !hasClearedIpTypeRef.current &&
-                          field.value === (activeApplication?.ipType ?? "")
-                        ) {
-                          field.onChange("");
-                          hasClearedIpTypeRef.current = true;
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select IP type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="patent">Patent</SelectItem>
-                        <SelectItem value="trademark">Trademark</SelectItem>
-                        <SelectItem value="copyright">Copyright</SelectItem>
-                        <SelectItem value="industrial_design">
-                          Industrial Design
-                        </SelectItem>
-                        <SelectItem value="utility_model">
-                          Utility Model
-                        </SelectItem>
-                        <SelectItem value="trade_secret">Trade Secret</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                        <SelectItem value="not_sure">Not Sure</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-3">
+                      {IP_TYPE_OPTIONS.map((option) => {
+                        const checked = field.value?.includes(option.value);
+                        const isNotSureSelected =
+                          field.value?.includes("not_sure") ?? false;
+                        const isAnyOtherSelected =
+                          (field.value ?? []).some(
+                            (value: string) => value !== "not_sure"
+                          );
+                        const isDisabled =
+                          option.value === "not_sure"
+                            ? isAnyOtherSelected
+                            : isNotSureSelected;
+                        const checkboxId = `ipType-${option.value}`;
+                        return (
+                          <label
+                            key={option.value}
+                            htmlFor={checkboxId}
+                            className="flex items-center gap-3 cursor-pointer"
+                          >
+                            <Checkbox
+                              id={checkboxId}
+                              checked={checked}
+                              disabled={isDisabled}
+                              onCheckedChange={(nextChecked) => {
+                                const current = field.value ?? [];
+                                const next = nextChecked
+                                  ? Array.from(
+                                      new Set([...current, option.value])
+                                    )
+                                  : current.filter(
+                                      (value: string) => value !== option.value
+                                    );
+                                field.onChange(next);
+                                form.trigger();
+                              }}
+                            />
+                            <span
+                              className={
+                                isDisabled ? "text-muted-foreground" : undefined
+                              }
+                            >
+                              {option.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </FormControl>
                   <FormDescription>
-                    Choose the category that best fits your intellectual
-                    property.
+                    Choose all categories that apply to this application.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -281,10 +287,10 @@ export function ApplicationTitleForm() {
             <Button
               type="submit"
               disabled={
-                updateApplicationMutation.isLoading || !form.formState.isValid
+                updateApplicationMutation.isPending || !form.formState.isValid
               }
             >
-              {updateApplicationMutation.isLoading ? "Saving..." : "Save Changes"}
+              {updateApplicationMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </form>
         </Form>

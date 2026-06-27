@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CopyrightBasicApplicationInventory } from "./CopyrightBasicApplicationInventory";
-// import { CopyrightTransactionPart1Inventory } from "./CopyrightTransactionPart1Inventory";
-// import { CopyrightTransactionPart2Inventory } from "./CopyrightTransactionPart2Inventory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookCopy, Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -73,26 +71,11 @@ export function CopyrightDisclosureInventory() {
                 <TabsTrigger value="basic-application">
                   Basic Application
                 </TabsTrigger>
-                {/* Commented the Transaction 1 and 2 */}
-                       {/* <TabsTrigger value="transaction-part1">
-                  Transaction Part 1
-                </TabsTrigger>
-                <TabsTrigger value="transaction-part2">
-                  Transaction Part 2
-                </TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="basic-application">
                 <CopyrightBasicApplicationInventory />
               </TabsContent>
-              {/*Commented the transaction form 1 and 2 */}
-              {/* <TabsContent value="transaction-part1">
-                <CopyrightTransactionPart1Inventory />
-              </TabsContent>
-
-              <TabsContent value="transaction-part2">
-                <CopyrightTransactionPart2Inventory />
-              </TabsContent> */}
             </Tabs>
           </CardContent>
         </Card>

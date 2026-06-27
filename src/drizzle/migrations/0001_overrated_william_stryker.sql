@@ -16,89 +16,93 @@ DROP TABLE "auth_session" CASCADE;--> statement-breakpoint
 DROP TABLE "inventory_item" CASCADE;--> statement-breakpoint
 DROP TABLE "inventory_transaction" CASCADE;--> statement-breakpoint
 DROP TABLE "user" CASCADE;--> statement-breakpoint
-ALTER TABLE "activity_log" DROP CONSTRAINT "activity_type_check";--> statement-breakpoint
-ALTER TABLE "application_phase" DROP CONSTRAINT "phase_progress_check";--> statement-breakpoint
-ALTER TABLE "application_phase" DROP CONSTRAINT "phase_status_check";--> statement-breakpoint
-ALTER TABLE "client_profile" DROP CONSTRAINT "client_profile_highest_degree_check";--> statement-breakpoint
-ALTER TABLE "client_profile" DROP CONSTRAINT "client_profile_gender_check";--> statement-breakpoint
-ALTER TABLE "client_profile" DROP CONSTRAINT "client_profile_research_output_status_check";--> statement-breakpoint
-ALTER TABLE "client_profile" DROP CONSTRAINT "client_profile_inst_materials_status_check";--> statement-breakpoint
-ALTER TABLE "ip_application" DROP CONSTRAINT "commercialization_status_check";--> statement-breakpoint
-ALTER TABLE "ip_application" DROP CONSTRAINT "ip_type_check";--> statement-breakpoint
-ALTER TABLE "ip_application" DROP CONSTRAINT "progress_check";--> statement-breakpoint
-ALTER TABLE "ip_application" DROP CONSTRAINT "status_check";--> statement-breakpoint
-ALTER TABLE "account" DROP CONSTRAINT "account_userId_user_id_fk";
+ALTER TABLE "activity_log" DROP CONSTRAINT IF EXISTS "activity_type_check";--> statement-breakpoint
+ALTER TABLE "application_phase" DROP CONSTRAINT IF EXISTS "phase_progress_check";--> statement-breakpoint
+ALTER TABLE "application_phase" DROP CONSTRAINT IF EXISTS "phase_status_check";--> statement-breakpoint
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_highest_degree_check";--> statement-breakpoint
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_gender_check";--> statement-breakpoint
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_research_output_status_check";--> statement-breakpoint
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_inst_materials_status_check";--> statement-breakpoint
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "commercialization_status_check";--> statement-breakpoint
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "ip_type_check";--> statement-breakpoint
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "progress_check";--> statement-breakpoint
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "status_check";--> statement-breakpoint
+ALTER TABLE "account" DROP CONSTRAINT IF EXISTS "account_userId_user_id_fk";
 --> statement-breakpoint
-ALTER TABLE "activity_log" DROP CONSTRAINT "fk_activity_application";
+ALTER TABLE "activity_log" DROP CONSTRAINT IF EXISTS "fk_activity_application";
 --> statement-breakpoint
-ALTER TABLE "activity_log" DROP CONSTRAINT "fk_activity_phase";
+ALTER TABLE "activity_log" DROP CONSTRAINT IF EXISTS "fk_activity_phase";
 --> statement-breakpoint
-ALTER TABLE "activity_log" DROP CONSTRAINT "fk_activity_user";
+ALTER TABLE "activity_log" DROP CONSTRAINT IF EXISTS "fk_activity_user";
 --> statement-breakpoint
-ALTER TABLE "application_phase" DROP CONSTRAINT "application_phase_application_id_fkey";
+ALTER TABLE "application_phase" DROP CONSTRAINT IF EXISTS "application_phase_application_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "authenticator" DROP CONSTRAINT "authenticator_userId_user_id_fk";
+ALTER TABLE "authenticator" DROP CONSTRAINT IF EXISTS "authenticator_userId_user_id_fk";
 --> statement-breakpoint
-ALTER TABLE "calendar_event" DROP CONSTRAINT "calendar_event_application_id_fkey";
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_application_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "calendar_event" DROP CONSTRAINT "calendar_event_created_by_fkey";
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_created_by_fkey";
 --> statement-breakpoint
-ALTER TABLE "client_profile" DROP CONSTRAINT "client_profile_verified_by_fkey";
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_verified_by_fkey";
 --> statement-breakpoint
-ALTER TABLE "client_profile" DROP CONSTRAINT "client_profile_user_id_fkey";
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_user_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "comment" DROP CONSTRAINT "comment_user_id_fkey";
+ALTER TABLE "comment" DROP CONSTRAINT IF EXISTS "comment_user_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "contact_message" DROP CONSTRAINT "contact_message_assigned_to_fkey";
+ALTER TABLE "contact_message" DROP CONSTRAINT IF EXISTS "contact_message_assigned_to_fkey";
 --> statement-breakpoint
-ALTER TABLE "digital_signature" DROP CONSTRAINT "digital_signature_signer_id_fkey";
+ALTER TABLE "digital_signature" DROP CONSTRAINT IF EXISTS "digital_signature_signer_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "document_management" DROP CONSTRAINT "document_management_application_id_fkey";
+ALTER TABLE "document_management" DROP CONSTRAINT IF EXISTS "document_management_application_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "document_management" DROP CONSTRAINT "document_management_uploaded_by_fkey";
+ALTER TABLE "document_management" DROP CONSTRAINT IF EXISTS "document_management_uploaded_by_fkey";
 --> statement-breakpoint
-ALTER TABLE "document_management" DROP CONSTRAINT "document_management_verified_by_fkey";
+ALTER TABLE "document_management" DROP CONSTRAINT IF EXISTS "document_management_verified_by_fkey";
 --> statement-breakpoint
-ALTER TABLE "documents" DROP CONSTRAINT "documents_application_id_fkey";
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_application_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "documents" DROP CONSTRAINT "documents_uploaded_by_fkey";
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_uploaded_by_fkey";
 --> statement-breakpoint
-ALTER TABLE "documents" DROP CONSTRAINT "documents_validated_by_fkey";
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_validated_by_fkey";
 --> statement-breakpoint
-ALTER TABLE "documents" DROP CONSTRAINT "documents_verified_by_fkey";
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_verified_by_fkey";
 --> statement-breakpoint
-ALTER TABLE "event_participant" DROP CONSTRAINT "event_participant_user_id_fkey";
+ALTER TABLE "event_participant" DROP CONSTRAINT IF EXISTS "event_participant_user_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "internal_validation" DROP CONSTRAINT "internal_validation_assigned_to_fkey";
+ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_assigned_to_fkey";
 --> statement-breakpoint
-ALTER TABLE "ip_application" DROP CONSTRAINT "ip_application_client_id_fkey";
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "ip_application_client_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "ip_application" DROP CONSTRAINT "ip_application_user_id_fkey";
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "ip_application_user_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "ip_contributors" DROP CONSTRAINT "ip_contributors_application_id_fkey";
+ALTER TABLE "ip_contributors" DROP CONSTRAINT IF EXISTS "ip_contributors_application_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "ip_details" DROP CONSTRAINT "ip_details_application_id_fkey";
+ALTER TABLE "ip_details" DROP CONSTRAINT IF EXISTS "ip_details_application_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "notification" DROP CONSTRAINT "notification_user_id_fkey";
+ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "notification_user_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "phase_review" DROP CONSTRAINT "phase_review_reviewer_id_fkey";
+ALTER TABLE "phase_review" DROP CONSTRAINT IF EXISTS "phase_review_reviewer_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "phase_task" DROP CONSTRAINT "phase_task_assignee_id_fkey";
+ALTER TABLE "phase_task" DROP CONSTRAINT IF EXISTS "phase_task_assignee_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "session" DROP CONSTRAINT "session_userId_user_id_fk";
+ALTER TABLE "session" DROP CONSTRAINT IF EXISTS "session_userId_user_id_fk";
 --> statement-breakpoint
-ALTER TABLE "task_assignment" DROP CONSTRAINT "task_assignment_staff_id_fkey";
+ALTER TABLE "task_assignment" DROP CONSTRAINT IF EXISTS "task_assignment_staff_id_fkey";
 --> statement-breakpoint
 DROP INDEX "idx_ip_application_type";--> statement-breakpoint
 DROP INDEX "ix_ip_application_status";--> statement-breakpoint
 DROP INDEX "ix_ip_application_type";--> statement-breakpoint
-ALTER TABLE "activity_log" ALTER COLUMN "activity_type" SET DATA TYPE activity_type;--> statement-breakpoint
+ALTER TABLE "activity_log" ALTER COLUMN "activity_type" SET DATA TYPE activity_type USING "activity_type"::text::activity_type;--> statement-breakpoint
 ALTER TABLE "client_profile" ALTER COLUMN "gender" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "client_profile" ALTER COLUMN "contact_number" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "client_profile" ALTER COLUMN "mailing_address" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "ip_application" ALTER COLUMN "ip_type" SET DATA TYPE application_type;--> statement-breakpoint
-ALTER TABLE "ip_application" ALTER COLUMN "status" SET DATA TYPE application_status;--> statement-breakpoint
+ALTER TABLE "ip_application" ALTER COLUMN "status" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "ip_application" ALTER COLUMN "ip_type" SET DATA TYPE application_type USING "ip_type"::text::application_type;--> statement-breakpoint
+ALTER TABLE "ip_application" ALTER COLUMN "status" SET DATA TYPE application_status USING "status"::text::application_status;--> statement-breakpoint
+ALTER TABLE "ip_application" ALTER COLUMN "status" SET DEFAULT 'draft';--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_provider_providerAccountId_pk" PRIMARY KEY("provider","providerAccountId");--> statement-breakpoint
+ALTER TABLE "activity_log" DROP CONSTRAINT IF EXISTS "activity_log_pkey";--> statement-breakpoint
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "ip_application_pkey";--> statement-breakpoint
 ALTER TABLE "activity_log" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "ip_application" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_account" ADD COLUMN "image" text;--> statement-breakpoint
@@ -173,6 +177,6 @@ ALTER TABLE "client_profile" ADD CONSTRAINT "client_profile_inst_materials_statu
 ALTER TABLE "ip_application" ADD CONSTRAINT "ck_commercialization" CHECK ((commercialization_status)::text = ANY ((ARRAY['not_licensed'::character varying, 'licensed'::character varying, 'in_negotiation'::character varying, 'technology_transfer'::character varying, 'internal_use'::character varying])::text[]));--> statement-breakpoint
 ALTER TABLE "ip_application" ADD CONSTRAINT "ck_progress" CHECK ((progress >= 0) AND (progress <= 100));--> statement-breakpoint
 ALTER TABLE "public"."activity_log" ALTER COLUMN "activity_type" SET DATA TYPE text;--> statement-breakpoint
-DROP TYPE "public"."activity_type";--> statement-breakpoint
+DROP TYPE IF EXISTS "public"."activity_type" CASCADE;--> statement-breakpoint
 CREATE TYPE "public"."activity_type" AS ENUM('created', 'updated', 'deleted', 'viewed', 'downloaded', 'uploaded', 'validated', 'verified', 'archived', 'unarchived', 'assigned', 'unassigned', 'completed', 'incompleted', 'approved', 'rejected', 'commented', 'replied', 'signed', 'unsigned', 'sent', 'received', 'read', 'unread', 'other');--> statement-breakpoint
 ALTER TABLE "public"."activity_log" ALTER COLUMN "activity_type" SET DATA TYPE "public"."activity_type" USING "activity_type"::"public"."activity_type";

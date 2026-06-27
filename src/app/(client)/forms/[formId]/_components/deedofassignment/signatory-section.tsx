@@ -62,6 +62,7 @@ import {
 
 import { DeedOfAssignmentPDFComponent } from "./deed-of-assignment-pdf";
 import { useDeedAssignmentStore } from "@/lib/store/deed-assignment-store";
+import { X } from "lucide-react";
 
 interface SignatorySectionProps {
   initialData?: any;
@@ -127,6 +128,29 @@ export function SignatorySection({
   // Get store functions
   const { updateSignatoryData, deed: storeDeedData } = useDeedAssignmentStore();
 
+  const notarizedUploader = useDriveUpload(
+    {
+      formId: resolvedFormId,
+      ipApplicationId: activeApplicationId,
+      formName: "Deed of Assignment - Notarized Document",
+      category: "deed-assignment",
+      description: "Notarized deed of assignment document",
+    },
+    {
+      successMessage: "Notarized document uploaded successfully",
+      onSuccess: (result) => {
+        const filePath = (result as { files?: Array<{ filePath?: string }> })
+          ?.files?.[0]?.filePath;
+        if (!filePath) {
+          toast.error("Upload succeeded but no file path returned");
+          return;
+        }
+        handleDocumentUpload(filePath, { showToast: false });
+        
+      },
+    }
+  );
+
   // Function to get application-specific localStorage key
   const getLocalStorageKey = useCallback(
     (baseKey: string) => {
@@ -158,6 +182,7 @@ export function SignatorySection({
       seriesYear: "",
     },
   });
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
   // Set isMounted flag on mount/unmount
   useEffect(() => {
@@ -545,13 +570,13 @@ export function SignatorySection({
       const result = await response.json();
       console.log("[SignatorySection] API response:", result);
 
-      // Update the loading toast to success
-      toast.success("Deed of assignment submitted", {
-        id: loadingToastId,
-        description: "Your deed of assignment has been successfully submitted.",
-        duration: 3000,
-      });
-
+      console.log("✅ SUCCESS NA, MO OPEN ANG MODAL");
+toast.success("Deed of assignment submitted", {
+  id: loadingToastId,
+  description: "Your deed of assignment has been successfully submitted.",
+  duration: 3000,
+});
+setShowCompleteModal(true);
       // Optionally register with the form submission system
       try {
         if (
@@ -607,7 +632,7 @@ export function SignatorySection({
 
       // Navigate back to deed details tab instead of forms overview
       const mainTab = searchParams.get("tab") || "deed-assignment";
-      router.push(`?tab=${mainTab}&subTab=deed`, { scroll: false });
+    //  router.push(`?tab=${mainTab}&subTab=deed`, { scroll: false });
     } catch (err) {
       console.error("[SignatorySection] Error submitting form:", err);
       setError(
@@ -848,94 +873,97 @@ export function SignatorySection({
     router.push(`?tab=${mainTab}&subTab=royalty`, { scroll: false });
   };
 
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    console.log("[SignatorySection] File upload triggered");
-    const file = event.target.files?.[0];
-    if (!file) {
-      console.log("[SignatorySection] No file selected");
-      return;
-    }
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const files = event.target.files;
 
-    // Check file type
+  if (!files || files.length === 0) return;
+
+  const validFiles: File[] = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
     if (file.type !== "application/pdf") {
-      toast.error("Invalid file type", {
-        description: "Please upload a PDF file only.",
-        duration: 5000,
-      });
-      return;
+      toast.error(`${file.name} is not a PDF`);
+      continue;
     }
 
-    // Check file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-      toast.error("File too large", {
-        description: "Please upload a file smaller than 5MB.",
-        duration: 5000,
-      });
-      return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(`${file.name} is too large (max 5MB)`);
+      continue;
     }
 
-    console.log("[SignatorySection] File selected:", file.name);
-    const formData = new FormData();
-    formData.append("files", file); // Changed from 'file' to 'files' to match API
-    formData.append("projectId", activeApplicationId || "default"); // Add projectId
-    formData.append("formName", "Deed of Assignment - Signatory");
+    validFiles.push(file);
+  }
 
-    try {
-      console.log("[SignatorySection] Uploading file...");
-      const response = await fetch("/api/files/upload", {
-        // Updated endpoint
-        method: "POST",
-        body: formData,
-      });
+  // ✅ IMPORTANT: append, dili replace
+  setNotarizedFiles((prev) => [...prev, ...validFiles]);
+};
 
-      console.log(
-        "[SignatorySection] Upload response status:",
-        response.status
-      );
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error("[SignatorySection] Upload error:", errorData);
-        throw new Error("Failed to upload file");
-      }
+         return (
+                  <div className="space-y-6">
+                    
+                    <Form {...form}>
+                      <form onSubmit={async (e) => {
+                  e.preventDefault(); // 🔥 mao ni importante
+                  if (isSubmitting) return;
 
-      const result = await response.json();
-      console.log("[SignatorySection] Upload successful:", result);
+                  setIsSubmitting(true);
+                  await form.handleSubmit(onSubmit)(e);
+                  setIsSubmitting(false);
+                }}
+                className="space-y-8"
+              >
+{showCompleteModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    
+    <div className="relative bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
 
-      // Get the first file path from the result
-      const uploadedFilePath = result.files[0]?.path;
-      if (!uploadedFilePath) {
-        throw new Error("No file path returned from server");
-      }
+      {/* CLOSE BUTTON (RIGHT) */}
+      <button
+  type="button"
+  onClick={() => {
+    setShowCompleteModal(false);
+    router.refresh(); // ✅ smooth refresh
+  }}
+  className="absolute top-4 right-4 bg-green-100 p-1.5 rounded-full text-green-700 hover:bg-green-200"
+>
+  <X className="h-5 w-5" />
+</button>
 
-      handleDocumentUpload(uploadedFilePath);
-      toast.success("File uploaded successfully", {
-        description: (
-          <div className="flex flex-col gap-1">
-            <p>File: {file.name}</p>
-            <p className="text-sm text-gray-500">
-              The notarized document has been attached to your application.
-            </p>
-          </div>
-        ),
-        duration: 5000,
-      });
-    } catch (err) {
-      console.error("[SignatorySection] Error uploading file:", err);
-      toast.error("Unable to upload file", {
-        description:
-          "Please try again or contact support if the problem persists.",
-        duration: 5000,
-      });
-    }
-  };
+      {/* TITLE */}
+      <h2 className="text-xl font-bold text-green-700 text-center">
+        COMPLETED!
+      </h2>
 
-  return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      {/* DESCRIPTION */}
+      <p className="text-muted-foreground text-center mt-2">
+        Your IP Application is successfully completed.
+      </p>
+
+      {/* BUTTONS */}
+      <div className="flex justify-center gap-4 mt-6">
+        
+        <Button
+          className="bg-green-700 text-white hover:bg-green-800"
+          onClick={() => router.push("/projects")}
+        >
+          Track Application
+        </Button>
+
+        <Button
+          className="bg-green-700 text-white hover:bg-green-800"
+          onClick={() => router.push("/")}
+        >
+          Close
+        </Button>
+
+      </div>
+
+    </div>
+  </div>
+)}
+
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               <p>An error occurred: {error.message}</p>
@@ -983,11 +1011,10 @@ export function SignatorySection({
                               className="text-center"
                               disabled={isDisabled}
                               onChange={(e) => {
-                                console.log(
-                                  "[SignatorySection] Day field changed:",
-                                  e.target.value
-                                );
-                                field.onChange(e);
+                                const value = e.target.value
+                                  .replace(/[^0-9]/g, "") // numbers only
+                                  .slice(0, 2); // max 2 digits
+                                field.onChange(value);
                               }}
                             />
                           </FormControl>
@@ -1008,12 +1035,9 @@ export function SignatorySection({
                               className="text-center"
                               disabled={isDisabled}
                               onChange={(e) => {
-                                console.log(
-                                  "[SignatorySection] Month field changed:",
-                                  e.target.value
-                                );
-                                field.onChange(e);
-                              }}
+    const value = e.target.value.replace(/[^a-zA-Z ]/g, "");
+    field.onChange(value);
+  }}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1033,11 +1057,10 @@ export function SignatorySection({
                               className="text-center"
                               disabled={isDisabled}
                               onChange={(e) => {
-                                console.log(
-                                  "[SignatorySection] Year field changed:",
-                                  e.target.value
-                                );
-                                field.onChange(e);
+                                const value = e.target.value
+                                  .replace(/[^0-9]/g, "") // numbers only
+                                  .slice(0, 4); // max 4 digits
+                                field.onChange(value);
                               }}
                             />
                           </FormControl>
@@ -1414,25 +1437,20 @@ export function SignatorySection({
                                       placeholder="Enter ID number"
                                       value={field.value || ""}
                                       onChange={(e) => {
-                                        // Update the field directly
-                                        field.onChange(e.target.value);
+                                        const value = e.target.value
+                                          .replace(/[^0-9\-\/ ]/g, ""); // allow numbers + - / space
 
-                                        // Get current assignorIds array
-                                        const currentIds =
-                                          form.getValues("assignorIds") || [];
-                                        // Update the array at the specific index
+                                        field.onChange(value);
+
+                                        const currentIds = form.getValues("assignorIds") || [];
                                         const newIds = [...currentIds];
-                                        newIds[index] = e.target.value;
-                                        // Update the form value for the whole array
+                                        newIds[index] = value;
+
                                         form.setValue("assignorIds", newIds);
-                                        // Also update the legacy assignorId field for backward compatibility
-                                        form.setValue(
-                                          "assignorId",
-                                          newIds.join(", ")
-                                        );
+                                        form.setValue("assignorId", newIds.join(", "));
                                       }}
                                       disabled={isDisabled}
-                                    />
+                                    />  
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -1728,7 +1746,7 @@ export function SignatorySection({
 
                     {/* Upload Section */}
                     <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 h-[120px]">
+                     <div className="flex flex-col gap-4 p-4 bg-gray-50 rounded-lg border">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-[#1B5E20]/10 flex items-center justify-center">
                             <Upload className="h-5 w-5 text-[#1B5E20]" />
@@ -1748,10 +1766,12 @@ export function SignatorySection({
                           render={({ field }) => (
                             <FormItem className="flex-1 max-w-[200px]">
                               <FormControl>
-                                <div className="flex flex-col gap-2">
+                                <div className="flex flex-col gap-3 w-full">
+                                  <div className="flex gap-2 w-full">
                                   <Input
                                     type="file"
                                     accept=".pdf"
+                                    multiple
                                     onChange={handleFileUpload}
                                     disabled={isDisabled}
                                     className="hidden"
@@ -1771,14 +1791,55 @@ export function SignatorySection({
                                       </span>
                                     </Button>
                                   </label>
-                                  {field.value && (
+                                 {notarizedFiles.length > 0 && (
+  <div className="flex flex-col w-full">
+    {notarizedFiles.map((file, index) => (
+      <div
+        key={index}
+        className="flex items-center justify-between bg-gray-50 border rounded-md px-3 py-2"
+      >
+        {/* FILE NAME */}
+        <div className="flex items-center gap-2 overflow-hidden">
+          <span className="text-sm truncate max-w-[180px]">
+            📄 {file.name}
+          </span>
+        </div>
+
+        {/* REMOVE BUTTON */}
+        <button
+          type="button"
+          onClick={() =>
+            setNotarizedFiles((prev) =>
+              prev.filter((_, i) => i !== index)
+            )
+          }
+          className="text-red-500 hover:text-red-700 font-bold"
+        >
+          ✕
+        </button>
+      </div>
+    ))}
+  </div>
+)}
+                                  <DriveUploadButton
+                                    files={notarizedFiles}
+                                    uploader={notarizedUploader}
+                                    variant="outline"
+                                    className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                                    disabled={
+                                      isDisabled || !activeApplicationId
+                                    }
+                                    buttonText="Upload to Drive"
+                                  />
+                                {/* {field.value && (
                                     <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
                                       <CheckCircle className="h-4 w-4 text-green-500" />
                                       <span className="truncate">
                                         File uploaded
                                       </span>
                                     </div>
-                                  )}
+                                  )} */}
+                                </div>
                                 </div>
                               </FormControl>
                             </FormItem>
@@ -1824,15 +1885,15 @@ export function SignatorySection({
                   "Update Form"
                 )}
               </Button>
-              <Button
-                type="button"
-                variant="default"
-                className="bg-green-700 text-white hover:bg-green-800"
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={isSubmitting || isUpdating || !form.formState.isValid}
-              >
-                Submit Form
-              </Button>
+             <Button
+  type="submit"
+  variant="default"
+  className="bg-green-700 text-white hover:bg-green-800"
+  
+  disabled={isSubmitting || isUpdating || !form.formState.isValid}
+>
+  {isSubmitting ? "Submitting..." : "Submit Form"}
+</Button>
             </div>
           </div>
         </form>

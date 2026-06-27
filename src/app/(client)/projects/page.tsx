@@ -73,6 +73,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { buildIpTypesFromApplicationValues } from "@/lib/utils/ip-types";
 
 interface Application {
   id: string;
@@ -185,13 +186,14 @@ export default function ProjectsPage() {
       title: newAppTitle.trim(),
       description: newAppDescription.trim() || undefined,
       ipType: newAppType as any,
+      selectedIpTypes: buildIpTypesFromApplicationValues([newAppType as any]),
     });
   };
 
   const handleCreateFirstApplication = async () => {
     if (
       isCreatingFirstApplication ||
-      createApplicationMutation.isLoading ||
+      createApplicationMutation.isPending ||
       isCreateCooldown
     ) {
       return;
@@ -214,7 +216,8 @@ export default function ProjectsPage() {
     createApplicationMutation.mutate({
       userId,
       title: "Untitled Application",
-      ipType: "not_sure" as any,
+      ipType: "patent" as any,
+      selectedIpTypes: buildIpTypesFromApplicationValues(["patent"]),
     });
   };
 
@@ -491,13 +494,13 @@ export default function ProjectsPage() {
                     className="bg-[#1B5E20] hover:bg-[#2E7D32] h-12 px-6 gap-2 text-base font-medium"
                     onClick={handleCreateFirstApplication}
                     disabled={
-                      createApplicationMutation.isLoading ||
+                      createApplicationMutation.isPending ||
                       isCreatingFirstApplication ||
                       isCreateCooldown
                     }
                   >
                     <PlusCircle className="h-5 w-5" />
-                    {createApplicationMutation.isLoading ||
+                    {createApplicationMutation.isPending ||
                     isCreatingFirstApplication ||
                     isCreateCooldown
                       ? "Creating..."

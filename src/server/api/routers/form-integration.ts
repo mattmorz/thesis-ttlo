@@ -10,6 +10,12 @@ import {
 } from "@/drizzle/migrations/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { type Session } from "next-auth";
+import {
+  type NormalizedIpTypes,
+  deriveIpTypesFromApplicationIpType,
+  getPrimaryApplicationIpType,
+  normalizeIpTypes,
+} from "@/lib/utils/ip-types";
 
 // Updated Context type to match the actual context structure
 interface User {
@@ -35,6 +41,7 @@ interface Application {
   status: string;
   progress: number;
   ipType: string;
+  selectedIpTypes: NormalizedIpTypes | null;
   createdAt: string | null;
   updatedAt: string | null;
   phases: {
@@ -69,22 +76,47 @@ export const formIntegrationRouter = createTRPCRouter({
     .query(async (opts) => {
       const { ctx, input } = opts;
       try {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[server:getUserApplications] query start", {
+            requestedUserId: input.userId,
+            sessionUserId: ctx.session?.user?.id ?? null,
+          });
+        }
         const apps = await db.query.ipApplication.findMany({
           where: eq(ipApplication.userId, input.userId),
           orderBy: [desc(ipApplication.createdAt)],
         });
 
-        return apps.map((app) => ({
-          id: app.id,
-          title: app.title,
-          description: app.description,
-          status: app.status,
-          progress: app.progress,
-          createdAt: app.createdAt
-            ? new Date(app.createdAt).toISOString()
-            : null,
-          ipType: app.ipType,
-        }));
+        if (process.env.NODE_ENV === "development") {
+          console.log("[server:getUserApplications] query result", {
+            requestedUserId: input.userId,
+            count: apps.length,
+            applicationIds: apps.map((app) => app.id),
+          });
+        }
+
+        return apps.map((app) => {
+          const selectedIpTypes = app.selectedIpTypes
+            ? normalizeIpTypes(
+                app.selectedIpTypes as Partial<NormalizedIpTypes>
+              )
+            : null;
+
+          return {
+            id: app.id,
+            title: app.title,
+            description: app.description,
+            status: app.status,
+            progress: app.progress,
+            createdAt: app.createdAt
+              ? new Date(app.createdAt).toISOString()
+              : null,
+            ipType: app.ipType,
+            selectedIpTypes:
+              selectedIpTypes ??
+              deriveIpTypesFromApplicationIpType(app.ipType).ipTypes,
+          };
+        });
       } catch (error) {
         console.error("Error getting user applications:", error);
         throw new Error("Failed to get user applications");
@@ -108,12 +140,28 @@ export const formIntegrationRouter = createTRPCRouter({
           "not_sure",
           "other",
         ]),
+        selectedIpTypes: z
+          .object({
+            copyright: z.boolean().default(false),
+            patent: z.boolean().default(false),
+            utilityModel: z.boolean().default(false),
+            industrialDesign: z.boolean().default(false),
+            trademark: z.boolean().default(false),
+            tradeSecret: z.boolean().default(false),
+            other: z.boolean().default(false),
+            notSure: z.boolean().default(false),
+          })
+          .optional(),
       })
     )
     .mutation(async (opts) => {
       const { ctx, input } = opts;
       try {
         const newAppId = uuid();
+
+        const selectedIpTypes = input.selectedIpTypes
+          ? normalizeIpTypes(input.selectedIpTypes)
+          : deriveIpTypesFromApplicationIpType(input.ipType).ipTypes;
 
         // Insert the new application
         await db.insert(ipApplication).values({
@@ -123,7 +171,8 @@ export const formIntegrationRouter = createTRPCRouter({
           description: input.description || null,
           status: "draft",
           progress: 0,
-          ipType: input.ipType,
+          ipType: getPrimaryApplicationIpType(selectedIpTypes),
+          selectedIpTypes,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -150,7 +199,8 @@ export const formIntegrationRouter = createTRPCRouter({
           description: input.description,
           status: "draft",
           progress: 0,
-          ipType: input.ipType,
+          ipType: getPrimaryApplicationIpType(selectedIpTypes),
+          selectedIpTypes,
           createdAt: new Date().toISOString(),
         };
       } catch (error) {
@@ -251,6 +301,18 @@ export const formIntegrationRouter = createTRPCRouter({
             "other",
           ])
           .optional(),
+        selectedIpTypes: z
+          .object({
+            copyright: z.boolean().default(false),
+            patent: z.boolean().default(false),
+            utilityModel: z.boolean().default(false),
+            industrialDesign: z.boolean().default(false),
+            trademark: z.boolean().default(false),
+            tradeSecret: z.boolean().default(false),
+            other: z.boolean().default(false),
+            notSure: z.boolean().default(false),
+          })
+          .optional(),
         status: z
           .enum(["draft", "pending", "in_progress", "approved", "rejected"])
           .optional(),
@@ -285,7 +347,15 @@ export const formIntegrationRouter = createTRPCRouter({
         if (input.title) updateData.title = input.title;
         if (input.description !== undefined)
           updateData.description = input.description;
-        if (input.ipType) updateData.ipType = input.ipType;
+        if (input.selectedIpTypes) {
+          const normalizedIpTypes = normalizeIpTypes(input.selectedIpTypes);
+          updateData.selectedIpTypes = normalizedIpTypes;
+          updateData.ipType = getPrimaryApplicationIpType(normalizedIpTypes);
+        } else if (input.ipType) {
+          updateData.ipType = input.ipType;
+          updateData.selectedIpTypes =
+            deriveIpTypesFromApplicationIpType(input.ipType).ipTypes;
+        }
         if (input.status) updateData.status = input.status;
         if (input.progress !== undefined) updateData.progress = input.progress;
 

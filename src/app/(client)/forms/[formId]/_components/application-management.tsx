@@ -55,6 +55,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Select,
@@ -67,11 +68,19 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { cn } from "@/lib/utils";
 import { displayStatus } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow  } from "date-fns";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Upload } from "lucide-react";
 import { OtherDocumentsSection } from "./otherDocuments";
+import {
+  buildIpTypesFromApplicationValues,
+  getSelectedApplicationIpTypes,
+  type ApplicationIpTypeValue,
+  type NormalizedIpTypes,
+} from "@/lib/utils/ip-types";
+
+const DEBUG_APPLICATION_MANAGEMENT = process.env.NODE_ENV === "development";
 
 interface Application {
   id: string;
@@ -81,16 +90,40 @@ interface Application {
   progress: number;
   createdAt: string | null;
   ipType: string;
+  selectedIpTypes?: NormalizedIpTypes | null;
 }
 
 interface ApplicationManagementProps {
   hideCreateButton?: boolean;
   onCreateClick?: () => void;
+  applications?: Application[];
+  activeApplicationId?: string | null;
+  activeApplication?: Application | null;
+  isLoading?: boolean;
+  setApplications?: React.Dispatch<React.SetStateAction<Application[]>>;
+  setActiveApplicationId?: (
+    id: string | null,
+    options?: {
+      clearFormData?: boolean;
+      emitEvent?: boolean;
+      skipReload?: boolean;
+    }
+  ) => void;
+  refetchApplications?: () => Promise<void>;
+  clearFormData?: () => void;
 }
 
 export function ApplicationManagement({
   hideCreateButton = false,
   onCreateClick,
+  applications: applicationsProp,
+  activeApplicationId: activeApplicationIdProp,
+  activeApplication: activeApplicationProp,
+  isLoading: isLoadingProp,
+  setApplications: setApplicationsProp,
+  setActiveApplicationId: setActiveApplicationIdProp,
+  refetchApplications: refetchApplicationsProp,
+  clearFormData: clearFormDataProp,
 }: ApplicationManagementProps) {
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -98,19 +131,32 @@ export function ApplicationManagement({
   const trpcUtils = trpc.useUtils();
 
   const {
-    activeApplicationId,
-    setActiveApplicationId,
-    activeApplication,
-    isLoading,
-    applications,
-    setApplications,
-    refetchApplications,
-    clearFormData,
+    activeApplicationId: hookActiveApplicationId,
+    setActiveApplicationId: hookSetActiveApplicationId,
+    activeApplication: hookActiveApplication,
+    isLoading: hookIsLoading,
+    applications: hookApplications,
+    setApplications: hookSetApplications,
+    refetchApplications: hookRefetchApplications,
+    clearFormData: hookClearFormData,
   } = useActiveApplication();
+
+  const activeApplicationId =
+    activeApplicationIdProp ?? hookActiveApplicationId;
+  const setActiveApplicationId =
+    setActiveApplicationIdProp ?? hookSetActiveApplicationId;
+  const activeApplication = activeApplicationProp ?? hookActiveApplication;
+  const isLoading = isLoadingProp ?? hookIsLoading;
+  const applications = applicationsProp ?? hookApplications;
+  const setApplications = setApplicationsProp ?? hookSetApplications;
+  const refetchApplications = refetchApplicationsProp ?? hookRefetchApplications;
+  const clearFormData = clearFormDataProp ?? hookClearFormData;
 
   const [isNewAppDialogOpen, setIsNewAppDialogOpen] = useState(false);
   const [newAppTitle, setNewAppTitle] = useState("");
-  const [newAppType, setNewAppType] = useState("patent");
+  const [newAppTypes, setNewAppTypes] = useState<ApplicationIpTypeValue[]>([
+    "patent",
+  ]);
   const [newAppDescription, setNewAppDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [sortOrder, setSortOrder] = useState<"newest" | "alphabetical">(
@@ -119,8 +165,36 @@ export function ApplicationManagement({
   const [deleteConfirmApp, setDeleteConfirmApp] = useState<string | null>(null);
   const deleteTargetRef = useRef<string | null>(null);
   const [isGuideCollapsed, setIsGuideCollapsed] = useState(false);
-  const [otherIpType, setOtherIpType] = useState("");
   const [showDocuments, setShowDocuments] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleApplicationTitleUpdate = () => {
+      refetchApplications();
+      trpcUtils.formIntegration.getUserApplications.invalidate();
+    };
+
+    window.addEventListener(
+      "applicationTitleFormCompleted",
+      handleApplicationTitleUpdate as EventListener
+    );
+    window.addEventListener(
+      "formProgressRefresh",
+      handleApplicationTitleUpdate as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "applicationTitleFormCompleted",
+        handleApplicationTitleUpdate as EventListener
+      );
+      window.removeEventListener(
+        "formProgressRefresh",
+        handleApplicationTitleUpdate as EventListener
+      );
+    };
+  }, [refetchApplications, trpcUtils.formIntegration.getUserApplications]);
 
   // tRPC mutation to create a new application
   const createApplicationMutation =
@@ -131,6 +205,7 @@ export function ApplicationManagement({
         setIsNewAppDialogOpen(false);
         setNewAppTitle("");
         setNewAppDescription("");
+        setNewAppTypes(["patent"]);
 
         // Clear form data
         clearFormData();
@@ -163,6 +238,7 @@ export function ApplicationManagement({
     trpc.formIntegration.deleteApplication.useMutation({
       onSuccess: () => {
         const deletedId = deleteTargetRef.current;
+        toast.dismiss("deleting-app");
         toast.success("Application deleted successfully");
         deleteTargetRef.current = null;
         let remainingApps: Application[] = [];
@@ -182,7 +258,7 @@ export function ApplicationManagement({
             handleSwitchApplication(remainingApps[0].id);
           } else {
             if (typeof window !== "undefined") {
-              clearFormData({ emitEvent: false });
+              clearFormData();
               localStorage.removeItem("activeApplicationId");
               localStorage.removeItem("activeApplicationIdSetAt");
               const event = new CustomEvent("application-switched", {
@@ -195,6 +271,7 @@ export function ApplicationManagement({
         }
       },
       onError: (error) => {
+        toast.dismiss("deleting-app");
         toast.error(`Failed to delete application: ${error.message}`);
         console.error("Error deleting application:", error);
       },
@@ -385,9 +462,8 @@ export function ApplicationManagement({
       return;
     }
 
-    // Check if "other" is selected but no custom type is provided
-    if (newAppType === "other" && !otherIpType.trim()) {
-      toast.error("Please specify your IP type");
+    if (newAppTypes.length === 0) {
+      toast.error("Please select at least one IP type");
       return;
     }
 
@@ -408,22 +484,22 @@ export function ApplicationManagement({
       // This ensures we don't inherit data from previous applications
       clearFormData();
 
-      // Determine the actual IP type to send to the API
-      const finalIpType = newAppType === "other" ? otherIpType : newAppType;
+      const selectedIpTypes = buildIpTypesFromApplicationValues(newAppTypes);
 
       // Create the application
       const result = await createApplicationMutation.mutateAsync({
         userId,
         title: newAppTitle.trim(),
         description: newAppDescription.trim(),
-        ipType: finalIpType as any,
+        ipType: newAppTypes[0] ?? "other",
+        selectedIpTypes,
       });
 
       // Close the dialog and reset form state
       setIsNewAppDialogOpen(false);
       setNewAppTitle("");
       setNewAppDescription("");
-      setOtherIpType("");
+      setNewAppTypes(["patent"]);
 
       // Wait for the application to be created before navigating
       if (result?.id) {
@@ -482,7 +558,7 @@ export function ApplicationManagement({
 
     // Clear form data if deleting active application
     if (deleteConfirmApp === activeApplicationId) {
-      clearFormData({ emitEvent: false });
+      clearFormData();
     }
 
     // Call the mutation to delete the application
@@ -653,6 +729,30 @@ export function ApplicationManagement({
     }
   };
 
+  const getSelectedIpTypeBadges = (application: Application) => {
+    const selectedTypes = getSelectedApplicationIpTypes(
+      application.selectedIpTypes
+    );
+
+    if (selectedTypes.length > 0) {
+      return selectedTypes.map((type) => (
+        <div key={`${application.id}-${type}`}>
+          {getIpTypeBadge(
+            type === "other" && application.ipType !== "other"
+              ? application.ipType
+              : type
+          )}
+        </div>
+      ));
+    }
+
+    return [
+      <div key={`${application.id}-${application.ipType}`}>
+        {getIpTypeBadge(application.ipType)}
+      </div>,
+    ];
+  };
+
   // Format date for display
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "N/A";
@@ -664,7 +764,32 @@ export function ApplicationManagement({
     });
   };
 
-  if (!userId) {
+  const hasApplicationData = applications.length > 0 || Boolean(activeApplicationId);
+
+  useEffect(() => {
+    if (DEBUG_APPLICATION_MANAGEMENT) {
+      console.log("[ApplicationManagement] render state", {
+        userId,
+        isLoading,
+        activeApplicationId,
+        applicationsCount: applications.length,
+        hasApplicationData,
+        activeApplicationTitle: activeApplication?.title ?? null,
+      });
+    }
+  }, [
+    userId,
+    isLoading,
+    activeApplicationId,
+    applications.length,
+    hasApplicationData,
+    activeApplication?.title,
+  ]);
+
+  if (!userId && !hasApplicationData && !isLoading) {
+    if (DEBUG_APPLICATION_MANAGEMENT) {
+      console.log("[ApplicationManagement] showing auth-required fallback");
+    }
     return (
       <Alert variant="destructive">
         <AlertCircleIcon className="h-4 w-4" />
@@ -796,9 +921,13 @@ export function ApplicationManagement({
                     <CalendarDays className="h-3 w-3" />
                     <span>
                       {application.createdAt
-                        ? formatDistanceToNow(new Date(application.createdAt), {
-                            addSuffix: true,
-                          })
+                        ? formatDistanceToNow(
+                            new Date(
+                              new Date(application.createdAt as string).getTime() +
+                                8 * 60 * 60 * 1000
+                            ),
+                            { addSuffix: true }
+                          )
                         : "recently"}
                     </span>
                   </div>
@@ -811,8 +940,8 @@ export function ApplicationManagement({
               </div>
 
               <div className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div>{getIpTypeBadge(application.ipType)}</div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  {getSelectedIpTypeBadges(application)}
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -884,84 +1013,79 @@ export function ApplicationManagement({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="ipType">
-                  IP Type <span className="text-rose-500">*</span>
+                <Label>
+                  IP Types <span className="text-rose-500">*</span>
                 </Label>
-                <Select
-                  value={newAppType}
-                  onValueChange={(value) => {
-                    setNewAppType(value);
-                    if (value !== "other") {
-                      setOtherIpType("");
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select IP type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="patent">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-3.5 w-3.5 text-violet-500" />
-                        Patent
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="copyright">
-                      <div className="flex items-center gap-2">
+                <div className="space-y-2 rounded-lg border bg-white p-3">
+                  {[
+                    {
+                      value: "patent" as ApplicationIpTypeValue,
+                      label: "Patent",
+                      icon: <Sparkles className="h-3.5 w-3.5 text-violet-500" />,
+                    },
+                    {
+                      value: "copyright" as ApplicationIpTypeValue,
+                      label: "Copyright",
+                      icon: (
                         <BookmarkCheck className="h-3.5 w-3.5 text-blue-500" />
-                        Copyright
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="trademark">
-                      <div className="flex items-center gap-2">
-                        <Bookmark className="h-3.5 w-3.5 text-emerald-500" />
-                        Trademark
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="utility_model">
-                      <div className="flex items-center gap-2">
-                        <FileType className="h-3.5 w-3.5 text-indigo-500" />
-                        Utility Model
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="industrial_design">
-                      <div className="flex items-center gap-2">
-                        <FileType className="h-3.5 w-3.5 text-amber-500" />
-                        Industrial Design
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="trade_secret">
-                      <div className="flex items-center gap-2">
-                        <FileType className="h-3.5 w-3.5 text-rose-500" />
-                        Trade Secret
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="other">
-                      <div className="flex items-center gap-2">
-                        <FileType className="h-3.5 w-3.5 text-gray-500" />
-                        Other
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                      ),
+                    },
+                    {
+                      value: "trademark" as ApplicationIpTypeValue,
+                      label: "Trademark",
+                      icon: <Bookmark className="h-3.5 w-3.5 text-emerald-500" />,
+                    },
+                    {
+                      value: "utility_model" as ApplicationIpTypeValue,
+                      label: "Utility Model",
+                      icon: <FileType className="h-3.5 w-3.5 text-indigo-500" />,
+                    },
+                    {
+                      value: "industrial_design" as ApplicationIpTypeValue,
+                      label: "Industrial Design",
+                      icon: <FileType className="h-3.5 w-3.5 text-amber-500" />,
+                    },
+                    {
+                      value: "trade_secret" as ApplicationIpTypeValue,
+                      label: "Trade Secret",
+                      icon: <FileType className="h-3.5 w-3.5 text-rose-500" />,
+                    },
+                    {
+                      value: "other" as ApplicationIpTypeValue,
+                      label: "Other",
+                      icon: <FileType className="h-3.5 w-3.5 text-gray-500" />,
+                    },
+                  ].map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex items-center gap-3 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={newAppTypes.includes(option.value)}
+                        onCheckedChange={(checked) => {
+                          setNewAppTypes((current) => {
+                            const exists = current.includes(option.value);
+                            if (checked && !exists) {
+                              return [...current, option.value];
+                            }
+                            if (!checked && exists) {
+                              return current.filter((value) => value !== option.value);
+                            }
+                            return current;
+                          });
+                        }}
+                      />
+                      <span className="flex items-center gap-2">
+                        {option.icon}
+                        <span>{option.label}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
                 <p className="text-xs text-gray-500">
-                  Select the type of intellectual property you want to protect
+                  Select one or more types of intellectual property you want to protect
                 </p>
               </div>
-
-              {newAppType === "other" && (
-                <div className="space-y-2">
-                  <Label htmlFor="otherIpType">
-                    Specify IP Type <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input
-                    id="otherIpType"
-                    placeholder="Specify your IP type"
-                    value={otherIpType}
-                    onChange={(e) => setOtherIpType(e.target.value)}
-                  />
-                </div>
-              )}
 
               <div className="space-y-2">
                 <Label htmlFor="description">
@@ -992,9 +1116,7 @@ export function ApplicationManagement({
               <Button
                 onClick={handleCreateNewApplication}
                 disabled={
-                  isCreating ||
-                  !newAppTitle.trim() ||
-                  (newAppType === "other" && !otherIpType.trim())
+                  isCreating || !newAppTitle.trim() || newAppTypes.length === 0
                 }
                 className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
                 data-testid="submit-new-application"
@@ -1083,4 +1205,3 @@ export function ApplicationManagement({
     </div>
   );
 }
-

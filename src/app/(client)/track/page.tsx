@@ -4,6 +4,10 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  getSelectedApplicationIpTypes,
+  type NormalizedIpTypes,
+} from "@/lib/utils/ip-types";
 
 type TrackingResponse = {
   application?: {
@@ -12,6 +16,7 @@ type TrackingResponse = {
     status: string;
     progress: number | null;
     ipType: string | null;
+    selectedIpTypes?: NormalizedIpTypes | null;
     createdAt: string;
     updatedAt: string;
   };
@@ -56,7 +61,7 @@ export default function Page() {
     null
   );
 
-  const channel: "email" = "email";
+  const channel = "email" as const;
 
   const canSendOtp = useMemo(() => {
     const hasTracking = Boolean(trackingCode.trim());
@@ -66,6 +71,21 @@ export default function Page() {
   const canVerify = useMemo(() => {
     return Boolean(otpSent && otp.trim().length >= 4);
   }, [otpSent, otp]);
+
+  const formatIpTypes = (
+    selectedIpTypes?: NormalizedIpTypes | null,
+    primaryIpType?: string | null
+  ) => {
+    const types = selectedIpTypes
+      ? getSelectedApplicationIpTypes(selectedIpTypes)
+      : primaryIpType
+        ? [primaryIpType]
+        : [];
+
+    if (types.length === 0) return "N/A";
+
+    return types.map((type) => type.replace(/_/g, " ")).join(", ");
+  };
 
   const sendOtp = async () => {
     setError(null);
@@ -234,7 +254,10 @@ export default function Page() {
             <div className="text-sm text-gray-600">
               Type:{" "}
               <span className="font-medium">
-                {trackingData.application.ipType || "N/A"}
+                {formatIpTypes(
+                  trackingData.application.selectedIpTypes,
+                  trackingData.application.ipType
+                )}
               </span>
             </div>
             <div className="text-sm text-gray-600">

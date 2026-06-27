@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/drizzle/db";
-import { otherDocuments } from "@/drizzle/migrations/schema";
+import { otherDocuments } from "@/drizzle/schema";
 import { v4 as uuidv4 } from "uuid";
 import { validate as validateUuid } from "uuid";
-import { ipApplication } from "@/drizzle/migrations/schema";
+import { ipApplication } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import {
   DriveAuthError,
@@ -21,8 +21,27 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   console.log("[API/documents/other/upload] Received upload request");
+  console.log("[API/documents/other/upload] Runtime context:", {
+    cwd: process.cwd(),
+    hasGoogleDriveStorageEmail: Boolean(
+      process.env.GOOGLE_DRIVE_STORAGE_EMAIL?.trim()
+    ),
+    hasGoogleDriveRootFolderId: Boolean(
+      process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID?.trim()
+    ),
+    hasGoogleDriveSharedDriveId: Boolean(
+      process.env.GOOGLE_DRIVE_SHARED_DRIVE_ID?.trim()
+    ),
+  });
   try {
     const session = await auth();
+    console.log("[API/documents/other/upload] Session lookup result:", {
+      hasSession: Boolean(session),
+      hasUser: Boolean(session?.user),
+      userId: session?.user?.id ?? null,
+      email: session?.user?.email ?? null,
+      role: (session?.user as { role?: string } | undefined)?.role ?? null,
+    });
     if (!session?.user?.id) {
       console.error("[API/documents/other/upload] Unauthorized - no session");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -113,6 +132,14 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+    } else {
+      console.error(
+        "[API/documents/other/upload] formId is required but missing"
+      );
+      return NextResponse.json(
+        { error: "Form ID is required" },
+        { status: 400 }
+      );
     }
 
     // Validate ipApplicationId
@@ -161,14 +188,21 @@ export async function POST(req: NextRequest) {
       ipApplicationId
     );
 
-    const applicationTitle = ipApplicationExists?.[0]?.title || ipApplicationId;
+    const applicationFolderId = ipApplicationId;
     const formName =
       (formData.get("formName") as string | null) ||
       (formId ? `Form ${formId}` : "Other Documents");
-    const folderPath = ["TTLO", applicationTitle, formName];
+    // Use the configured Drive root folder directly; do not add an extra TTLO parent.
+    const folderPath = [applicationFolderId, formName];
+    console.log("[API/documents/other/upload] Drive folder path:", {
+      folderPath,
+      rootFolderHint: process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID?.trim() || null,
+    });
     const { folderId } = await ensureDriveFolderPath({
-      userId,
       pathSegments: folderPath,
+    });
+    console.log("[API/documents/other/upload] Drive folder resolved:", {
+      folderId,
     });
 
     // Process each file
@@ -219,11 +253,16 @@ export async function POST(req: NextRequest) {
       }
 
       const driveFile = await uploadFileToDrive({
-        userId,
         file,
         fileName: `${ipApplicationId}-${fileName}`,
         mimeType: fileType,
         parentId: folderId,
+      });
+      console.log("[API/documents/other/upload] Drive file uploaded:", {
+        fileName,
+        driveFileId: driveFile.fileId,
+        hasWebViewLink: Boolean(driveFile.webViewLink),
+        hasWebContentLink: Boolean(driveFile.webContentLink),
       });
 
       const fileUrl =
@@ -250,7 +289,6 @@ export async function POST(req: NextRequest) {
         formId: formId || null,
         userId: userId,
         ipApplicationId,
-        title,
         fileName: fileName.replace(/[^a-zA-Z0-9.-]/g, "_"),
         originalName: fileName,
         filePath: fileUrl,
@@ -309,6 +347,7 @@ export async function POST(req: NextRequest) {
         // Explicitly check all required fields based on schema
         const requiredFields = [
           { field: "documentId", value: newDocument.documentId },
+          { field: "formId", value: newDocument.formId },
           { field: "userId", value: newDocument.userId },
           { field: "ipApplicationId", value: newDocument.ipApplicationId },
           { field: "fileName", value: newDocument.fileName },
@@ -325,11 +364,11 @@ export async function POST(req: NextRequest) {
             missingFields.map((f) => f.field).join(", ")
           );
           return NextResponse.json(
-            {
-              error: "Missing required fields",
-              details: `Fields ${missingFields
-                .map((f) => f.field)
-                .join(", ")} are required`,
+              {
+                error: "Missing required fields",
+                details: `Fields ${missingFields
+                  .map((f) => f.field)
+                  .join(", ")} are required`,
             },
             { status: 400 }
           );
@@ -459,6 +498,13 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[API/documents/other/upload] Error uploading files:", error);
     if (error instanceof DriveAuthError) {
+      console.error(
+        "[API/documents/other/upload] Drive auth failure:",
+        {
+          message: error.message,
+          stack: error.stack,
+        }
+      );
       return NextResponse.json(
         { error: error.message },
         { status: 401 }

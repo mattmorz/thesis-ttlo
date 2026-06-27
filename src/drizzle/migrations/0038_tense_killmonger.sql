@@ -1,0 +1,1 @@
+ALTER TABLE "ip_application" ADD COLUMN "selected_ip_types" jsonb;

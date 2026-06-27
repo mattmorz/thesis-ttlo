@@ -15,8 +15,6 @@ import {
   useIpDisclosureStore,
 } from "@/lib/store/ip-disclosure-store";
 import type { IpTypes } from "@/lib/store/ip-disclosure-store";
-// import { TransactionFormPart1 } from "./copyright-forms/transaction-form-part1";
-// import { TransactionFormPart2 } from "./copyright-forms/transaction-form-part2";
 import { PatentSearchForm } from "./patentum-forms/patent-search-form";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -25,6 +23,18 @@ import { AlertCircle, Loader2, PlusCircle } from "lucide-react";
 import { useIpDisclosure } from "./hooks/use-ip-disclosure";
 import { useApplicationIpDisclosure } from "@/features/client/ip-disclosure/hooks/use-application-ip-disclosure";
 import { useRouter } from "next/navigation";
+import {
+  Sparkles,
+  BookmarkCheck,
+  Bookmark,
+  FileType
+} from "lucide-react";
+import {
+  areIpTypesEqual,
+  deriveIpTypesFromApplicationIpType,
+  hasSelectedIpTypes,
+  normalizeIpTypes,
+} from "./utils/ip-type";
 
 // Global logging control
 const DEBUG = false;
@@ -34,65 +44,66 @@ const tabs = [
     id: "applicants-information",
     label: "Applicant's Information",
     component: ApplicantsInformation,
+    icon: FileType,
   },
   {
     id: "patent-application",
     label: "Patent/UM Application",
     component: PatentApplication,
+    icon: Sparkles,
     showIf: (types: IpTypes) => types.patent || types.utilityModel,
   },
   {
     id: "matrix-sample",
     label: "Matrix Sample",
     component: MatrixSampleForm,
+     icon: Sparkles,
     showIf: (types: IpTypes) => types.patent || types.utilityModel,
   },
-  {
-    id: "patent-search",
-    label: "Patent Search Report",
-    component: PatentSearchForm,
-    showIf: (types: IpTypes) => types.patent || types.utilityModel,
-  },
+ // {
+  //  id: "patent-search",
+    //label: "Patent Search Report",
+   // component: PatentSearchForm,
+   // icon: Sparkles,
+    //showIf: (types: IpTypes) => types.patent || types.utilityModel,
+  //},
   {
     id: "copyright-application",
     label: "Copyright Application",
     component: CopyrightApplication,
+    icon: BookmarkCheck,
     showIf: (types: IpTypes) => types.copyright,
   },
-  // Transaction Form Part 1/2 removed per updated requirements.
-  //  {
-  //   id: "transaction-form-1",
-  //   label: "Transaction Form Part 1",
-  //   component: TransactionFormPart1,
-  //   showIf: (types: IpTypes) => types.copyright,
-  // },
-  // {
-  //   id: "transaction-form-2",
-  //   label: "Transaction Form Part 2",
-  //   component: TransactionFormPart2,
-  //   showIf: (types: IpTypes) => types.copyright,
-  // },
   {
     id: "trademark",
     label: "Trademark Application",
     component: TrademarkApplication,
+    icon: Bookmark,
     showIf: (types: IpTypes) => types.trademark,
   },
   {
     id: "trade-secret",
     label: "Trade Secret",
     component: TradeSecret,
+    icon: FileType,
     showIf: (types: IpTypes) => types.tradeSecret,
   },
   {
     id: "confirmation",
     label: "Disclosure and Confirmation",
     component: DisclosureConfirmation,
+    icon: FileType,
   },
 ];
 
 export function IPDisclosureForm() {
-  const { selectedIpTypes, isHydrated: formContextHydrated } = useFormContext();
+  const getIpTypeStorageKey = (applicationId: string) =>
+    `application-selected-ip-types-${applicationId}`;
+  const {
+    selectedIpTypes,
+    setSelectedIpTypes,
+    isHydrated: formContextHydrated,
+  } = useFormContext();
   const { activeTab, setActiveTab, visibleTabs, clearLocalStorage } =
     useHydratedIpDisclosureStore();
   const {
@@ -118,6 +129,70 @@ export function IPDisclosureForm() {
     isLoading: isLoadingApplication,
     refreshData,
   } = useApplicationIpDisclosure();
+
+  const localStorageIpTypes = useMemo(() => {
+    if (!activeApplicationId || typeof window === "undefined") {
+      return null;
+    }
+    try {
+      const raw = window.localStorage.getItem(
+        getIpTypeStorageKey(activeApplicationId)
+      );
+      if (!raw) return null;
+      return normalizeIpTypes(JSON.parse(raw));
+    } catch (error) {
+      console.error("Failed to parse stored application IP types:", error);
+      return null;
+    }
+  }, [activeApplicationId]);
+
+  const derivedIpTypes = useMemo(
+    () => {
+      if (activeApplication?.selectedIpTypes) {
+        const normalizedFromApp = normalizeIpTypes(activeApplication.selectedIpTypes);
+        // Some endpoints may return jsonb as a JSON string or otherwise malformed shape.
+        // Only trust the application value if it actually contains selected flags.
+        if (hasSelectedIpTypes(normalizedFromApp)) {
+          return normalizedFromApp;
+        }
+      }
+      if (hasSelectedIpTypes(localStorageIpTypes)) {
+        return normalizeIpTypes(localStorageIpTypes);
+      }
+
+      return deriveIpTypesFromApplicationIpType(
+        activeApplication?.ipType ?? undefined
+      ).ipTypes;
+    },
+    [
+      activeApplication?.ipType,
+      activeApplication?.selectedIpTypes,
+      localStorageIpTypes,
+    ]
+  );
+
+  useEffect(() => {
+    if (!formContextHydrated) return;
+    if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
+      const nextTypes = normalizeIpTypes(applicantsInfo?.ipTypes);
+      if (!areIpTypesEqual(selectedIpTypes, nextTypes)) {
+        setSelectedIpTypes(nextTypes);
+      }
+      return;
+    }
+    if (hasSelectedIpTypes(selectedIpTypes)) return;
+    if (hasSelectedIpTypes(derivedIpTypes)) {
+      if (!areIpTypesEqual(selectedIpTypes, derivedIpTypes)) {
+        setSelectedIpTypes(derivedIpTypes);
+      }
+    }
+  }, [
+    applicantsInfo?.ipTypes,
+    derivedIpTypes,
+    formContextHydrated,
+    selectedIpTypes,
+    setSelectedIpTypes,
+  ]);
 
   // Add error handling
   useEffect(() => {
@@ -159,22 +234,30 @@ export function IPDisclosureForm() {
   // and saved store data once navigating away.
   const activeIpTypes: IpTypes = useMemo(() => {
     if (activeTab === "applicants-information") {
-      return selectedIpTypes;
+      if (hasSelectedIpTypes(selectedIpTypes)) {
+        return normalizeIpTypes(selectedIpTypes);
+      }
+      if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
+        return normalizeIpTypes(applicantsInfo?.ipTypes);
+      }
+      return derivedIpTypes;
     }
-    if (applicantsInfo?.ipTypes) {
-      return {
-        copyright: Boolean(applicantsInfo.ipTypes.copyright),
-        patent: Boolean(applicantsInfo.ipTypes.patent),
-        utilityModel: Boolean(applicantsInfo.ipTypes.utilityModel),
-        industrialDesign: Boolean(applicantsInfo.ipTypes.industrialDesign),
-        trademark: Boolean(applicantsInfo.ipTypes.trademark),
-        tradeSecret: Boolean(applicantsInfo.ipTypes.tradeSecret),
-        other: Boolean(applicantsInfo.ipTypes.other),
-        notSure: Boolean(applicantsInfo.ipTypes.notSure),
-      };
+    if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
+      return normalizeIpTypes(applicantsInfo?.ipTypes);
     }
-    return selectedIpTypes;
-  }, [activeTab, applicantsInfo?.ipTypes, selectedIpTypes]);
+    if (hasSelectedIpTypes(selectedIpTypes)) {
+      return normalizeIpTypes(selectedIpTypes);
+    }
+    if (hasSelectedIpTypes(derivedIpTypes)) {
+      return derivedIpTypes;
+    }
+    return normalizeIpTypes(selectedIpTypes);
+  }, [
+    activeTab,
+    applicantsInfo?.ipTypes,
+    derivedIpTypes,
+    selectedIpTypes,
+  ]);
 
   // Memoize visible tab components based on active IP types
   const visibleTabComponents = useMemo(() => {
@@ -374,7 +457,15 @@ export function IPDisclosureForm() {
     currentTab,
     visibleTabs: visibleTabComponents.map((tab) => tab.id),
   });
+const getNextTab = (currentTabId: string) => {
+  const index = visibleTabComponents.findIndex(
+    (tab) => tab.id === currentTabId
+  );
 
+  if (index === -1) return "applicants-information";
+
+  return visibleTabComponents[index + 1]?.id || currentTabId;
+};
   // Function to handle tab changes (previously was using setActiveTabForStore)
   const handleTabChange = (tabId: string) => {
     console.log("IP Disclosure Form - Changing tab to:", tabId);
@@ -414,16 +505,6 @@ export function IPDisclosureForm() {
         );
         setActiveTab("trade-secret");
       }
-      // If trying to navigate to trademark-confirmation, check if we have a trademark-application tab
-      else if (
-        tabId === "trademark-confirmation" &&
-        visibleTabComponents.some((tab) => tab.id === "trademark-application")
-      ) {
-        console.log(
-          "IP Disclosure Form - Redirecting from 'trademark-confirmation' to 'trademark-application'"
-        );
-        setActiveTab("trademark-application");
-      }
     }
   };
 
@@ -442,11 +523,6 @@ export function IPDisclosureForm() {
         return <PatentSearchForm />;
       case "copyright-application":
         return <CopyrightApplication />;
-        // Commented the transaction form parts per updated requirements.
-      //     case "transaction-form-1":
-      //   return <TransactionFormPart1 />;
-      // case "transaction-form-2":
-      //   return <TransactionFormPart2 />;
       case "trademark":
       case "trademark-application":
         return <TrademarkApplication />;
@@ -469,9 +545,9 @@ export function IPDisclosureForm() {
         <Alert className="bg-green-50 border-green-200">
           <AlertTitle className="text-green-800 flex items-center">
             Active Application: {activeApplication.title}
-            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+            {/* <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
               {activeApplication.ipType}
-            </span>
+            </span> */}
           </AlertTitle>
           <AlertDescription className="text-green-700">
             {activeApplication.description || "No description provided."}
@@ -495,14 +571,17 @@ export function IPDisclosureForm() {
                   const isCompletedTab = isTabComplete(tab.id);
                   const isDisabled = isFutureTab && !isCompletedTab;
                   return (
-                  <TabsTrigger
-                    key={tab.id}
-                    value={tab.id}
-                    disabled={isDisabled}
-                    className="inline-flex items-center justify-center whitespace-nowrap rounded-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm relative py-2 text-sm font-medium text-muted-foreground data-[state=active]:text-[#1B5E20] data-[state=active]:bg-transparent data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[#1B5E20] hover:text-[#1B5E20]/80 transition-colors px-2 md:px-3 lg:px-4"
-                  >
-                    {tab.label}
-                  </TabsTrigger>
+                 <TabsTrigger
+  key={tab.id}
+  value={tab.id}
+  disabled={isDisabled}
+  className="inline-flex items-center justify-center whitespace-nowrap rounded-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm relative py-2 text-sm font-medium text-muted-foreground data-[state=active]:text-[#1B5E20] data-[state=active]:bg-transparent data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-[#1B5E20] hover:text-[#1B5E20]/80 transition-colors px-2 md:px-3 lg:px-4"
+>
+  <div className="flex items-center gap-2">
+    {tab.icon && <tab.icon className="h-4 w-4" />}
+    <span>{tab.label}</span>
+  </div>
+</TabsTrigger>
                 );
                 })}
               </TabsList>

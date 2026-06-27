@@ -6,9 +6,6 @@ import {
   ensureDriveFolderPath,
   uploadFileToDrive,
 } from "@/lib/google-drive";
-import { db } from "@/drizzle/db";
-import { ipApplication } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +13,6 @@ export async function POST(request: Request) {
     if (!session?.user) {
       return NextResponse.redirect(new URL("/auth/unauthorized", request.url));
     }
-
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
 
@@ -35,20 +31,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const application =
-      (await db.query.ipApplication.findFirst({
-        where: eq(ipApplication.id, projectId),
-        columns: { title: true },
-      })) || null;
-
-    const applicationTitle = application?.title || projectId;
-    const folderPath = [
-      "TTLO",
-      applicationTitle,
-      formName || "General Uploads",
-    ];
+    const applicationFolderId = projectId;
+    // Use the configured Drive root folder directly; do not add an extra TTLO parent.
+    const folderPath = [applicationFolderId, formName || "General Uploads"];
     const { folderId } = await ensureDriveFolderPath({
-      userId: session.user.id,
       pathSegments: folderPath,
     });
 
@@ -62,7 +48,6 @@ export async function POST(request: Request) {
       }
 
       const driveFile = await uploadFileToDrive({
-        userId: session.user.id,
         file,
         fileName: `${projectId}-${file.name}`,
         mimeType: file.type || "application/octet-stream",

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/drizzle/db";
+import { clientProfile as liveClientProfile } from "@/drizzle/schema";
 import {
-  clientProfile,
   formSubmissionRegistry,
   ipApplication,
 } from "@/drizzle/migrations/schema";
@@ -10,6 +10,160 @@ import { eq, and } from "drizzle-orm";
 import { checkPermission, bypassPermissions } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
+
+const CLIENT_PROFILE_FIELDS = {
+  clientId: liveClientProfile.clientId,
+  userId: liveClientProfile.userId,
+  firstName: liveClientProfile.firstName,
+  middleName: liveClientProfile.middleName,
+  lastName: liveClientProfile.lastName,
+  contactNumber: liveClientProfile.contactNumber,
+  email: liveClientProfile.email,
+  mailingAddress: liveClientProfile.mailingAddress,
+  companyName: liveClientProfile.companyName,
+  companyEmail: liveClientProfile.companyEmail,
+  occupation: liveClientProfile.occupation,
+  createdAt: liveClientProfile.createdAt,
+  updatedAt: liveClientProfile.updatedAt,
+  age: liveClientProfile.age,
+  companyStreet: liveClientProfile.companyStreet,
+  companyBarangay: liveClientProfile.companyBarangay,
+  companyCityMunicipality: liveClientProfile.companyCityMunicipality,
+  companyProvince: liveClientProfile.companyProvince,
+  degree: liveClientProfile.degree,
+  profession: liveClientProfile.profession,
+  status: liveClientProfile.status,
+  gender: liveClientProfile.gender,
+  citizenship: liveClientProfile.citizenship,
+  highestDegree: liveClientProfile.highestDegree,
+  familiarWithIpRights: liveClientProfile.familiarWithIpRights,
+  ipExperience: liveClientProfile.ipExperience,
+} as const;
+
+async function getClientProfileById(clientId: string) {
+  const rows = await db
+    .select(CLIENT_PROFILE_FIELDS)
+    .from(liveClientProfile)
+    .where(eq(liveClientProfile.clientId, clientId))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+async function getClientProfileByUserId(userId: string) {
+  const rows = await db
+    .select(CLIENT_PROFILE_FIELDS)
+    .from(liveClientProfile)
+    .where(eq(liveClientProfile.userId, userId))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+const HIGHEST_DEGREE_DB_VALUES = new Set([
+  "bachelor",
+  "master",
+  "doctorate",
+  "other",
+]);
+
+const HIGHEST_DEGREE_LEGACY_VALUES = new Set([
+  "associate",
+  "vocational",
+  "highschool",
+]);
+
+function normalizeHighestDegree(
+  highestDegree: { value?: unknown; otherValue?: unknown } | undefined,
+  subType?: unknown
+) {
+  if (!highestDegree || typeof highestDegree !== "object") {
+    return { value: "bachelor", otherValue: null };
+  }
+
+  const rawValue =
+    typeof highestDegree.value === "string"
+      ? highestDegree.value.toLowerCase()
+      : "";
+
+  if (rawValue === "other") {
+    return {
+      value: "other",
+      otherValue:
+        typeof highestDegree.otherValue === "string"
+          ? highestDegree.otherValue
+          : "",
+    };
+  }
+
+  if (HIGHEST_DEGREE_LEGACY_VALUES.has(rawValue)) {
+    return {
+      value: "other",
+      otherValue:
+        typeof subType === "string" && subType.trim()
+          ? subType
+          : rawValue,
+    };
+  }
+
+  if (HIGHEST_DEGREE_DB_VALUES.has(rawValue)) {
+    return { value: rawValue, otherValue: null };
+  }
+
+  return { value: "bachelor", otherValue: null };
+}
+
+function denormalizeHighestDegree(
+  highestDegree:
+    | { value?: unknown; otherValue?: unknown }
+    | null
+    | undefined
+) {
+  if (!highestDegree || typeof highestDegree !== "object") return highestDegree;
+  if (highestDegree.value !== "other") return highestDegree;
+
+  const otherValue =
+    typeof highestDegree.otherValue === "string"
+      ? highestDegree.otherValue.toLowerCase()
+      : "";
+
+  if (HIGHEST_DEGREE_LEGACY_VALUES.has(otherValue)) {
+    return { value: otherValue, otherValue: null };
+  }
+
+  return highestDegree;
+}
+
+function normalizeHasCompany(personalInfo: any) {
+  const raw = personalInfo?.hasCompany;
+  if (typeof raw === "boolean") return raw;
+  if (raw === "false") return false;
+  if (raw === "true") return true;
+
+  const hasCollegeData =
+    (typeof personalInfo?.collegeName === "string" &&
+      personalInfo.collegeName.trim() !== "") ||
+    (typeof personalInfo?.departmentName === "string" &&
+      personalInfo.departmentName.trim() !== "");
+
+  const hasCompanyData =
+    (typeof personalInfo?.companyName === "string" &&
+      personalInfo.companyName.trim() !== "") ||
+    (typeof personalInfo?.companyEmail === "string" &&
+      personalInfo.companyEmail.trim() !== "") ||
+    (typeof personalInfo?.companyStreet === "string" &&
+      personalInfo.companyStreet.trim() !== "") ||
+    (typeof personalInfo?.companyBarangay === "string" &&
+      personalInfo.companyBarangay.trim() !== "") ||
+    (typeof personalInfo?.companyCityMunicipality === "string" &&
+      personalInfo.companyCityMunicipality.trim() !== "") ||
+    (typeof personalInfo?.companyProvince === "string" &&
+      personalInfo.companyProvince.trim() !== "");
+
+  if (hasCollegeData) return false;
+  if (hasCompanyData) return true;
+  return true;
+}
 
 export async function POST(req: Request) {
   try {
@@ -76,8 +230,6 @@ export async function POST(req: Request) {
     // Format data for database insertion
     const formattedData = {
       userId: session.user.id,
-      // Add direct reference to IP application
-      ipApplicationId: applicationId || null,
       // Personal Information
       firstName: personalInfo?.firstName?.trim(),
       lastName: personalInfo?.lastName?.trim(),
@@ -94,44 +246,18 @@ export async function POST(req: Request) {
       contactNumber: personalInfo?.contactNumber?.trim(),
       mailingAddress: personalInfo?.mailingAddress?.trim(),
 
-      // Explicitly handle hasCompany field and related fields
-      hasCompany: personalInfo?.hasCompany === false ? false : true,
-
-      // College/Department fields - preserve even if empty
-      collegeName:
-        personalInfo?.hasCompany === false
-          ? personalInfo?.collegeName?.trim() || ""
-          : null,
-      departmentName:
-        personalInfo?.hasCompany === false
-          ? personalInfo?.departmentName?.trim() || ""
-          : null,
-
       // Company Information - only save if hasCompany is true
-      companyName:
-        personalInfo?.hasCompany === false
-          ? null
-          : personalInfo?.companyName?.trim() || null,
+      companyName: personalInfo?.companyName?.trim() || null,
       companyStreet:
-        personalInfo?.hasCompany === false
-          ? null
-          : personalInfo?.companyStreet?.trim() || null,
+        personalInfo?.companyStreet?.trim() || null,
       companyBarangay:
-        personalInfo?.hasCompany === false
-          ? null
-          : personalInfo?.companyBarangay?.trim() || null,
+        personalInfo?.companyBarangay?.trim() || null,
       companyCityMunicipality:
-        personalInfo?.hasCompany === false
-          ? null
-          : personalInfo?.companyCityMunicipality?.trim() || null,
+        personalInfo?.companyCityMunicipality?.trim() || null,
       companyProvince:
-        personalInfo?.hasCompany === false
-          ? null
-          : personalInfo?.companyProvince?.trim() || null,
+        personalInfo?.companyProvince?.trim() || null,
       companyEmail:
-        personalInfo?.hasCompany === false
-          ? null
-          : personalInfo?.companyEmail?.trim() || null,
+        personalInfo?.companyEmail?.trim() || null,
 
       occupation: personalInfo?.occupation?.trim() || null,
 
@@ -144,8 +270,6 @@ export async function POST(req: Request) {
       profession: educationalBackground?.profession?.trim(),
 
       // Background IP
-      publishedResearch: backgroundIP?.publishedResearch || { value: "no" },
-      developedMaterials: backgroundIP?.developedMaterials || { value: "no" },
       familiarWithIpRights: backgroundIP?.familiarWithIPRights || {
         value: "no",
       },
@@ -166,6 +290,12 @@ export async function POST(req: Request) {
       status: status,
       updatedAt: new Date().toISOString(),
     };
+
+    // Normalize highest degree to align with DB constraints
+    formattedData.highestDegree = normalizeHighestDegree(
+      educationalBackground?.highestDegree,
+      educationalBackground?.subType
+    );
 
     // Right after formattedData is created, update the validation for citizenship
     // Fix citizenship format to ensure it meets database constraints
@@ -196,51 +326,11 @@ export async function POST(req: Request) {
     let result;
     let existingProfileId = null;
 
-    // If an applicationId is provided, check if a profile is already associated with this application
+    // If an applicationId is provided, check the registry first.
+    // The live client_profile table may not have a direct ip_application_id column,
+    // so the registry entry is the source of truth for application linking.
     if (applicationId) {
-      console.log(
-        `🔍 Checking for existing profile for application: ${applicationId}`
-      );
-
-      // IMPORTANT: First, verify that the application ID actually exists in the database
-      try {
-        const applicationExists = await db.query.ipApplication.findFirst({
-          where: eq(ipApplication.id, applicationId),
-          columns: { id: true },
-        });
-
-        if (!applicationExists) {
-          console.error(
-            `❌ Application ID ${applicationId} does not exist in the database`
-          );
-          return NextResponse.json(
-            {
-              error: "Invalid application ID",
-              detail: `Application ID ${applicationId} not found in the database`,
-            },
-            { status: 400 }
-          );
-        }
-
-        console.log(
-          `✓ Verified application ID ${applicationId} exists in the database`
-        );
-      } catch (err) {
-        console.error(
-          `❌ Error verifying application ID ${applicationId}:`,
-          err
-        );
-        return NextResponse.json(
-          {
-            error: "Error validating application ID",
-            detail:
-              err instanceof Error ? err.message : "Unknown database error",
-          },
-          { status: 500 }
-        );
-      }
-
-      // Then, check if there's a registry entry for this application
+      console.log(`🔍 Checking registry for application: ${applicationId}`);
       const registryEntry = await db.query.formSubmissionRegistry.findFirst({
         where: and(
           eq(formSubmissionRegistry.ipApplicationId, applicationId),
@@ -249,10 +339,13 @@ export async function POST(req: Request) {
       });
 
       if (registryEntry?.sourceId) {
+        console.log(
+          `✓ Found registry entry for application ${applicationId}, sourceId=${registryEntry.sourceId}`
+        );
         // If there's a registry entry, check if the profile exists
-        const profileForThisApp = await db.query.clientProfile.findFirst({
-          where: eq(clientProfile.clientId, registryEntry.sourceId),
-        });
+        const profileForThisApp = await getClientProfileById(
+          registryEntry.sourceId
+        );
 
         if (profileForThisApp) {
           existingProfileId = profileForThisApp.clientId;
@@ -261,6 +354,8 @@ export async function POST(req: Request) {
           );
         }
       }
+    } else {
+      console.log("ℹ️ No applicationId provided; creating an unlinked client profile");
     }
 
     // If we have an existing profile for this application, update it
@@ -284,35 +379,43 @@ export async function POST(req: Request) {
         }
 
         result = await db
-          .update(clientProfile)
+          .update(liveClientProfile)
           .set({
             status: data.status,
             updatedAt: new Date().toISOString(),
           })
-          .where(eq(clientProfile.clientId, existingProfileId))
-          .returning();
+          .where(eq(liveClientProfile.clientId, existingProfileId))
+          .returning({ clientId: liveClientProfile.clientId });
 
         console.log("✅ Profile status updated successfully");
       } else {
         // Full update for this application's profile
         result = await db
-          .update(clientProfile)
+          .update(liveClientProfile)
           .set(formattedData)
-          .where(eq(clientProfile.clientId, existingProfileId))
-          .returning();
+          .where(eq(liveClientProfile.clientId, existingProfileId))
+          .returning({ clientId: liveClientProfile.clientId });
         console.log("✅ Profile updated successfully for this application");
       }
     } else {
       // No existing profile for this application, create a new one
       console.log("🆕 Creating new profile");
       result = await db
-        .insert(clientProfile)
+        .insert(liveClientProfile)
         .values({
           ...formattedData,
           createdAt: new Date().toISOString(),
         })
-        .returning();
+        .returning({ clientId: liveClientProfile.clientId });
       console.log("✅ New profile created successfully");
+    }
+
+    const savedProfile = await getClientProfileById(result[0].clientId);
+    if (!savedProfile) {
+      return NextResponse.json(
+        { error: "Failed to load saved client profile" },
+        { status: 500 }
+      );
     }
 
     // If an application ID was provided, register this profile in the form submission registry
@@ -492,7 +595,7 @@ export async function POST(req: Request) {
 
     // Transform the result to camelCase to match frontend expectations
     const camelCaseResult = {
-      ...result[0],
+      ...savedProfile,
       // Add registry information to the response
       registryId: registryId || null,
     };
@@ -569,83 +672,6 @@ export async function GET(req: Request) {
 
     // If an applicationId is provided, fetch the profile associated with this application
     if (applicationId) {
-      // FIRST METHOD: Try to find the profile directly by ipApplicationId (preferred method)
-      console.log("🔍 Checking for direct profile match by ipApplicationId");
-      const directProfile = await db.query.clientProfile.findFirst({
-        where: and(
-          eq(clientProfile.ipApplicationId, applicationId),
-          eq(clientProfile.userId, session.user.id)
-        ),
-      });
-
-      if (directProfile) {
-        console.log(
-          "✅ Found profile directly by ipApplicationId:",
-          directProfile.clientId
-        );
-
-        // Check if there's a registry entry for backward compatibility
-        const registryEntry = await db.query.formSubmissionRegistry.findFirst({
-          where: and(
-            eq(formSubmissionRegistry.ipApplicationId, applicationId),
-            eq(formSubmissionRegistry.sourceType, "client_profile"),
-            eq(formSubmissionRegistry.sourceId, directProfile.clientId)
-          ),
-        });
-
-        if (registryEntry) {
-          registryId = registryEntry.registryId;
-        }
-
-        // Format and return the profile
-        const camelCaseProfile = {
-          clientId: directProfile.clientId,
-          userId: directProfile.userId,
-          firstName: directProfile.firstName,
-          lastName: directProfile.lastName,
-          middleName: directProfile.middleName,
-          gender: directProfile.gender,
-          age: directProfile.age,
-          citizenship: directProfile.citizenship,
-          email: directProfile.email,
-          contactNumber: directProfile.contactNumber,
-          mailingAddress: directProfile.mailingAddress,
-          companyName: directProfile.companyName,
-          companyStreet: directProfile.companyStreet,
-          companyBarangay: directProfile.companyBarangay,
-          companyCityMunicipality: directProfile.companyCityMunicipality,
-          companyProvince: directProfile.companyProvince,
-          companyEmail: directProfile.companyEmail,
-          occupation: directProfile.occupation,
-          highestDegree: directProfile.highestDegree,
-          degree: directProfile.degree,
-          profession: directProfile.profession,
-          publishedResearch: directProfile.publishedResearch,
-          developedMaterials: directProfile.developedMaterials,
-          familiarWithIpRights: directProfile.familiarWithIpRights,
-          ipExperience: directProfile.ipExperience,
-          status: directProfile.status,
-          createdAt: directProfile.createdAt,
-          updatedAt: directProfile.updatedAt,
-          registryId: registryId,
-          formLoad: isFormLoad,
-        };
-
-        console.log(
-          "✅ Returning direct profile match for application:",
-          applicationId
-        );
-        return NextResponse.json({
-          success: true,
-          exists: true,
-          data: camelCaseProfile,
-          formLoad: isFormLoad,
-        });
-      }
-
-      // SECOND METHOD (legacy): Check via registry if direct match wasn't found
-      console.log("🔍 No direct profile match, checking via registry");
-
       // Find the form registry entry for this application and client profile
       const formRegistry = await db.query.formSubmissionRegistry.findFirst({
         where: and(
@@ -679,9 +705,7 @@ export async function GET(req: Request) {
       }
 
       // Now fetch the client profile using the sourceId
-      const profile = await db.query.clientProfile.findFirst({
-        where: eq(clientProfile.clientId, formRegistry.sourceId),
-      });
+      const profile = await getClientProfileById(formRegistry.sourceId);
 
       if (!profile) {
         console.log(
@@ -699,76 +723,6 @@ export async function GET(req: Request) {
           userId: formRegistry.userId,
           createdAt: formRegistry.createdAt,
         });
-
-        // Try one more time with direct application ID match (in case registry is pointing to a non-existent profile)
-        const directFallbackProfile = await db.query.clientProfile.findFirst({
-          where: and(
-            eq(clientProfile.ipApplicationId, applicationId),
-            eq(clientProfile.userId, session.user.id)
-          ),
-        });
-
-        if (directFallbackProfile) {
-          console.log(
-            "✅ Found profile directly by application ID as fallback:",
-            directFallbackProfile.clientId
-          );
-
-          // Update the registry to point to the correct profile
-          await db
-            .update(formSubmissionRegistry)
-            .set({ sourceId: directFallbackProfile.clientId })
-            .where(
-              eq(formSubmissionRegistry.registryId, formRegistry.registryId)
-            );
-
-          console.log("✅ Updated registry to point to correct profile");
-
-          // Format and return the profile
-          const camelCaseProfile = {
-            clientId: directFallbackProfile.clientId,
-            userId: directFallbackProfile.userId,
-            firstName: directFallbackProfile.firstName,
-            lastName: directFallbackProfile.lastName,
-            middleName: directFallbackProfile.middleName,
-            gender: directFallbackProfile.gender,
-            age: directFallbackProfile.age,
-            citizenship: directFallbackProfile.citizenship,
-            email: directFallbackProfile.email,
-            contactNumber: directFallbackProfile.contactNumber,
-            mailingAddress: directFallbackProfile.mailingAddress,
-            companyName: directFallbackProfile.companyName,
-            companyStreet: directFallbackProfile.companyStreet,
-            companyBarangay: directFallbackProfile.companyBarangay,
-            companyCityMunicipality:
-              directFallbackProfile.companyCityMunicipality,
-            companyProvince: directFallbackProfile.companyProvince,
-            companyEmail: directFallbackProfile.companyEmail,
-            occupation: directFallbackProfile.occupation,
-            highestDegree: directFallbackProfile.highestDegree,
-            degree: directFallbackProfile.degree,
-            profession: directFallbackProfile.profession,
-            publishedResearch: directFallbackProfile.publishedResearch,
-            developedMaterials: directFallbackProfile.developedMaterials,
-            familiarWithIpRights: directFallbackProfile.familiarWithIpRights,
-            ipExperience: directFallbackProfile.ipExperience,
-            status: directFallbackProfile.status,
-            createdAt: directFallbackProfile.createdAt,
-            updatedAt: directFallbackProfile.updatedAt,
-            registryId: formRegistry.registryId,
-            formLoad: isFormLoad,
-          };
-
-          console.log(
-            "✅ Returning direct profile match after registry repair"
-          );
-          return NextResponse.json({
-            success: true,
-            exists: true,
-            data: camelCaseProfile,
-            formLoad: isFormLoad,
-          });
-        }
 
         return NextResponse.json({
           success: false,
@@ -797,7 +751,7 @@ export async function GET(req: Request) {
         companyProvince: profile.companyProvince,
         companyEmail: profile.companyEmail,
         occupation: profile.occupation,
-        highestDegree: profile.highestDegree,
+        highestDegree: denormalizeHighestDegree(profile.highestDegree),
         degree: profile.degree,
         profession: profile.profession,
         publishedResearch: profile.publishedResearch,
@@ -823,9 +777,7 @@ export async function GET(req: Request) {
     // If no applicationId is provided, fall back to the default behavior
     // of fetching the profile by user ID
     console.log("🔍 Fetching profile for user:", session.user.id);
-    const profile = await db.query.clientProfile.findFirst({
-      where: eq(clientProfile.userId, session.user.id),
-    });
+      const profile = await getClientProfileByUserId(session.user.id);
 
     if (!profile) {
       console.log("❌ No profile found for user");
@@ -856,7 +808,7 @@ export async function GET(req: Request) {
       companyProvince: profile.companyProvince,
       companyEmail: profile.companyEmail,
       occupation: profile.occupation,
-      highestDegree: profile.highestDegree,
+      highestDegree: denormalizeHighestDegree(profile.highestDegree),
       degree: profile.degree,
       profession: profile.profession,
       publishedResearch: profile.publishedResearch,
@@ -967,7 +919,6 @@ export async function PUT(req: Request) {
     // Format data for database insertion
     const formattedData: any = {
       userId: session.user.id,
-      ipApplicationId: applicationId, // Ensure ipApplicationId is set
       status: status,
       updatedAt: new Date().toISOString(),
     };
@@ -1014,67 +965,31 @@ export async function PUT(req: Request) {
       formattedData.contactNumber = personalInfo.contactNumber?.trim();
       formattedData.mailingAddress = personalInfo.mailingAddress?.trim();
 
-      // Explicitly handle hasCompany field and related fields
-      formattedData.hasCompany =
-        personalInfo.hasCompany === false ? false : true;
-
-      // College/Department fields - preserve even if empty
-      formattedData.collegeName =
-        personalInfo.hasCompany === false
-          ? personalInfo.collegeName?.trim() || ""
-          : null;
-      formattedData.departmentName =
-        personalInfo.hasCompany === false
-          ? personalInfo.departmentName?.trim() || ""
-          : null;
-
       // Company Information - only save if hasCompany is true
-      formattedData.companyName =
-        personalInfo.hasCompany === false
-          ? null
-          : personalInfo.companyName?.trim() || null;
-      formattedData.companyStreet =
-        personalInfo.hasCompany === false
-          ? null
-          : personalInfo.companyStreet?.trim() || null;
+      formattedData.companyName = personalInfo.companyName?.trim() || null;
+      formattedData.companyStreet = personalInfo.companyStreet?.trim() || null;
       formattedData.companyBarangay =
-        personalInfo.hasCompany === false
-          ? null
-          : personalInfo.companyBarangay?.trim() || null;
+        personalInfo.companyBarangay?.trim() || null;
       formattedData.companyCityMunicipality =
-        personalInfo.hasCompany === false
-          ? null
-          : personalInfo.companyCityMunicipality?.trim() || null;
-      formattedData.companyProvince =
-        personalInfo.hasCompany === false
-          ? null
-          : personalInfo.companyProvince?.trim() || null;
-      formattedData.companyEmail =
-        personalInfo.hasCompany === false
-          ? null
-          : personalInfo.companyEmail?.trim() || null;
+        personalInfo.companyCityMunicipality?.trim() || null;
+      formattedData.companyProvince = personalInfo.companyProvince?.trim() || null;
+      formattedData.companyEmail = personalInfo.companyEmail?.trim() || null;
 
       formattedData.occupation = personalInfo.occupation?.trim() || null;
     }
 
     if (educationalBackground) {
       // Educational Background
-      formattedData.highestDegree = educationalBackground.highestDegree || {
-        value: "bachelor",
-        otherValue: null,
-      };
+      formattedData.highestDegree = normalizeHighestDegree(
+        educationalBackground.highestDegree,
+        educationalBackground.subType
+      );
       formattedData.degree = educationalBackground.degree?.trim();
       formattedData.profession = educationalBackground.profession?.trim();
     }
 
     if (backgroundIP) {
       // Background IP
-      formattedData.publishedResearch = backgroundIP.publishedResearch || {
-        value: "no",
-      };
-      formattedData.developedMaterials = backgroundIP.developedMaterials || {
-        value: "no",
-      };
       formattedData.familiarWithIpRights =
         backgroundIP.familiarWithIPRights || {
           value: "no",
@@ -1098,51 +1013,29 @@ export async function PUT(req: Request) {
       JSON.stringify(formattedData, null, 2)
     );
 
-    // FIRST METHOD: Try to find the profile directly by ipApplicationId
-    console.log("🔍 Looking for existing profile by ipApplicationId");
-    let existingProfile = await db.query.clientProfile.findFirst({
+    console.log("🔍 Looking for existing profile via registry");
+    const registryEntry = await db.query.formSubmissionRegistry.findFirst({
       where: and(
-        eq(clientProfile.ipApplicationId, applicationId),
-        eq(clientProfile.userId, session.user.id)
+        eq(formSubmissionRegistry.ipApplicationId, applicationId),
+        eq(formSubmissionRegistry.sourceType, "client_profile")
       ),
     });
 
-    // If found directly by application ID, update it
-    let profileId = existingProfile?.clientId;
-    let registryEntry = null;
+    if (!registryEntry?.sourceId) {
+      console.log("❌ No registry entry found for this application");
+      return NextResponse.json(
+        { error: "No client profile found for this application" },
+        { status: 404 }
+      );
+    }
 
-    if (!profileId) {
-      // SECOND METHOD (legacy): If not found directly, check via registry
-      console.log("🔍 No direct profile match, checking via registry");
-      registryEntry = await db.query.formSubmissionRegistry.findFirst({
-        where: and(
-          eq(formSubmissionRegistry.ipApplicationId, applicationId),
-          eq(formSubmissionRegistry.sourceType, "client_profile")
-        ),
-      });
+    const profileId = registryEntry.sourceId;
 
-      // If no registry entry is found, return an error
-      if (!registryEntry?.sourceId) {
-        console.log("❌ No profile found for this application");
-        return NextResponse.json(
-          { error: "No client profile found for this application" },
-          { status: 404 }
-        );
-      }
+    // Get existing profile to avoid overwriting fields that aren't being updated
+    const existingProfile = await getClientProfileById(profileId);
 
-      profileId = registryEntry.sourceId;
-
-      // Get existing profile to avoid overwriting fields that aren't being updated
-      existingProfile = await db.query.clientProfile.findFirst({
-        where: eq(clientProfile.clientId, profileId),
-      });
-
-      if (!existingProfile) {
-        return NextResponse.json(
-          { error: "Profile not found" },
-          { status: 404 }
-        );
-      }
+    if (!existingProfile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     // Ensure we don't lose existing data for fields not included in the update
@@ -1164,10 +1057,10 @@ export async function PUT(req: Request) {
     // Update the existing profile
     console.log(`🔄 Updating profile with ID: ${profileId}`);
     const result = await db
-      .update(clientProfile)
+      .update(liveClientProfile)
       .set(formattedData)
-      .where(eq(clientProfile.clientId, profileId))
-      .returning();
+      .where(eq(liveClientProfile.clientId, profileId))
+      .returning({ clientId: liveClientProfile.clientId });
 
     if (!result.length) {
       console.log(`❌ Failed to update profile with ID: ${profileId}`);
@@ -1186,7 +1079,7 @@ export async function PUT(req: Request) {
         .update(formSubmissionRegistry)
         .set({
           status: status, // Update registry status to match profile status
-          title: `Client Profile - ${result[0].firstName} ${result[0].lastName}`,
+          title: `Client Profile - ${existingProfile.firstName} ${existingProfile.lastName}`,
           updatedAt: new Date().toISOString(),
         })
         .where(eq(formSubmissionRegistry.registryId, registryEntry.registryId))
@@ -1215,9 +1108,8 @@ export async function PUT(req: Request) {
           userId: session.user.id,
           sourceType: "client_profile" as const,
           sourceId: result[0].clientId,
-          ipApplicationId: applicationId,
           status: status,
-          title: `Client Profile - ${result[0].firstName} ${result[0].lastName}`,
+          title: `Client Profile - ${existingProfile.firstName} ${existingProfile.lastName}`,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };

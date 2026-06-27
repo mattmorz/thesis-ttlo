@@ -56,7 +56,8 @@ import {
  * 4. Company/Institution or Academic Information
  */
 
-const formSchema = z.object({
+const formSchema = z
+  .object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   middleName: z.string().optional(),
@@ -89,13 +90,78 @@ const formSchema = z.object({
   companyCityMunicipality: z.string().optional(),
   companyProvince: z.string().optional(),
   companyEmail: z.string().email("Invalid email address").optional(),
+  institutionName: z.string().optional(),
+  isCSUAffiliated: z.boolean().nullable().optional(),
   collegeName: z.string().optional(),
   departmentName: z.string().optional(),
   occupation: z.string().min(1, "Occupation is required"),
   affiliationType: z.enum(["company", "academic", "none"], {
     required_error: "Affiliation type is required",
   }),
-});
+})
+  .superRefine((data, ctx) => {
+    if (data.affiliationType === "company") {
+      if (!data.companyName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Company name is required",
+          path: ["companyName"],
+        });
+      }
+      if (!data.companyStreet?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Street is required",
+          path: ["companyStreet"],
+        });
+      }
+      if (!data.companyBarangay?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Barangay is required",
+          path: ["companyBarangay"],
+        });
+      }
+      if (!data.companyCityMunicipality?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "City / Municipality is required",
+          path: ["companyCityMunicipality"],
+        });
+      }
+      if (!data.companyProvince?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Province is required",
+          path: ["companyProvince"],
+        });
+      }
+      if (!data.companyEmail?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Company email is required",
+          path: ["companyEmail"],
+        });
+      }
+    }
+
+    if (data.affiliationType === "academic") {
+      if (!data.collegeName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "College name is required",
+          path: ["collegeName"],
+        });
+      }
+      if (!data.departmentName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Department is required",
+          path: ["departmentName"],
+        });
+      }
+    }
+  });
 
 const getLocalDateInputValue = (date: Date): string => {
   const year = date.getFullYear();
@@ -225,11 +291,8 @@ export function ClientInformation({
     showToasts: false, // We'll handle toasts ourselves
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    defaultValues: {
+  const defaultValues: z.infer<typeof formSchema> & { contactNumber?: string } =
+    {
       firstName: "",
       lastName: "",
       middleName: "",
@@ -246,11 +309,20 @@ export function ClientInformation({
       companyCityMunicipality: "",
       companyProvince: "",
       companyEmail: "",
+      institutionName: "",
+      isCSUAffiliated: null,
       collegeName: "",
       departmentName: "",
       occupation: "",
+      occupationOther: "",
       affiliationType: "company",
-    },
+    };
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    defaultValues,
   });
 
   // Watch the hasCompany field to respond to changes
@@ -272,6 +344,32 @@ export function ClientInformation({
   const companyCityMunicipality = form.watch("companyCityMunicipality");
   const companyProvince = form.watch("companyProvince");
   const companyEmail = form.watch("companyEmail");
+  const institutionName = form.watch("institutionName");
+  const isCSUAffiliated = form.watch("isCSUAffiliated");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (isCSUAffiliated !== null && isCSUAffiliated !== undefined) {
+      const serializedValue = JSON.stringify(isCSUAffiliated);
+      localStorage.setItem("isCSUAffiliated", serializedValue);
+
+      if (activeApplicationId) {
+        localStorage.setItem(
+          `isCSUAffiliated-${activeApplicationId}`,
+          serializedValue,
+        );
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("clientProfileAffiliationChanged", {
+          detail: {
+            applicationId: activeApplicationId ?? null,
+            isCSUAffiliated,
+          },
+        }),
+      );
+    }
+  }, [activeApplicationId, isCSUAffiliated]);
   const collegeName = form.watch("collegeName");
   const departmentName = form.watch("departmentName");
 
@@ -296,7 +394,12 @@ export function ClientInformation({
 
   if (affiliationType === "academic") {
     isNextDisabled =
-      isNextDisabled || !collegeName?.trim() || !departmentName?.trim();
+      isNextDisabled ||
+      !collegeName?.trim() ||
+      !departmentName?.trim() ||
+      isCSUAffiliated === null ||
+      isCSUAffiliated === undefined ||
+      (!isCSUAffiliated && !institutionName?.trim());
   }
 
   // Add effect to respond to hasCompany changes
@@ -387,6 +490,8 @@ export function ClientInformation({
           companyCityMunicipality: "",
           companyProvince: "",
           companyEmail: "",
+          institutionName: "",
+          isCSUAffiliated: null,
           collegeName: "",
           departmentName: "",
           occupation: "",
@@ -470,6 +575,30 @@ export function ClientInformation({
         }
       }
 
+      if (formattedData.affiliationType) {
+        formattedData.hasCompany = formattedData.affiliationType === "company";
+      }
+
+      if (formattedData.affiliationType !== "academic") {
+        formattedData.isCSUAffiliated = null;
+        formattedData.institutionName = "";
+      } else {
+        const normalizedInstitutionName =
+          typeof formattedData.institutionName === "string"
+            ? formattedData.institutionName
+            : "";
+        const inferredIsCSUAffiliated =
+          typeof formattedData.isCSUAffiliated === "boolean"
+            ? formattedData.isCSUAffiliated
+            : normalizedInstitutionName.trim().toLowerCase() ===
+              "caraga state university";
+
+        formattedData.isCSUAffiliated = inferredIsCSUAffiliated;
+        formattedData.institutionName = inferredIsCSUAffiliated
+          ? "Caraga State University"
+          : normalizedInstitutionName;
+      }
+
       // Now always save the merged data back to localStorage to keep it in sync
       // Only save if we have an active application
       if (activeApplicationId) {
@@ -529,8 +658,28 @@ export function ClientInformation({
 
         // Ensure the form is reset with the correct data
         setTimeout(() => {
-          form.reset(formattedData);
-          setFormData(formattedData);
+          const normalizedData = {
+            ...defaultValues,
+            ...formattedData,
+            gender: {
+              value:
+                formattedData.gender?.value ??
+                defaultValues.gender.value ??
+                "",
+            },
+            citizenship: {
+              value:
+                formattedData.citizenship?.value ??
+                defaultValues.citizenship.value,
+              otherValue:
+                formattedData.citizenship?.value === "other"
+                  ? formattedData.citizenship.otherValue ?? ""
+                  : null,
+            },
+          };
+
+          form.reset(normalizedData);
+          setFormData(normalizedData);
           form.trigger(undefined, { shouldFocus: false });
 
           if (typeof formattedData.birthDate === "string") {
@@ -628,11 +777,11 @@ export function ClientInformation({
     // Also listen for tab navigation/page refresh
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // Cleanup function
-    return () => {
-      // Save state when component unmounts
-      if (isFormLoaded) {
-        const values = form.getValues();
+      // Cleanup function
+      return () => {
+        // Save state when component unmounts
+        if (isFormLoaded) {
+          const values = form.getValues();
 
         // Ensure gender data is properly formatted
         const formattedValues = {
@@ -646,13 +795,13 @@ export function ClientInformation({
         console.log(
           "[ClientInformation] Component unmounting, saving form state",
         );
-        setStorageItem(
-          "clientInformationData",
-          JSON.stringify(formattedValues),
-        );
+        const storageKey = activeApplicationId
+          ? `clientInformationData-${activeApplicationId}`
+          : "clientInformationData";
+        setStorageItem(storageKey, JSON.stringify(formattedValues));
         console.log(
           "[ClientInformation] Saved (unmount) birthDate:",
-          { storageKey: "clientInformationData", birthDate },
+          { storageKey, birthDate },
         );
       }
 
@@ -778,6 +927,16 @@ export function ClientInformation({
         companyProvince: values.companyProvince || undefined,
         collegeName: values.collegeName || undefined,
         departmentName: values.departmentName || undefined,
+        institutionName:
+          values.affiliationType === "academic"
+            ? values.isCSUAffiliated
+              ? "Caraga State University"
+              : values.institutionName || undefined
+            : undefined,
+        isCSUAffiliated:
+          values.affiliationType === "academic"
+            ? values.isCSUAffiliated ?? null
+            : null,
         // Fix citizenship data
         citizenship: {
           value: values.citizenship?.value || "filipino",
@@ -855,6 +1014,8 @@ export function ClientInformation({
               formattedValues.companyCityMunicipality || "",
             companyProvince: formattedValues.companyProvince || "",
             companyEmail: formattedValues.companyEmail || "",
+            institutionName: "",
+            isCSUAffiliated: null,
             // Explicitly set college fields to empty strings
             collegeName: "",
             departmentName: "",
@@ -879,6 +1040,10 @@ export function ClientInformation({
             companyCityMunicipality: "",
             companyProvince: "",
             companyEmail: "",
+            institutionName: formattedValues.isCSUAffiliated
+              ? "Caraga State University"
+              : formattedValues.institutionName || "",
+            isCSUAffiliated: formattedValues.isCSUAffiliated ?? null,
             // College fields
             collegeName: formattedValues.collegeName || "",
             departmentName: formattedValues.departmentName || "",
@@ -1453,6 +1618,16 @@ export function ClientInformation({
         companyProvince: values.companyProvince || undefined,
         collegeName: values.collegeName || undefined,
         departmentName: values.departmentName || undefined,
+        institutionName:
+          values.affiliationType === "academic"
+            ? values.isCSUAffiliated
+              ? "Caraga State University"
+              : values.institutionName || undefined
+            : undefined,
+        isCSUAffiliated:
+          values.affiliationType === "academic"
+            ? values.isCSUAffiliated ?? null
+            : null,
         // Fix citizenship data
         citizenship: {
           value: values.citizenship?.value || "filipino",
@@ -1649,6 +1824,8 @@ export function ClientInformation({
             companyCityMunicipality: personalInfo.companyCityMunicipality || "",
             companyProvince: personalInfo.companyProvince || "",
             companyEmail: personalInfo.companyEmail || "",
+            institutionName: "",
+            isCSUAffiliated: null,
             // Explicitly set college fields to empty strings
             collegeName: "",
             departmentName: "",
@@ -1673,6 +1850,10 @@ export function ClientInformation({
             companyCityMunicipality: "",
             companyProvince: "",
             companyEmail: "",
+            institutionName: personalInfo.isCSUAffiliated
+              ? "Caraga State University"
+              : personalInfo.institutionName || "",
+            isCSUAffiliated: personalInfo.isCSUAffiliated ?? null,
             // College fields
             collegeName: personalInfo.collegeName || "",
             departmentName: personalInfo.departmentName || "",
@@ -1922,6 +2103,8 @@ export function ClientInformation({
         // Always include both sets of fields in localStorage for completeness
         collegeName: formattedValues.collegeName || "",
         departmentName: formattedValues.departmentName || "",
+        institutionName: formattedValues.institutionName || "",
+        isCSUAffiliated: formattedValues.isCSUAffiliated ?? null,
         companyName: formattedValues.companyName || "",
         companyEmail: formattedValues.companyEmail || "",
         companyStreet: formattedValues.companyStreet || "",
@@ -2416,9 +2599,6 @@ export function ClientInformation({
                           <option value="Health Technologist or Technician">
                             Health Technologist or Technician
                           </option>
-                          <option value="Other Healthcare Practitioner">
-                            Other Healthcare Practitioner
-                          </option>
                         </optgroup>
                         <optgroup label="Healthcare Support Occupations">
                           <option value="Nursing Aide">
@@ -2426,9 +2606,6 @@ export function ClientInformation({
                           </option>
                           <option value="Therapy Assistant">
                             Occupational / Physical Therapy Assistant
-                          </option>
-                          <option value="Other Healthcare Support">
-                            Other Healthcare Support Occupation
                           </option>
                         </optgroup>
                         <optgroup label="Business and Management Occupations">
@@ -2442,9 +2619,6 @@ export function ClientInformation({
                           <option value="IT Manager">IT / HR Manager</option>
                           <option value="Accountant">Accountant / Auditor</option>
                           <option value="Business Owner">Business Owner</option>
-                          <option value="Other Business Occupation">
-                            Other Business Occupation
-                          </option>
                         </optgroup>
                         <optgroup label="Education Occupations">
                           <option value="College Professor">
@@ -2459,14 +2633,21 @@ export function ClientInformation({
                           <option value="Military">Military</option>
                           <option value="Homemaker">Homemaker</option>
                           <option value="Student">Student</option>
-                          <option value="Dont Know">Don't Know</option>
-                          <option value="Not Applicable">Not Applicable</option>
+                          <option value="Other">Other (please specify)</option>
                         </optgroup>
                       </select>
                     </FormControl>
                     <FormDescription>
                       Select your occupation. Scroll to see more options.
                     </FormDescription>
+                   {field.value === "Other" && (
+                    <input
+                      type="text"
+                      placeholder="Enter your occupation"
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm mt-2"
+                      onChange={(e) => form.setValue("occupationOther", e.target.value)}
+                    />
+                  )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -2501,6 +2682,39 @@ export function ClientInformation({
                       ) => {
                         field.onChange(value);
 
+                        const nextHasCompany = value === "company";
+                        form.setValue("hasCompany", nextHasCompany, {
+                          shouldValidate: false,
+                          shouldDirty: true,
+                        });
+
+                        if (value === "company") {
+                          form.setValue("institutionName", "");
+                          form.setValue("isCSUAffiliated", null);
+                          form.setValue("collegeName", "");
+                          form.setValue("departmentName", "");
+                        } else if (value === "academic") {
+                          form.setValue("companyName", "");
+                          form.setValue("companyStreet", "");
+                          form.setValue("companyBarangay", "");
+                          form.setValue("companyCityMunicipality", "");
+                          form.setValue("companyProvince", "");
+                          form.setValue("companyEmail", "");
+                          form.setValue("institutionName", "");
+                          form.setValue("isCSUAffiliated", null);
+                        } else {
+                          form.setValue("companyName", "");
+                          form.setValue("companyStreet", "");
+                          form.setValue("companyBarangay", "");
+                          form.setValue("companyCityMunicipality", "");
+                          form.setValue("companyProvince", "");
+                          form.setValue("companyEmail", "");
+                          form.setValue("institutionName", "");
+                          form.setValue("isCSUAffiliated", null);
+                          form.setValue("collegeName", "");
+                          form.setValue("departmentName", "");
+                        }
+
                         if (activeApplicationId) {
                           const currentValues = form.getValues();
                           const storageKey = `clientInformationData-${activeApplicationId}`;
@@ -2509,9 +2723,25 @@ export function ClientInformation({
                             JSON.stringify({
                               ...currentValues,
                               affiliationType: value,
+                              hasCompany: nextHasCompany,
                             }),
                           );
                         }
+
+                        form.trigger(
+                          [
+                            "affiliationType",
+                            "companyName",
+                            "companyStreet",
+                            "companyBarangay",
+                            "companyCityMunicipality",
+                            "companyProvince",
+                            "companyEmail",
+                            "collegeName",
+                            "departmentName",
+                          ],
+                          { shouldFocus: false },
+                        );
                       }}
                     >
                       <FormControl>
@@ -2522,12 +2752,12 @@ export function ClientInformation({
 
                       <SelectContent>
                         <SelectItem value="company">
-                          Company / Institution
+                          Company / Non Academic
                         </SelectItem>
                         <SelectItem value="academic">
                           Academic Institution
                         </SelectItem>
-                        <SelectItem value="none">No Application</SelectItem>
+                        <SelectItem value="none">No Affiliation</SelectItem>
                       </SelectContent>
                     </Select>
 
@@ -2662,6 +2892,79 @@ export function ClientInformation({
               {/* ACADEMIC FIELDS */}
               {form.watch("affiliationType") === "academic" && (
                 <div className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="isCSUAffiliated"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>
+                          Are you affiliated with CSU?
+                          <span className="text-red-500"> *</span>
+                        </FormLabel>
+
+                        <div className="flex items-center gap-6">
+                          <label className="flex items-center gap-2 cursor-pointer text-sm">
+                            <input
+                              type="radio"
+                              checked={field.value === true}
+                              onChange={() => {
+                                field.onChange(true);
+                                form.setValue(
+                                  "institutionName",
+                                  "Caraga State University",
+                                  {
+                                    shouldDirty: true,
+                                    shouldValidate: true,
+                                  },
+                                );
+                              }}
+                            />
+                            Yes (CSU Student/Employee)
+                          </label>
+
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              checked={field.value === false}
+                              onChange={() => {
+                                field.onChange(false);
+                                form.setValue("institutionName", "", {
+                                  shouldDirty: true,
+                                  shouldValidate: true,
+                                });
+                              }}
+                            />
+                            No (External)
+                          </label>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="institutionName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Name of Institution
+                          {!form.watch("isCSUAffiliated") && (
+                            <span className="text-red-500"> *</span>
+                          )}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Enter your institution name"
+                            disabled={Boolean(form.watch("isCSUAffiliated"))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="collegeName"

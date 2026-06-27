@@ -104,6 +104,11 @@ import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatDate } from "@/lib/utils";
 import { FormProgressTracker } from "@/app/(client)/forms/[formId]/_components/FormProgressTracker";
+import {
+  getSelectedApplicationIpTypes,
+  normalizeIpTypes,
+  type NormalizedIpTypes,
+} from "@/lib/utils/ip-types";
 
 // Database interfaces aligned with our schema
 interface IpApplication {
@@ -111,6 +116,7 @@ interface IpApplication {
   title: string;
   status: string;
   ipType: string;
+  selectedIpTypes?: NormalizedIpTypes | null;
   description?: string | null;
   progress: number;
   createdAt: string | null;
@@ -433,6 +439,26 @@ const formatIpType = (ipType: string | null | undefined): string => {
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+};
+
+const formatIpTypes = (
+  selectedIpTypes?: unknown,
+  primaryIpType?: string | null
+) => {
+  const normalizedIpTypes = normalizeIpTypes(
+    selectedIpTypes as Partial<NormalizedIpTypes> | null
+  );
+  const types = normalizedIpTypes
+    ? getSelectedApplicationIpTypes(normalizedIpTypes)
+    : primaryIpType
+      ? [primaryIpType]
+      : [];
+
+  if (types.length === 0) return "N/A";
+
+  return types
+    .map((type) => formatIpType(type))
+    .join(", ");
 };
 
 export default function DashboardPage() {
@@ -1034,7 +1060,10 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-sm text-gray-600">
                       {applicationData.id} ·{" "}
-                      {formatIpType(applicationData.ipType)}
+                      {formatIpTypes(
+                        applicationData.selectedIpTypes,
+                        applicationData.ipType
+                      )}
                       {applicationData.department && (
                         <> · {applicationData.department}</>
                       )}
@@ -1088,7 +1117,8 @@ export default function DashboardPage() {
                                     }
                                   >
                                     <div className="flex items-center gap-2 w-full">
-                                      {app.ipType === "patent" && (
+                                      {(app.selectedIpTypes?.patent ||
+                                        app.ipType === "patent") && (
                                         <TooltipProvider>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
@@ -1103,7 +1133,8 @@ export default function DashboardPage() {
                                           </Tooltip>
                                         </TooltipProvider>
                                       )}
-                                      {app.ipType === "copyright" && (
+                                      {(app.selectedIpTypes?.copyright ||
+                                        app.ipType === "copyright") && (
                                         <TooltipProvider>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
@@ -1118,7 +1149,8 @@ export default function DashboardPage() {
                                           </Tooltip>
                                         </TooltipProvider>
                                       )}
-                                      {app.ipType === "trademark" && (
+                                      {(app.selectedIpTypes?.trademark ||
+                                        app.ipType === "trademark") && (
                                         <TooltipProvider>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
@@ -1133,7 +1165,8 @@ export default function DashboardPage() {
                                           </Tooltip>
                                         </TooltipProvider>
                                       )}
-                                      {app.ipType === "utility_model" && (
+                                      {(app.selectedIpTypes?.utilityModel ||
+                                        app.ipType === "utility_model") && (
                                         <TooltipProvider>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
@@ -1148,7 +1181,8 @@ export default function DashboardPage() {
                                           </Tooltip>
                                         </TooltipProvider>
                                       )}
-                                      {app.ipType === "industrial_design" && (
+                                      {(app.selectedIpTypes?.industrialDesign ||
+                                        app.ipType === "industrial_design") && (
                                         <TooltipProvider>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
@@ -1339,7 +1373,10 @@ export default function DashboardPage() {
                                     IP Type
                                   </span>
                                   <span className="text-sm font-medium">
-                                    {formatIpType(applicationData.ipType)}
+                                    {formatIpTypes(
+                                      applicationData.selectedIpTypes,
+                                      applicationData.ipType
+                                    )}
                                   </span>
                                 </div>
                                 <div className="flex justify-between">

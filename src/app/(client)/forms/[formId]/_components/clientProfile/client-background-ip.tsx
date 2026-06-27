@@ -1127,6 +1127,67 @@ export function ClientBackgroundIP({
         });
         if (personalData) {
           personalInfo = JSON.parse(personalData);
+
+          // Normalize affiliation fields before submission
+          const hasCollegeData =
+            typeof (personalInfo as any).collegeName === "string" &&
+              (personalInfo as any).collegeName.trim() !== "" ||
+            (typeof (personalInfo as any).departmentName === "string" &&
+              (personalInfo as any).departmentName.trim() !== "");
+          const hasCompanyData =
+            (typeof (personalInfo as any).companyName === "string" &&
+              (personalInfo as any).companyName.trim() !== "") ||
+            (typeof (personalInfo as any).companyEmail === "string" &&
+              (personalInfo as any).companyEmail.trim() !== "") ||
+            (typeof (personalInfo as any).companyStreet === "string" &&
+              (personalInfo as any).companyStreet.trim() !== "") ||
+            (typeof (personalInfo as any).companyBarangay === "string" &&
+              (personalInfo as any).companyBarangay.trim() !== "") ||
+            (typeof (personalInfo as any).companyCityMunicipality === "string" &&
+              (personalInfo as any).companyCityMunicipality.trim() !== "") ||
+            (typeof (personalInfo as any).companyProvince === "string" &&
+              (personalInfo as any).companyProvince.trim() !== "");
+
+          let normalizedHasCompany: boolean | undefined;
+          const rawHasCompany = (personalInfo as any).hasCompany;
+          if (typeof rawHasCompany === "boolean") {
+            normalizedHasCompany = rawHasCompany;
+          } else if (rawHasCompany === "false") {
+            normalizedHasCompany = false;
+          } else if (rawHasCompany === "true") {
+            normalizedHasCompany = true;
+          }
+
+          if (normalizedHasCompany === undefined) {
+            if (hasCollegeData) normalizedHasCompany = false;
+            else if (hasCompanyData) normalizedHasCompany = true;
+            else normalizedHasCompany = true;
+          }
+
+          let normalizedAffiliation = (personalInfo as any).affiliationType;
+          if (normalizedHasCompany === false) normalizedAffiliation = "academic";
+          if (normalizedHasCompany === true) normalizedAffiliation = "company";
+
+          personalInfo = {
+            ...personalInfo,
+            hasCompany: normalizedHasCompany,
+            affiliationType: normalizedAffiliation,
+            // Clear incompatible fields to avoid ambiguity
+            ...(normalizedHasCompany === false
+              ? {
+                  companyName: "",
+                  companyStreet: "",
+                  companyBarangay: "",
+                  companyCityMunicipality: "",
+                  companyProvince: "",
+                  companyEmail: "",
+                }
+              : {
+                  collegeName: "",
+                  departmentName: "",
+                }),
+          };
+
           console.log(
             "Loaded personal information data for submission:",
             personalInfo,
@@ -1719,14 +1780,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-copyright"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-copyright"
+                            className="font-normal cursor-pointer"
+                          >
                             Copyright
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1738,12 +1803,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-patent"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">Patent</FormLabel>
+                          <label
+                            htmlFor="ip-exp-type-patent"
+                            className="font-normal cursor-pointer"
+                          >
+                            Patent
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1755,14 +1826,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-utility-model"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-utility-model"
+                            className="font-normal cursor-pointer"
+                          >
                             Utility Model
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1774,14 +1849,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-industrial-design"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-industrial-design"
+                            className="font-normal cursor-pointer"
+                          >
                             Industrial Design
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1793,14 +1872,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-trademark"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-trademark"
+                            className="font-normal cursor-pointer"
+                          >
                             Trademark
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -1812,14 +1895,18 @@ export function ClientBackgroundIP({
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <Checkbox
+                              id="ip-exp-type-other"
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="border-[#1B5E20] data-[state=checked]:bg-[#1B5E20] data-[state=checked]:text-white"
                             />
                           </FormControl>
-                          <FormLabel className="font-normal">
+                          <label
+                            htmlFor="ip-exp-type-other"
+                            className="font-normal cursor-pointer"
+                          >
                             Others, specify:
-                          </FormLabel>
+                          </label>
                         </FormItem>
                       )}
                     />

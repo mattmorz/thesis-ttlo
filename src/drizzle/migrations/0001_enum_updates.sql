@@ -11,19 +11,28 @@ DROP TYPE IF EXISTS "application_status" CASCADE;
 DROP TYPE IF EXISTS "application_type" CASCADE;
 DROP TYPE IF EXISTS "activity_type" CASCADE;
 
--- Recreate the enum types
-CREATE TYPE "application_status" AS ENUM (
-    'draft', 'pending', 'in_progress', 'approved', 
-    'rejected', 'completed', 'archived', 'on-hold'
-);
+-- Recreate the enum types only if they are missing
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'application_status') THEN
+        CREATE TYPE "application_status" AS ENUM (
+            'draft', 'pending', 'in_progress', 'approved',
+            'rejected', 'completed', 'archived', 'on-hold'
+        );
+    END IF;
 
-CREATE TYPE "application_type" AS ENUM (
-    'patent', 'copyright', 'trademark', 'utility_model'
-);
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'application_type') THEN
+        CREATE TYPE "application_type" AS ENUM (
+            'patent', 'copyright', 'trademark', 'utility_model'
+        );
+    END IF;
 
-CREATE TYPE "activity_type" AS ENUM (
-    'update', 'comment', 'status_change'
-);
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'activity_type') THEN
+        CREATE TYPE "activity_type" AS ENUM (
+            'update', 'comment', 'status_change'
+        );
+    END IF;
+END $$;
 
 -- Update the columns to use the new enum types
 ALTER TABLE "ip_application" 

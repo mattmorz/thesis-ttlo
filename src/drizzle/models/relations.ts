@@ -7,7 +7,6 @@ import {
   clientProfile,
   ipDisclosure,
   copyrightBasicApplication,
-  copyrightTransactionPart2,
   ipApplication,
   archives,
   applicationPhase,
@@ -134,18 +133,6 @@ export const copyrightBasicApplicationRelations = relations(
     ipDisclosure: one(ipDisclosure, {
       fields: [copyrightBasicApplication.disclosureId],
       references: [ipDisclosure.disclosureId],
-    }),
-    copyrightTransactionPart2s: many(copyrightTransactionPart2),
-  })
-);
-
-// Copyright Transaction Part 2 Relations
-export const copyrightTransactionPart2Relations = relations(
-  copyrightTransactionPart2,
-  ({ one, many }) => ({
-    copyrightBasicApplication: one(copyrightBasicApplication, {
-      fields: [copyrightTransactionPart2.copyrightId],
-      references: [copyrightBasicApplication.copyrightId],
     }),
   })
 );

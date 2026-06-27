@@ -84,24 +84,6 @@ CREATE TABLE IF NOT EXISTS "copyright_work_creation" (
 );
 
 -- =============================================
--- Copyright Transaction Part 2 Management - Enhanced
--- =============================================
-CREATE TABLE IF NOT EXISTS "copyright_transaction_part2" (
-    "transaction_detail_id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "copyright_id" UUID REFERENCES "copyright_basic_application"("copyright_id") ON DELETE CASCADE,
-    "transaction_types" JSONB NOT NULL DEFAULT '{}',
-    "filing_method" JSONB NOT NULL DEFAULT '{}',
-    "filing_type" JSONB NOT NULL DEFAULT '{}',
-    "applicant_type" JSONB NOT NULL DEFAULT '{}',
-    "number_of_copies" INTEGER DEFAULT 1,
-    "ipso_region" VARCHAR(100),
-    "classification_of_work" VARCHAR(10),
-    "documents_submitted" JSONB DEFAULT '{}',
-    "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- =============================================
 -- Patent Application Management - Enhanced
 -- =============================================
 CREATE TABLE IF NOT EXISTS "patent_basic_application" (
@@ -192,7 +174,6 @@ CREATE INDEX IF NOT EXISTS idx_copyright_basic_disclosure ON copyright_basic_app
 CREATE INDEX IF NOT EXISTS idx_copyright_applicant_copyright ON copyright_applicant(copyright_id);
 CREATE INDEX IF NOT EXISTS idx_copyright_author_copyright ON copyright_author_creator(copyright_id);
 CREATE INDEX IF NOT EXISTS idx_copyright_work_creation_copyright ON copyright_work_creation(copyright_id);
-CREATE INDEX IF NOT EXISTS idx_copyright_transaction_copyright ON copyright_transaction_part2(copyright_id);
 
 CREATE INDEX IF NOT EXISTS idx_patent_basic_disclosure ON patent_basic_application(disclosure_id);
 CREATE INDEX IF NOT EXISTS idx_patent_search_report_patent ON patent_search_report(patent_id);
@@ -235,11 +216,6 @@ CREATE TRIGGER update_copyright_author_timestamp
 
 CREATE TRIGGER update_copyright_work_creation_timestamp
     BEFORE UPDATE ON copyright_work_creation
-    FOR EACH ROW
-    EXECUTE FUNCTION update_timestamp();
-
-CREATE TRIGGER update_copyright_transaction_timestamp
-    BEFORE UPDATE ON copyright_transaction_part2
     FOR EACH ROW
     EXECUTE FUNCTION update_timestamp();
 

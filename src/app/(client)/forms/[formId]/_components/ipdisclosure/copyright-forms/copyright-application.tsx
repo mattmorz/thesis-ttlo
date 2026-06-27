@@ -713,8 +713,15 @@ export function CopyrightApplication() {
       setCopyrightApplication(essentialData);
       previousValuesRef.current = { ...essentialData };
 
+      // Persist to the database before moving to the next step
+      const success = await saveCopyrightApplication();
+      if (!success) {
+        toast.error("Failed to save copyright application", { id: toastId });
+        return;
+      }
+
       // Success message
-      toast.success("Data saved in memory", { id: toastId });
+      toast.success("Data saved and synced", { id: toastId });
 
       // Navigate to the next visible tab
       const tabs = useIpDisclosureStore.getState().visibleTabs || [];

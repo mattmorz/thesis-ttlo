@@ -416,8 +416,28 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
   // Initialize form with local storage data if available
   useEffect(() => {
     if (typeof window === "undefined") return; // Skip server-side rendering
-    if (!activeApplicationId || isAppLoading) return; // Wait for application to be ready
-    if (formInitializedRef.current) return; // Skip if form is already initialized
+    console.log("[ClientProfileForm] init gate", {
+      activeApplicationId,
+      isAppLoading,
+      alreadyInitialized: formInitializedRef.current,
+      hasSessionUser: !!session?.user?.id,
+    });
+    if (!activeApplicationId || isAppLoading) {
+      console.log(
+        "[ClientProfileForm] Skipping init because the active application is not ready",
+        {
+          activeApplicationId,
+          isAppLoading,
+        }
+      );
+      return; // Wait for application to be ready
+    }
+    if (formInitializedRef.current) {
+      console.log(
+        "[ClientProfileForm] Skipping init because form was already initialized"
+      );
+      return; // Skip if form is already initialized
+    }
 
     const initializeForm = async () => {
       try {
@@ -439,7 +459,17 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
         const localEducation = loadLocalSection("educationalBackgroundData");
         const localBackground = loadLocalSection("clientBackgroundIPData");
 
+        console.log("[ClientProfileForm] Local draft lookup result", {
+          activeApplicationId,
+          hasPersonal: !!localPersonal,
+          hasEducation: !!localEducation,
+          hasBackground: !!localBackground,
+        });
+
         if (localPersonal || localEducation || localBackground) {
+          console.log(
+            "[ClientProfileForm] Using local draft data, skipping backend fetch"
+          );
           setFormState({
             personal: localPersonal ?? initializeEmptyPersonalData(),
             education: localEducation ?? initializeEmptyEducationData(),
@@ -451,6 +481,9 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
         }
 
         // Fall back to API if no local storage data exists
+        console.log(
+          "[ClientProfileForm] No local draft found, fetching client profile from backend"
+        );
         await fetchDataFromAPI();
       } catch (error) {
         console.error(
@@ -470,6 +503,12 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
 
   // Function to fetch data from API
   const fetchDataFromAPI = async () => {
+    console.log("[ClientProfileForm] fetchDataFromAPI invoked", {
+      activeApplicationId,
+      hasSessionUser: !!session?.user?.id,
+      isAppLoading,
+    });
+
     if (!activeApplicationId || !session?.user?.id) {
       console.log("[ClientProfileForm] Missing dependencies for API fetch", {
         hasActiveApp: !!activeApplicationId,
@@ -512,7 +551,10 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
 
     try {
       console.log(
-        `[ClientProfileForm] Fetching data for application: ${activeApplicationId}`
+        `[ClientProfileForm] Fetching data for application: ${activeApplicationId}`,
+        {
+          cacheKey,
+        }
       );
 
       // First check if profile exists in submission registry

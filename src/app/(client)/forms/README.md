@@ -1,6 +1,6 @@
 # Form Navigation System
 
-This directory contains the forms system for the TTLO application. The forms are organized with a shared navigation system.
+This diretory contains the forms system for the TTLO application. The forms are organized with a shared navigation system.
 
 ## Directory Structure
 
@@ -102,4 +102,4 @@ To add a new form:
 
 
 
-<!-- !! Note to change or alter table use npx drizzle-kit push and if have a custom one use drizzle:generate and drizzle:migrate-->
+<!-- !! Note to change or alter table use npx drizzle-kit push and if have a custom one use drizzle:generate and npx drizzle:migrate-->

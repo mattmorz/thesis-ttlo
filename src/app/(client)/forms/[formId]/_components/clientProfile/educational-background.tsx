@@ -49,7 +49,17 @@ import { Checkbox } from "@/components/ui/checkbox";
  */
 const formSchema = z.object({
   highestDegree: z.object({
-    value: z.enum(["bachelor", "master", "doctorate", "other"]),
+    value: z
+      .enum([
+        "bachelor",
+        "master",
+        "doctorate",
+        "other",
+        "associate",
+        "vocational",
+        "highschool",
+      ])
+      .optional(),
     otherValue: z.string().optional().nullable(),
   }),
   degree: z.string().min(1, "Degree is required"),
@@ -204,7 +214,7 @@ export function EducationalBackground({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      highestDegree: { value: "bachelor", otherValue: null },
+      highestDegree: { value: undefined, otherValue: null },
       degree: "",
       profession: "",
     },
@@ -258,9 +268,15 @@ export function EducationalBackground({
         if (parsedData.highestDegree) {
           // Ensure highestDegree.value is one of the allowed values
           if (
-            !["bachelor", "master", "doctorate", "other"].includes(
-              parsedData.highestDegree.value,
-            )
+            ![
+              "bachelor",
+              "master",
+              "doctorate",
+              "other",
+              "associate",
+              "vocational",
+              "highschool",
+            ].includes(parsedData.highestDegree.value)
           ) {
             formattedData.highestDegree.value = "bachelor";
           }
@@ -304,9 +320,15 @@ export function EducationalBackground({
         if (initialData.highestDegree) {
           // Ensure highestDegree.value is one of the allowed values
           if (
-            !["bachelor", "master", "doctorate", "other"].includes(
-              initialData.highestDegree.value,
-            )
+            ![
+              "bachelor",
+              "master",
+              "doctorate",
+              "other",
+              "associate",
+              "vocational",
+              "highschool",
+            ].includes(initialData.highestDegree.value)
           ) {
             formattedData.highestDegree.value = "bachelor";
           }
@@ -350,7 +372,7 @@ export function EducationalBackground({
           form.reset({
             ...formattedData,
             highestDegree: {
-              value: formattedData.highestDegree?.value || "bachelor",
+              value: formattedData.highestDegree?.value || undefined,
               otherValue: formattedData.highestDegree?.otherValue || null,
             },
           });
@@ -768,7 +790,7 @@ export function EducationalBackground({
                         <span className="text-red-500">*</span>
                       </FormLabel>
                       <Select
-                        value={field.value}
+                        value={field.value || ""}
                         onValueChange={(value) => {
                           field.onChange(value);
                           // Reset subType if switching to higher degrees

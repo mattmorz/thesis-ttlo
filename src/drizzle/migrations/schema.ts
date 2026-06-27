@@ -450,113 +450,6 @@ export const account = pgTable(
   ]
 );
 
-export const copyrightTransactionPart2 = pgTable(
-  "copyright_transaction_part2",
-  {
-    transactionPart2Id: uuid("transaction_part2_id")
-      .defaultRandom()
-      .primaryKey()
-      .notNull(),
-    disclosureId: uuid("disclosure_id").notNull(),
-    copyrightId: uuid("copyright_id").notNull(),
-    transactionDetails: jsonb("transaction_details")
-      .default({
-        ipsoRegion: "",
-        applicantType: {
-          heir: false,
-          agent: false,
-          licensee: false,
-          newOwner: false,
-          copyrightClaimant: false,
-        },
-        bulkFilingQty: "",
-        transactionType: {
-          recordation: false,
-          resaleRights: false,
-          anonymousWork: false,
-          certifiedCopy: false,
-          reconstitution: false,
-          correctionEntry: false,
-        },
-        otherCertifications: "",
-        numberOfCertificates: "",
-      })
-      .notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-    updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-    isCopyrightRegistration: boolean("is_copyright_registration").default(
-      false
-    ),
-    filingMethod: varchar("filing_method", { length: 50 }),
-    filingType: varchar("filing_type", { length: 50 }),
-    applicantInfo: jsonb("applicant_info")
-      .default({
-        personalInfo: {
-          sex: null,
-          address: "",
-          surname: "",
-          zipCode: "",
-          firstName: "",
-          middleName: "",
-          civilStatus: null,
-          dateOfBirth: null,
-          nationality: "",
-          emailAddress: "",
-          mobileNumber: "",
-          provinceState: "",
-          municipalityCity: "",
-          countryOfResidence: "",
-        },
-        applicantType: {
-          heir: false,
-          agent: false,
-          licensee: false,
-          newOwner: false,
-          authorCreator: false,
-          copyrightClaimant: false,
-        },
-      })
-      .notNull(),
-    authorInfo: jsonb("author_info")
-      .default({
-        personalInfo: {
-          sex: null,
-          address: "",
-          surname: "",
-          zipCode: "",
-          firstName: "",
-          middleName: "",
-          civilStatus: null,
-          dateOfBirth: null,
-          nationality: "",
-          emailAddress: "",
-          mobileNumber: "",
-          provinceState: "",
-          municipalityCity: "",
-          countryOfResidence: "",
-        },
-        isSameAsApplicant: false,
-      })
-      .notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.copyrightId],
-      foreignColumns: [copyrightBasicApplication.copyrightId],
-      name: "copyright_transaction_part2_copyright_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.disclosureId],
-      foreignColumns: [ipDisclosure.disclosureId],
-      name: "copyright_transaction_part2_disclosure_id_fkey",
-    }).onDelete("cascade"),
-  ]
-);
-
 export const deedOfAssignment = pgTable(
   "deed_of_assignment",
   {
@@ -646,37 +539,6 @@ export const copyrightBasicApplication = pgTable(
       columns: [table.disclosureId],
       foreignColumns: [ipDisclosure.disclosureId],
       name: "copyright_basic_application_disclosure_id_fkey",
-    }).onDelete("cascade"),
-  ]
-);
-
-export const copyrightTransactionPart1 = pgTable(
-  "copyright_transaction_part1",
-  {
-    transactionPart1Id: uuid("transaction_part1_id")
-      .defaultRandom()
-      .primaryKey()
-      .notNull(),
-    disclosureId: uuid("disclosure_id").notNull(),
-    copyrightId: uuid("copyright_id").notNull(),
-    transactionData: jsonb("transaction_data").notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-    updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.copyrightId],
-      foreignColumns: [copyrightBasicApplication.copyrightId],
-      name: "copyright_transaction_part1_copyright_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.disclosureId],
-      foreignColumns: [ipDisclosure.disclosureId],
-      name: "copyright_transaction_part1_disclosure_id_fkey",
     }).onDelete("cascade"),
   ]
 );
@@ -1204,6 +1066,7 @@ export const ipApplication = pgTable(
     title: varchar({ length: 255 }).notNull(),
     description: text(),
     ipType: applicationType("ip_type").notNull(),
+    selectedIpTypes: jsonb("selected_ip_types"),
     status: applicationStatus().default("draft"),
     progress: integer().default(0),
     inventors: text().array(),
@@ -1857,83 +1720,83 @@ export const userAccount = pgTable(
   ]
 );
 
-export const trackingCode = pgTable(
-  "tracking_code",
-  {
-    trackingId: uuid("tracking_id").defaultRandom().primaryKey().notNull(),
-    ipApplicationId: uuid("ip_application_id").notNull(),
-    userId: uuid("user_id").notNull(),
-    code: varchar({ length: 20 }).notNull(),
-    codeHash: varchar("code_hash", { length: 128 }).notNull(),
-    email: varchar({ length: 255 }).notNull(),
-    phoneNumber: varchar("phone_number", { length: 30 }),
-    createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-    revokedAt: timestamp("revoked_at", { mode: "string" }),
-    lastUsedAt: timestamp("last_used_at", { mode: "string" }),
-  },
-  (table) => [
-    unique("tracking_code_value_key").on(table.code),
-    unique("tracking_code_hash_key").on(table.codeHash),
-    index("idx_tracking_code_application").using(
-      "btree",
-      table.ipApplicationId.asc().nullsLast().op("uuid_ops")
-    ),
-    index("idx_tracking_code_user").using(
-      "btree",
-      table.userId.asc().nullsLast().op("uuid_ops")
-    ),
-    foreignKey({
-      columns: [table.ipApplicationId],
-      foreignColumns: [ipApplication.id],
-      name: "tracking_code_application_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [userAccount.id],
-      name: "tracking_code_user_id_fkey",
-    }).onDelete("cascade"),
-  ]
-);
+// export const trackingCode = pgTable(
+//   "tracking_code",
+//   {
+//     trackingId: uuid("tracking_id").defaultRandom().primaryKey().notNull(),
+//     ipApplicationId: uuid("ip_application_id").notNull(),
+//     userId: uuid("user_id").notNull(),
+//     code: varchar({ length: 20 }).notNull(),
+//     codeHash: varchar("code_hash", { length: 128 }).notNull(),
+//     email: varchar({ length: 255 }).notNull(),
+//     phoneNumber: varchar("phone_number", { length: 30 }),
+//     createdAt: timestamp("created_at", { mode: "string" }).default(
+//       sql`CURRENT_TIMESTAMP`
+//     ),
+//     revokedAt: timestamp("revoked_at", { mode: "string" }),
+//     lastUsedAt: timestamp("last_used_at", { mode: "string" }),
+//   },
+//   (table) => [
+//     unique("tracking_code_value_key").on(table.code),
+//     unique("tracking_code_hash_key").on(table.codeHash),
+//     index("idx_tracking_code_application").using(
+//       "btree",
+//       table.ipApplicationId.asc().nullsLast().op("uuid_ops")
+//     ),
+//     index("idx_tracking_code_user").using(
+//       "btree",
+//       table.userId.asc().nullsLast().op("uuid_ops")
+//     ),
+//     foreignKey({
+//       columns: [table.ipApplicationId],
+//       foreignColumns: [ipApplication.id],
+//       name: "tracking_code_application_id_fkey",
+//     }).onDelete("cascade"),
+//     foreignKey({
+//       columns: [table.userId],
+//       foreignColumns: [userAccount.id],
+//       name: "tracking_code_user_id_fkey",
+//     }).onDelete("cascade"),
+//   ]
+// );
 
-export const trackingOtp = pgTable(
-  "tracking_otp",
-  {
-    otpId: uuid("otp_id").defaultRandom().primaryKey().notNull(),
-    trackingId: uuid("tracking_id").notNull(),
-    channel: varchar({ length: 10 }).notNull(),
-    identifier: varchar({ length: 255 }).notNull(),
-    otpHash: varchar("otp_hash", { length: 128 }).notNull(),
-    attempts: integer().default(0),
-    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
-    lastSentAt: timestamp("last_sent_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-    createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-  },
-  (table) => [
-    index("idx_tracking_otp_tracking").using(
-      "btree",
-      table.trackingId.asc().nullsLast().op("uuid_ops")
-    ),
-    index("idx_tracking_otp_identifier").using(
-      "btree",
-      table.identifier.asc().nullsLast().op("text_ops")
-    ),
-    foreignKey({
-      columns: [table.trackingId],
-      foreignColumns: [trackingCode.trackingId],
-      name: "tracking_otp_tracking_id_fkey",
-    }).onDelete("cascade"),
-    check(
-      "tracking_otp_channel_check",
-      sql`(channel)::text = ANY (ARRAY[('email'::character varying)::text, ('sms'::character varying)::text])`
-    ),
-  ]
-);
+// export const trackingOtp = pgTable(
+//   "tracking_otp",
+//   {
+//     otpId: uuid("otp_id").defaultRandom().primaryKey().notNull(),
+//     trackingId: uuid("tracking_id").notNull(),
+//     channel: varchar({ length: 10 }).notNull(),
+//     identifier: varchar({ length: 255 }).notNull(),
+//     otpHash: varchar("otp_hash", { length: 128 }).notNull(),
+//     attempts: integer().default(0),
+//     expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
+//     lastSentAt: timestamp("last_sent_at", { mode: "string" }).default(
+//       sql`CURRENT_TIMESTAMP`
+//     ),
+//     createdAt: timestamp("created_at", { mode: "string" }).default(
+//       sql`CURRENT_TIMESTAMP`
+//     ),
+//   },
+//   (table) => [
+//     index("idx_tracking_otp_tracking").using(
+//       "btree",
+//       table.trackingId.asc().nullsLast().op("uuid_ops")
+//     ),
+//     index("idx_tracking_otp_identifier").using(
+//       "btree",
+//       table.identifier.asc().nullsLast().op("text_ops")
+//     ),
+//     foreignKey({
+//       columns: [table.trackingId],
+//       foreignColumns: [trackingCode.trackingId],
+//       name: "tracking_otp_tracking_id_fkey",
+//     }).onDelete("cascade"),
+//     check(
+//       "tracking_otp_channel_check",
+//       sql`(channel)::text = ANY (ARRAY[('email'::character varying)::text, ('sms'::character varying)::text])`
+//     ),
+//   ]
+// );
 
 export const phaseReminder = pgTable(
   "phase_reminder",

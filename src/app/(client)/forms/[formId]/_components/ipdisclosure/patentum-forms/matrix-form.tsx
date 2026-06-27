@@ -15,7 +15,9 @@ import { useIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
 import React from "react";
 import { usePatentTabsStore } from "./patent-tabs";
 import { useIpDisclosure } from "@/features/client/ip-disclosure/hooks/use-ip-disclosure";
-
+import { useParams } from "next/navigation";
+import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -379,18 +381,18 @@ const [isSubmitting, setIsSubmitting] = React.useState(false);
   // Function to handle direct navigation to next tab
   const navigateToNext = () => {
     try {
-      // For Matrix Sample, next should always be patent-search
-      console.log("Navigating to patent-search");
+      // For Matrix Sample, next should Disclosure and Confirmation
+      console.log("Navigating to Disclosure and Confirmation");
 
       // Save current form data
       const values = form.getValues();
       setData(values);
 
       // Use only the global tab state for navigation
-      setGlobalActiveTab("patent-search");
+      setGlobalActiveTab("confirmation");
       console.log("Global active tab set to patent-search");
 
-      toast.success("Navigated to Patent Search Report");
+      toast.success("Navigated to Disclosure and Confirmation");
     } catch (error) {
       console.error("Navigation failed:", error);
       toast.error("Navigation is not available. Please try again later.");
@@ -500,8 +502,27 @@ const [isSubmitting, setIsSubmitting] = React.useState(false);
           </CardContent>
         </Card>
 
-        {/* Prior Arts Section */}
-        <Card>
+{/* Prior Art Info Card */}
+<Card className="bg-yellow-50 border border-yellow-200">
+  <CardHeader>
+    <CardTitle>What is Prior Art?</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-2 text-sm text-muted-foreground">
+    <p>
+      Prior art refers to any existing knowledge, publication, or invention
+      that is already available before your invention. It is used to determine
+      if your invention is new and original.
+    </p>
+    <p className="font-medium text-[#1B5E20]">
+  Note: TTLO also offers Prior Art Services.{" "}
+  <Link href="/contact" className="underline hover:text-[#0A3A10]">
+    Contact us
+  </Link>{" "}
+  for details.
+</p>
+  </CardContent>
+</Card>
+        <Card> 
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Prior Art References</CardTitle>
             <Button

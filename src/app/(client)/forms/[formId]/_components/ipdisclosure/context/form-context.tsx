@@ -10,6 +10,11 @@ import {
 import { useHydratedIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
 import type { IpTypes } from "@/lib/store/ip-disclosure-store";
 import { useRouter } from "next/navigation";
+import {
+  areIpTypesEqual,
+  getVisibleIpDisclosureTabs,
+  normalizeIpTypes,
+} from "../utils/ip-type";
 
 // Global logging control
 const DEBUG = false;
@@ -20,8 +25,6 @@ interface FormContextType {
   resetIpType: (type: keyof IpTypes) => void;
   currentTransactionStep: number;
   setCurrentTransactionStep: (step: number) => void;
-  currentTransactionTab: string;
-  setCurrentTransactionTab: (tab: string) => void;
   currentTransactionSubTab: string;
   setCurrentTransactionSubTab: (tab: string) => void;
   isHydrated: boolean;
@@ -57,12 +60,14 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
   // Only run this effect once after hydration
   useEffect(() => {
     if (isHydrated && applicantsInfo?.ipTypes) {
-      setSelectedIpTypes(applicantsInfo.ipTypes);
+      setSelectedIpTypes((prev) => {
+        const nextTypes = normalizeIpTypes(applicantsInfo.ipTypes);
+        return areIpTypesEqual(prev, nextTypes) ? prev : nextTypes;
+      });
     }
   }, [isHydrated]); // Remove applicantsInfo from dependencies to prevent loops
 
   const [currentTransactionStep, setCurrentTransactionStep] = useState(1);
-  const [currentTransactionTab, setCurrentTransactionTab] = useState("details");
   const [currentTransactionSubTab, setCurrentTransactionSubTab] =
     useState("details");
 
@@ -73,30 +78,7 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
       if (!isHydrated) return;
 
       // Update visible tabs based on selected IP types
-      const visibleTabs = ["applicants-information"];
-
-      if (ipTypes.copyright) {
-        visibleTabs.push("copyright-application");
-      }
-
-      if (ipTypes.patent || ipTypes.utilityModel) {
-        visibleTabs.push(
-          "patent-application",
-          "matrix-sample",
-          "patent-search"
-        );
-      }
-
-      if (ipTypes.trademark) {
-        visibleTabs.push("trademark");
-      }
-
-      if (ipTypes.tradeSecret) {
-        visibleTabs.push("trade-secret");
-      }
-
-      // Always add confirmation tab at the end
-      visibleTabs.push("confirmation");
+      const visibleTabs = getVisibleIpDisclosureTabs(ipTypes);
 
       // Update visible tabs in the store
       setVisibleTabs(visibleTabs);
@@ -176,21 +158,13 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // IMPORTANT: Check if at least one IP type is true, and force hasChanges to true
-        // to ensure the update propagates
-        const hasTrueValues = Object.values(newTypes).some((v) => v === true);
-
         // Log diagnostic information
         console.log("Updated IP types:", {
           newTypes,
           hasChanges,
-          hasTrueValues,
-          forceUpdate: hasTrueValues && !hasChanges,
         });
 
-        // Force update if we have true values but hasChanges is false
-        // This ensures changes are always detected when IP types are selected
-        return hasTrueValues || hasChanges ? newTypes : prev;
+        return hasChanges && !areIpTypesEqual(prev, newTypes) ? newTypes : prev;
       });
     },
     [isHydrated]
@@ -284,13 +258,11 @@ export function FormProvider({ children }: { children: React.ReactNode }) {
     selectedIpTypes,
     setSelectedIpTypes: updateIpTypes,
     resetIpType,
-    currentTransactionStep,
-    setCurrentTransactionStep,
-    currentTransactionTab,
-    setCurrentTransactionTab,
-    currentTransactionSubTab,
-    setCurrentTransactionSubTab,
-    isHydrated,
+      currentTransactionStep,
+      setCurrentTransactionStep,
+      currentTransactionSubTab,
+      setCurrentTransactionSubTab,
+      isHydrated,
   };
 
   return <FormContext.Provider value={value}>{children}</FormContext.Provider>;

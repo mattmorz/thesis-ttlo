@@ -42,7 +42,7 @@ const formSchema = z.object({
     planned: z.boolean().default(false),
     notApplicable: z.boolean().default(false),
   }),
-  futureWork: z.string().min(1, "Future Work is required"),
+  futureWork: z.string().optional().or(z.literal("")),
   confirmationDeclaration: z.boolean().refine(
   (val) => val === true,
   {
@@ -53,6 +53,17 @@ const formSchema = z.object({
 
 export function DisclosureConfirmation() {
   const router = useRouter();
+
+const [isCSU, setIsCSU] = useState<boolean | null>(null);
+
+useEffect(() => {
+  const value = localStorage.getItem("isCSUAffiliated");
+  if (value !== null) {
+    setIsCSU(JSON.parse(value));
+  }
+}, []);
+const [showCSUModal, setShowCSUModal] = useState(false);
+
   const {
     applicantsInfo,
     validateSection,
@@ -63,11 +74,7 @@ export function DisclosureConfirmation() {
     activeTab,
     setActiveTab,
     copyrightApplication,
-    // transactionFormPart1,
-    // transactionFormPart2,
     setCopyrightApplication,
-    // setTransactionFormPart1,
-    // setTransactionFormPart2,
     resetSubmissionState,
     patentUtilityModelApplication,
     setPatentUtilityModelApplication,
@@ -103,19 +110,27 @@ export function DisclosureConfirmation() {
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
 
   const handleSubmissionSuccess = () => {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent("ipDisclosureFormCompleted", {
-          detail: {
-            completed: true,
-            applicationId,
-            disclosureId,
-          },
-        })
-      );
-    }
-    router.push("/forms?tab=substantial-use");
-  };
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("ipDisclosureFormCompleted", {
+        detail: {
+          completed: true,
+          applicationId,
+          disclosureId,
+        },
+      })
+    );
+  }
+
+  // 🔥 CHECK CSU
+  if (isCSU === false) {
+    setShowCSUModal(true);
+    return;
+  }
+
+  // ✅ Proceed if CSU
+  router.push("/forms?tab=substantial-use");
+};
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -813,103 +828,6 @@ export function DisclosureConfirmation() {
           }
         }
 
-        // Transaction form part 1/2 saving removed per updated requirements.
-            // Save transaction form part 1 if present
-        // if (applicantsInfo?.ipTypes?.copyright && transactionFormPart1) {
-        //   try {
-        //     console.log(
-        //       "Saving transaction form part 1:",
-        //       transactionFormPart1
-        //     );
-
-        //     // Update the store with current transaction form data
-        //     setTransactionFormPart1(transactionFormPart1);
-
-        //     // Make direct API call with registry flag
-        //     const currentDisclosureId =
-        //       useIpDisclosureStore.getState().disclosureId;
-        //     const response = await fetch(
-        //       `/api/ip-disclosure/${currentDisclosureId}/transaction-part1`,
-        //       {
-        //         method: "POST",
-        //         headers: {
-        //           "Content-Type": "application/json",
-        //         },
-        //         body: JSON.stringify({
-        //           disclosureId: currentDisclosureId,
-        //           data: transactionFormPart1,
-        //           registerForm: true,
-        //         }),
-        //       }
-        //     );
-
-        //     if (!response.ok) {
-        //       throw new Error(
-        //         `Failed to save transaction part 1: ${response.status}`
-        //       );
-        //     }
-
-        //     const result = await response.json();
-        //     console.log(
-        //       "Transaction part 1 saved via direct API call:",
-        //       result
-        //     );
-        //   } catch (error: unknown) {
-        //     console.error(
-        //       "Error saving transaction form part 1:",
-        //       error instanceof Error ? error.message : "Unknown error"
-        //     );
-        //   }
-        // }
-
-        // // Save transaction form part 2 if present
-        // if (applicantsInfo?.ipTypes?.copyright && transactionFormPart2) {
-        //   try {
-        //     console.log(
-        //       "Saving transaction form part 2:",
-        //       transactionFormPart2
-        //     );
-
-        //     // Update the store with current transaction form data
-        //     setTransactionFormPart2(transactionFormPart2);
-
-        //     // Make direct API call with registry flag
-        //     const currentDisclosureId =
-        //       useIpDisclosureStore.getState().disclosureId;
-        //     const response = await fetch(
-        //       `/api/ip-disclosure/${currentDisclosureId}/transaction-part2`,
-        //       {
-        //         method: "POST",
-        //         headers: {
-        //           "Content-Type": "application/json",
-        //         },
-        //         body: JSON.stringify({
-        //           disclosureId: currentDisclosureId,
-        //           data: transactionFormPart2,
-        //           registerForm: true,
-        //         }),
-        //       }
-        //     );
-
-        //     if (!response.ok) {
-        //       throw new Error(
-        //         `Failed to save transaction part 2: ${response.status}`
-        //       );
-        //     }
-
-        //     const result = await response.json();
-        //     console.log(
-        //       "Transaction part 2 saved via direct API call:",
-        //       result
-        //     );
-        //   } catch (error: unknown) {
-        //     console.error(
-        //       "Error saving transaction form part 2:",
-        //       error instanceof Error ? error.message : "Unknown error"
-        //     );
-        //   }
-        // }
-
         // Save patent/utility model application if present
         if (
           (applicantsInfo?.ipTypes?.patent ||
@@ -1021,8 +939,6 @@ export function DisclosureConfirmation() {
         applicantsInfo,
         disclosureConfirmation: confirmationData,
         copyrightApplication,
-        // transactionFormPart1,
-        // transactionFormPart2,
         patentUtilityModelApplication,
         trademarkApplication,
         tradeSecretApplication,
@@ -1049,21 +965,6 @@ export function DisclosureConfirmation() {
           completeFormData.copyrightApplication
         );
       }
-
-      // Transaction form part 1/2 removed per updated requirements.
-      //      if (completeFormData.transactionFormPart1) {
-      //   console.log(
-      //     "SUBMISSION DATA - Transaction Part 1:",
-      //     completeFormData.transactionFormPart1
-      //   );
-      // }
-
-      // if (completeFormData.transactionFormPart2) {
-      //   console.log(
-      //     "SUBMISSION DATA - Transaction Part 2:",
-      //     completeFormData.transactionFormPart2
-      //   );
-      // }
 
       if (completeFormData.patentUtilityModelApplication) {
         console.log(
@@ -1198,9 +1099,7 @@ export function DisclosureConfirmation() {
       "matrix-sample",
       "patent-search",
       "copyright-application",
-      "transaction-form-1",
-      "transaction-form-2",
-      "trademark-application", // Match the id used in the parent (both "trademark" and "trademark-application" render the same component)
+      "trademark-application", // Back-compat alias for the trademark application step
       "trade-secret",
       "confirmation",
     ];
@@ -1442,7 +1341,9 @@ export function DisclosureConfirmation() {
                 name="futureWork"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Future Work<span className="text-red-500"> *</span></FormLabel>
+                    <FormLabel className="text-base after:content-none">
+                      Future Work
+                    </FormLabel>
                     <FormDescription>
                       Please describe any planned future work or developments
                     </FormDescription>
@@ -1609,15 +1510,6 @@ export function DisclosureConfirmation() {
                       Work Title:{" "}
                       {copyrightApplication.workTitle || "Not provided"}
                     </span>
-                    {/* Transaction form parts removed per updated requirements. */}
-                       {/* {transactionFormPart1 && (
-                      <span className="block">Transaction Type: Included</span>
-                    )}
-                    {transactionFormPart2 && (
-                      <span className="block">
-                        Transaction Details: Completed
-                      </span>
-                    )} */}
                   </div>
                 </div>
               )}
@@ -1644,7 +1536,7 @@ export function DisclosureConfirmation() {
                   </span>
                   <div className="text-xs text-gray-700 ml-2">
                     <span className="block">
-                      Trademark Application: Completed
+                      Trademark Application and Disclosure: Completed
                     </span>
                   </div>
                 </div>
@@ -1721,6 +1613,28 @@ export function DisclosureConfirmation() {
           </div>
         )}
       </form>
+      {showCSUModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div className="bg-white p-6 rounded-lg shadow-lg max-w-md text-center">
+      <h2 className="text-lg font-semibold text-green-600 mb-2">
+        Submission Completed!
+      </h2>
+      <p className="text-sm text-gray-600 mb-4">
+        Your application has been submitted.
+        <br></br>
+However, since you are not affiliated with CSU, you cannot proceed to the next step.
+<br></br>
+Please contact the administrator for further assistance.
+      </p>
+      <button
+        onClick={() => setShowCSUModal(false)}
+        className="px-4 py-2 bg-[#1B5E20] text-white rounded"
+      >
+        OK
+      </button>
+    </div>
+  </div>
+)}
     </Form>
   );
 }

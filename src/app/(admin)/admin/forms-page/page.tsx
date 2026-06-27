@@ -19,10 +19,6 @@ import generateClientProfilePdf from "./forms/ClientProfilePdf";
 import generateSubstantialUsePdf from "./forms/SubstantialUsePdf";
 import generateIPDisclosurePdf from "./forms/IPDisclosurePdf";
 import generatePatentSearchReportPdf from "./forms/PatentSearchReportPdf";
-import generateTransactionForm1124Pdf, {
-  generateCopyrightTransactionForm,
-} from "./forms/TransactionForm1124Pdf";
-import generateTransactionFormSupplementalPdf from "./forms/TransactionFormSupplementalPdf";
 import generateMatrixSamplePdf from "./forms/MatrixSamplePdf";
 
 export default function DocumentGenerationPage() {
@@ -110,37 +106,6 @@ export default function DocumentGenerationPage() {
     }
   };
 
-  const handleGenerateTransactionForm = async () => {
-    setIsGenerating("transactionForm");
-    try {
-      // Use the new function that gets data from the current user session
-      await generateCopyrightTransactionForm();
-      toast.success("BCCR Transaction Form generated successfully");
-    } catch (error) {
-      console.error("Error generating BCCR Transaction Form:", error);
-      toast.error("Failed to generate BCCR Transaction Form");
-    } finally {
-      setIsGenerating(null);
-    }
-  };
-
-  const handleGenerateSupplementalSheet = async () => {
-    setIsGenerating("supplementalSheet");
-    try {
-      await generateTransactionFormSupplementalPdf();
-      toast.success(
-        "Transaction Form Supplemental Sheet generated successfully"
-      );
-    } catch (error) {
-      console.error(
-        "Error generating Transaction Form Supplemental Sheet:",
-        error
-      );
-      toast.error("Failed to generate Transaction Form Supplemental Sheet");
-    } finally {
-      setIsGenerating(null);
-    }
-  };
 
   return (
     <div className=" mx-auto p-6">
@@ -392,95 +357,6 @@ export default function DocumentGenerationPage() {
           </CardFooter>
         </Card>
 
-        {/* BCCR Transaction Form 1124 Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-xl">
-                  BCCR Transaction Form 1124
-                </CardTitle>
-              </div>
-              <div className="bg-indigo-50 rounded-full p-2">
-                <FileText className="h-6 w-6 text-indigo-600" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="mt-4 flex items-center text-sm">
-              <CheckCircle className="h-4 w-4 text-indigo-500 mr-2" />
-              <span>Copyright registration</span>
-            </div>
-            <div className="mt-2 flex items-center text-sm">
-              <CheckCircle className="h-4 w-4 text-indigo-500 mr-2" />
-              <span>Official transaction document</span>
-            </div>
-            <div className="mt-2 flex items-center text-sm">
-              <CheckCircle className="h-4 w-4 text-indigo-500 mr-2" />
-              <span>Uses data from your current session</span>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button
-              onClick={handleGenerateTransactionForm}
-              disabled={isGenerating === "transactionForm"}
-              className="w-full"
-              variant="outline"
-            >
-              {isGenerating === "transactionForm" ? (
-                "Generating..."
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Document
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
-
-        {/* Transaction Form Supplemental Sheet Card */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-xl">
-                  Transaction Form Supplemental Sheet
-                </CardTitle>
-              </div>
-              <div className="bg-pink-50 rounded-full p-2">
-                <FileText className="h-6 w-6 text-pink-600" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="mt-4 flex items-center text-sm">
-              <CheckCircle className="h-4 w-4 text-pink-500 mr-2" />
-              <span>Additional work details</span>
-            </div>
-            <div className="mt-2 flex items-center text-sm">
-              <CheckCircle className="h-4 w-4 text-pink-500 mr-2" />
-              <span>Bulk application support</span>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button
-              onClick={handleGenerateSupplementalSheet}
-              disabled={isGenerating === "supplementalSheet"}
-              className="w-full"
-              variant="outline"
-            >
-              {isGenerating === "supplementalSheet" ? (
-                "Generating..."
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Document
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
       </div>
     </div>
   );

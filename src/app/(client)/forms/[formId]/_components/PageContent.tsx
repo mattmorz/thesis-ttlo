@@ -25,6 +25,7 @@ import {
   ChevronRight,
   FolderOpenDot,
   LucideFolderOpen,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -96,6 +97,13 @@ import { IPDisclosureForm } from "./ipdisclosure/ip-disclosure-form";
 import { DeedAssignmentForm } from "./deedofassignment/deed-assignment-form";
 import { SubstantialUseForm } from "./substantialuse/substantial-use-form";
 import { OtherDocumentsSection } from "./otherDocuments";
+import {
+  buildIpTypesFromApplicationValues,
+  getSelectedApplicationIpTypes,
+  hasSelectedIpTypes,
+} from "@/lib/utils/ip-types";
+
+const DEBUG_PAGE_CONTENT = process.env.NODE_ENV === "development";
 
 // Add icons to the navigation config
 const sidebarItems = formNavigationConfig.map((item) => {
@@ -123,6 +131,7 @@ const sidebarItems = formNavigationConfig.map((item) => {
   }
   return { ...item, icon };
 });
+
 
 // Add the missing getStatusBadge function near other utility functions
 const getStatusBadge = (status: string) => {
@@ -191,17 +200,18 @@ const INITIAL_FORM_STATUS: FormStatus = {
   substantialUse: false,
   deedAssignment: false,
 };
-
 const GettingStartedGuide = ({
   isCollapsed,
   setIsCollapsed,
   formStatus,
   onStepClick,
+  isCSU,
 }: {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   formStatus?: FormStatus;
   onStepClick?: (tabId: FormTabId) => void;
+  isCSU?: boolean | null;
 }) => {
   const steps = [
     {
@@ -219,19 +229,23 @@ const GettingStartedGuide = ({
       tabId: FormTabs.IP_DISCLOSURE,
       statusKey: "ipDisclosure",
     },
-    {
-      label: "Substantial Use",
-      tabId: FormTabs.SUBSTANTIAL_USE,
-      statusKey: "substantialUse",
-    },
-    {
-      label: "Deed of Assignment",
-      tabId: FormTabs.DEED_ASSIGNMENT,
-      statusKey: "deedAssignment",
-    },
-  ] as const;
+     ...(isCSU === true
+    ? [
+        {
+          label: "Substantial Use",
+          tabId: FormTabs.SUBSTANTIAL_USE,
+          statusKey: "substantialUse",
+        },
+        {
+          label: "Deed of Assignment",
+          tabId: FormTabs.DEED_ASSIGNMENT,
+          statusKey: "deedAssignment",
+        },
+      ]
+    : []),
+];
 
-  const completedCount = steps.reduce((count, step) => {
+    const completedCount = steps.reduce((count, step) => {
     return count + (formStatus?.[step.statusKey] ? 1 : 0);
   }, 0);
 
@@ -362,7 +376,13 @@ const GettingStartedGuide = ({
                   </ul>
                 </div>
 
-                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                <div
+  className={`rounded-lg border p-4 relative ${
+    isCSU === false
+      ? "bg-gray-100 opacity-50 pointer-events-none"
+      : "bg-[#1B5E20]/5"
+  }`}
+>
                   <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
                     Step 4
                   </div>
@@ -392,7 +412,13 @@ const GettingStartedGuide = ({
                   </ul>
                 </div>
 
-                <div className="rounded-lg border p-4 bg-[#1B5E20]/5 relative">
+                <div
+  className={`rounded-lg border p-4 relative ${
+    isCSU === false
+      ? "bg-gray-100 opacity-50 pointer-events-none"
+      : "bg-[#1B5E20]/5"
+  }`}
+>
                   <div className="absolute -top-3 -left-1 bg-white px-1.5 py-0.5 rounded-full border border-[#1B5E20]/30 text-[#1B5E20] text-xs font-semibold">
                     Step 5
                   </div>
@@ -422,12 +448,21 @@ const GettingStartedGuide = ({
                   </ul>
                 </div>
               </div>
+             
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <h5 className="font-medium text-green-700">
+                    Substantial Use and Deed of Assignment are only required for CSU-Affiliated users.
+                  </h5>
+                </div>
+              </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h5 className="font-medium text-blue-800">
+                    <h5 className="font-medium text-blue-8 00">
                       Important Note
                     </h5>
                     <p className="text-xs text-blue-700 mt-0.5">
@@ -541,6 +576,13 @@ const GettingStartedGuide = ({
 };
 
 export function PageContent() {
+const [isCSU, setIsCSU] = useState<boolean | null>(null);
+
+useEffect(() => {
+  const value = localStorage.getItem("isCSUAffiliated");
+  setIsCSU(value ? JSON.parse(value) : null);
+}, []);
+
   const [progress, setProgress] = useState({
     clientProfile: false,
     applicationTitle: false,
@@ -589,8 +631,64 @@ export function PageContent() {
     setApplications,
     setActiveApplicationId,
     refetchApplications,
+    clearFormData,
     isLoading: isApplicationsLoading,
   } = useActiveApplication();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const readStoredCSU = () => {
+      const scopedKey = activeApplicationId
+        ? `isCSUAffiliated-${activeApplicationId}`
+        : null;
+      const storedValue =
+        (scopedKey && localStorage.getItem(scopedKey)) ||
+        localStorage.getItem("isCSUAffiliated");
+
+      if (storedValue === null) {
+        setIsCSU(null);
+        return;
+      }
+
+      try {
+        setIsCSU(JSON.parse(storedValue));
+      } catch {
+        setIsCSU(null);
+      }
+    };
+
+    readStoredCSU();
+
+    const handleAffiliationChanged = (
+      event: CustomEvent<{
+        applicationId: string | null;
+        isCSUAffiliated: boolean | null;
+      }>,
+    ) => {
+      if (
+        activeApplicationId &&
+        event.detail.applicationId &&
+        event.detail.applicationId !== activeApplicationId
+      ) {
+        return;
+      }
+
+      setIsCSU(event.detail.isCSUAffiliated);
+    };
+
+    window.addEventListener(
+      "clientProfileAffiliationChanged",
+      handleAffiliationChanged as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "clientProfileAffiliationChanged",
+        handleAffiliationChanged as EventListener,
+      );
+    };
+  }, [activeApplicationId]);
 
   const createApplicationMutation =
     trpc.formIntegration.createApplication.useMutation({
@@ -697,7 +795,7 @@ export function PageContent() {
   }, []);
 
   useEffect(() => {
-    if (applications.length === 1) {
+    if (applications.length > 0) {
       setIsApplicationsExpanded(true);
     }
   }, [applications.length]);
@@ -1004,6 +1102,47 @@ export function PageContent() {
     "deed-assignment": "deedAssignment",
   };
 
+  const isApplicationTitleComplete = useCallback(() => {
+    const title =
+      typeof activeApplication?.title === "string"
+        ? activeApplication.title.trim()
+        : "";
+
+    if (!title || title.toLowerCase() === "untitled application") {
+      return false;
+    }
+
+    return (
+      Boolean(activeApplication?.ipType) ||
+      hasSelectedIpTypes(activeApplication?.selectedIpTypes)
+    );
+  }, [activeApplication]);
+
+  const isTabComplete = useCallback(
+    (tabId: string) => {
+      if (!activeApplicationId) return false;
+
+      const statusKey = formTypeMapping[tabId];
+      const knownStatus =
+        statusKey &&
+        knownApplicationStatus[activeApplicationId]?.status?.[
+          statusKey as keyof FormStatus
+        ];
+
+      if (tabId === FormTabs.Application_Title) {
+        return Boolean(knownStatus) || isApplicationTitleComplete();
+      }
+
+      return Boolean(knownStatus);
+    },
+    [
+      activeApplicationId,
+      formTypeMapping,
+      isApplicationTitleComplete,
+      knownApplicationStatus,
+    ]
+  );
+
   // check what tab is active
   const isTabEnabled = (tabId: string) => {
     if (!activeApplicationId) return false; // no application selected
@@ -1018,10 +1157,52 @@ export function PageContent() {
     const prevTabId = sidebarItems[tabIndex - 1].id;
 
     // Check if previous tab is completed
-    return knownApplicationStatus[activeApplicationId]?.status?.[
-      formTypeMapping[prevTabId]
-    ];
+    return isTabComplete(prevTabId);
   };
+
+  const getLastEnabledTab = () => {
+    if (!activeApplicationId) return FormTabs.CLIENT_PROFILE;
+
+    let lastEnabled = sidebarItems[0]?.id ?? FormTabs.CLIENT_PROFILE;
+    for (let index = 1; index < sidebarItems.length; index += 1) {
+      const prevTabId = sidebarItems[index - 1].id;
+      const isPrevComplete = isTabComplete(prevTabId);
+      if (!isPrevComplete) {
+        break;
+      }
+      lastEnabled = sidebarItems[index].id;
+    }
+    return lastEnabled;
+  };
+
+  useEffect(() => {
+    if (!mounted || !activeApplicationId || !tabParam) return;
+
+    const tabId = tabParam as FormTabId;
+    const isKnownTab = sidebarItems.some((item) => item.id === tabId);
+    if (!isKnownTab) {
+      const fallbackTab = FormTabs.CLIENT_PROFILE;
+      router.replace(getFormUrl(undefined, fallbackTab), { scroll: false });
+      setActiveForm(fallbackTab);
+      return;
+    }
+
+    if (!isTabEnabled(tabId)) {
+      const fallbackTab = getLastEnabledTab();
+      if (fallbackTab !== tabId) {
+        toast.error("Please complete the current form before proceeding.");
+        router.replace(getFormUrl(undefined, fallbackTab), { scroll: false });
+        setActiveForm(fallbackTab as FormTabId);
+      }
+    }
+  }, [
+    activeApplicationId,
+    getLastEnabledTab,
+    isTabEnabled,
+    mounted,
+    router,
+    tabParam,
+  ]);
 
   // Simplify application switching - delegate to the robust implementation
   const handleSwitchApplication = (applicationId: string) => {
@@ -1515,6 +1696,45 @@ export function PageContent() {
     );
   };
 
+  const displayedApplication = activeApplication || applications[0] || null;
+  const displayedApplicationId =
+    activeApplicationId || applications[0]?.id || null;
+  const displayedApplicationTypes = displayedApplication?.selectedIpTypes
+    ? getSelectedApplicationIpTypes(displayedApplication.selectedIpTypes)
+    : displayedApplication?.ipType
+      ? [displayedApplication.ipType]
+      : [];
+  const shouldShowApplicationLoader =
+    isApplicationsLoading && applications.length === 0;
+
+  useEffect(() => {
+    if (DEBUG_PAGE_CONTENT) {
+      console.log("[PageContent] Application shell state", {
+        formId,
+        tabParam,
+        mounted,
+        activeApplicationId,
+        applicationsCount: applications.length,
+        isApplicationsLoading,
+        activeApplicationTitle: activeApplication?.title ?? null,
+        displayedApplicationId,
+        shouldShowApplicationLoader,
+        isApplicationsExpanded,
+      });
+    }
+  }, [
+    formId,
+    tabParam,
+    mounted,
+    activeApplicationId,
+    applications.length,
+    isApplicationsLoading,
+    activeApplication?.title,
+    displayedApplicationId,
+    shouldShowApplicationLoader,
+    isApplicationsExpanded,
+  ]);
+
   // Create a simple placeholder for server-side rendering that matches structure
   if (!mounted && typeof window !== "undefined") {
     return (
@@ -1719,6 +1939,34 @@ export function PageContent() {
     );
   }
 
+  if (shouldShowApplicationLoader) {
+    if (DEBUG_PAGE_CONTENT) {
+      console.log("[PageContent] Rendering application loader", {
+        activeApplicationId,
+        applicationsCount: applications.length,
+      });
+    }
+    return (
+      <div className="w-full">
+        <main className="container mx-auto max-w-7xl pb-12 px-4 md:px-6">
+          <div className="rounded-lg border bg-white shadow-sm p-8">
+            <div className="flex items-center gap-3 text-[#1B5E20]">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <div>
+                <h2 className="text-lg font-semibold">
+                  Loading your IP applications
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Please wait while we fetch your submitted applications.
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   // Additional help content based on current form
   // const getContextualHelp = () => {
   //   switch (activeForm) {
@@ -1780,7 +2028,7 @@ export function PageContent() {
   const handleCreateFirstApplication = () => {
     if (
       isCreatingFirstApplication ||
-      createApplicationMutation.isLoading ||
+      createApplicationMutation.isPending ||
       isCreateCooldown
     ) {
       return;
@@ -1799,7 +2047,8 @@ export function PageContent() {
     createApplicationMutation.mutate({
       userId: session.user.id,
       title: "Untitled Application", // Default title as requested
-      ipType: "not_sure", // Safe default
+      ipType: "patent", // Default to a visible type instead of unsure
+      selectedIpTypes: buildIpTypesFromApplicationValues(["patent"]),
       // Ensure button state resets even if mutation errors before callbacks
     });
   };
@@ -1814,6 +2063,7 @@ export function PageContent() {
               ? knownApplicationStatus[activeApplicationId]?.status
               : undefined
           }
+          isCSU={isCSU}
           onStepClick={(tabId) => handleTabChange(tabId)}
           isCollapsed={isGuideCollapsed}
           setIsCollapsed={(collapsed) => {
@@ -1848,13 +2098,17 @@ export function PageContent() {
     }
   };
 
-  const displayedApplication = activeApplication || applications[0] || null;
-  const displayedApplicationId =
-    activeApplicationId || applications[0]?.id || null;
-
   return (
     <div className="w-full">
       <main className="container mx-auto max-w-7xl pb-12">
+        {DEBUG_PAGE_CONTENT && (
+          <DebugRenderLog
+            activeApplicationId={activeApplicationId}
+            applicationsCount={applications.length}
+            activeApplicationTitle={activeApplication?.title ?? null}
+            activeForm={activeForm}
+          />
+        )}
         {/* Application Selection Header - Simplified and compact */}
         <div className="bg-white border rounded-lg shadow-sm mb-6 overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b bg-gray-50">
@@ -1929,12 +2183,15 @@ export function PageContent() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-white text-xs border-gray-200"
-                  >
-                    {displayedApplication.ipType?.replace("_", " ")}
-                  </Badge>
+                  {displayedApplicationTypes.map((type) => (
+                    <Badge
+                      key={type}
+                      variant="outline"
+                      className="bg-white text-xs border-gray-200"
+                    >
+                      {type.replace(/_/g, " ")}
+                    </Badge>
+                  ))}
                   {getStatusBadge(displayedApplication.status)}
                   <div className="flex items-center bg-gray-100/80 px-2 py-0.5 rounded border border-gray-200/80">
                     <span className="text-xs text-gray-600 mr-1.5">ID:</span>
@@ -1974,7 +2231,18 @@ export function PageContent() {
           {/* Collapsible Application Management */}
           {(isApplicationsExpanded || applications.length === 1) && (
             <div className="p-4 border-b bg-white">
-              <ApplicationManagement hideCreateButton={false} />
+              <ApplicationManagement
+                hideCreateButton={false}
+                onCreateClick={handleCreateFirstApplication}
+                applications={applications}
+                activeApplicationId={activeApplicationId}
+                activeApplication={activeApplication}
+                isLoading={isApplicationsLoading}
+                setApplications={setApplications}
+                setActiveApplicationId={setActiveApplicationId}
+                refetchApplications={refetchApplications}
+                clearFormData={clearFormData}
+              />
             </div>
           )}
         </div>
@@ -2125,14 +2393,14 @@ export function PageContent() {
                     <Button
                       onClick={handleCreateFirstApplication}
                       disabled={
-                        createApplicationMutation.isLoading ||
+                        createApplicationMutation.isPending ||
                         isCreatingFirstApplication ||
                         isCreateCooldown
                       }
                       className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
                     >
                       <PlusCircle className="h-4 w-4 mr-2" />
-                      {createApplicationMutation.isLoading ||
+                      {createApplicationMutation.isPending ||
                       isCreatingFirstApplication ||
                       isCreateCooldown
                         ? "Creating..."
@@ -2219,4 +2487,27 @@ export function PageContent() {
       )}
     </div>
   );
+}
+
+function DebugRenderLog({
+  activeApplicationId,
+  applicationsCount,
+  activeApplicationTitle,
+  activeForm,
+}: {
+  activeApplicationId: string | null;
+  applicationsCount: number;
+  activeApplicationTitle: string | null;
+  activeForm: string;
+}) {
+  useEffect(() => {
+    console.log("[PageContent] Rendering application manager", {
+      activeApplicationId,
+      applicationsCount,
+      activeApplicationTitle,
+      activeForm,
+    });
+  }, [activeApplicationId, applicationsCount, activeApplicationTitle, activeForm]);
+
+  return null;
 }

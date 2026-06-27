@@ -1,8 +1,21 @@
-CREATE TYPE "public"."activity_type" AS ENUM('update', 'comment', 'status_change');--> statement-breakpoint
-CREATE TYPE "public"."application_status" AS ENUM('draft', 'pending', 'in_progress', 'approved', 'rejected', 'completed', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."application_type" AS ENUM('patent', 'copyright', 'trademark', 'utility_model');--> statement-breakpoint
-CREATE TYPE "public"."ip_disclosure_status" AS ENUM('draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_revision');--> statement-breakpoint
-CREATE TYPE "public"."user_role" AS ENUM('admin', 'ttlo_staff', 'client');--> statement-breakpoint
+DO $$
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'activity_type') THEN
+		CREATE TYPE "public"."activity_type" AS ENUM('update', 'comment', 'status_change');
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'application_status') THEN
+		CREATE TYPE "public"."application_status" AS ENUM('draft', 'pending', 'in_progress', 'approved', 'rejected', 'completed', 'archived');
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'application_type') THEN
+		CREATE TYPE "public"."application_type" AS ENUM('patent', 'copyright', 'trademark', 'utility_model');
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ip_disclosure_status') THEN
+		CREATE TYPE "public"."ip_disclosure_status" AS ENUM('draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_revision');
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+		CREATE TYPE "public"."user_role" AS ENUM('admin', 'ttlo_staff', 'client');
+	END IF;
+END $$;--> statement-breakpoint
 CREATE TABLE "account" (
 	"userId" uuid NOT NULL,
 	"type" text NOT NULL,

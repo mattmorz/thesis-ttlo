@@ -435,113 +435,6 @@ export const account = pgTable(
   ]
 );
 
-export const copyrightTransactionPart2 = pgTable(
-  "copyright_transaction_part2",
-  {
-    transactionPart2Id: uuid("transaction_part2_id")
-      .defaultRandom()
-      .primaryKey()
-      .notNull(),
-    disclosureId: uuid("disclosure_id").notNull(),
-    copyrightId: uuid("copyright_id").notNull(),
-    transactionDetails: jsonb("transaction_details")
-      .default({
-        ipsoRegion: "",
-        applicantType: {
-          heir: false,
-          agent: false,
-          licensee: false,
-          newOwner: false,
-          copyrightClaimant: false,
-        },
-        bulkFilingQty: "",
-        transactionType: {
-          recordation: false,
-          resaleRights: false,
-          anonymousWork: false,
-          certifiedCopy: false,
-          reconstitution: false,
-          correctionEntry: false,
-        },
-        otherCertifications: "",
-        numberOfCertificates: "",
-      })
-      .notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-    updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-    isCopyrightRegistration: boolean("is_copyright_registration").default(
-      false
-    ),
-    filingMethod: varchar("filing_method", { length: 50 }),
-    filingType: varchar("filing_type", { length: 50 }),
-    applicantInfo: jsonb("applicant_info")
-      .default({
-        personalInfo: {
-          sex: null,
-          address: "",
-          surname: "",
-          zipCode: "",
-          firstName: "",
-          middleName: "",
-          civilStatus: null,
-          dateOfBirth: null,
-          nationality: "",
-          emailAddress: "",
-          mobileNumber: "",
-          provinceState: "",
-          municipalityCity: "",
-          countryOfResidence: "",
-        },
-        applicantType: {
-          heir: false,
-          agent: false,
-          licensee: false,
-          newOwner: false,
-          authorCreator: false,
-          copyrightClaimant: false,
-        },
-      })
-      .notNull(),
-    authorInfo: jsonb("author_info")
-      .default({
-        personalInfo: {
-          sex: null,
-          address: "",
-          surname: "",
-          zipCode: "",
-          firstName: "",
-          middleName: "",
-          civilStatus: null,
-          dateOfBirth: null,
-          nationality: "",
-          emailAddress: "",
-          mobileNumber: "",
-          provinceState: "",
-          municipalityCity: "",
-          countryOfResidence: "",
-        },
-        isSameAsApplicant: false,
-      })
-      .notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.copyrightId],
-      foreignColumns: [copyrightBasicApplication.copyrightId],
-      name: "copyright_transaction_part2_copyright_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.disclosureId],
-      foreignColumns: [ipDisclosure.disclosureId],
-      name: "copyright_transaction_part2_disclosure_id_fkey",
-    }).onDelete("cascade"),
-  ]
-);
-
 export const deedOfAssignment = pgTable(
   "deed_of_assignment",
   {
@@ -631,37 +524,6 @@ export const copyrightBasicApplication = pgTable(
       columns: [table.disclosureId],
       foreignColumns: [ipDisclosure.disclosureId],
       name: "copyright_basic_application_disclosure_id_fkey",
-    }).onDelete("cascade"),
-  ]
-);
-
-export const copyrightTransactionPart1 = pgTable(
-  "copyright_transaction_part1",
-  {
-    transactionPart1Id: uuid("transaction_part1_id")
-      .defaultRandom()
-      .primaryKey()
-      .notNull(),
-    disclosureId: uuid("disclosure_id").notNull(),
-    copyrightId: uuid("copyright_id").notNull(),
-    transactionData: jsonb("transaction_data").notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-    updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
-    ),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.copyrightId],
-      foreignColumns: [copyrightBasicApplication.copyrightId],
-      name: "copyright_transaction_part1_copyright_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.disclosureId],
-      foreignColumns: [ipDisclosure.disclosureId],
-      name: "copyright_transaction_part1_disclosure_id_fkey",
     }).onDelete("cascade"),
   ]
 );
@@ -1168,6 +1030,7 @@ export const ipApplication = pgTable(
     title: varchar({ length: 255 }).notNull(),
     description: text(),
     ipType: applicationType("ip_type").notNull(),
+    selectedIpTypes: jsonb("selected_ip_types"),
     status: applicationStatus().default("draft"),
     progress: integer().default(0),
     inventors: text().array(),

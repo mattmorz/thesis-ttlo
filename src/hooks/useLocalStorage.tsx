@@ -12,6 +12,15 @@ export function useLocalStorage<T>(
   key: string,
   initialValue: T
 ): [T, (value: T | ((val: T) => T)) => void] {
+  const parseStoredValue = (raw: string): T => {
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      // Support legacy values written as plain strings, such as UUIDs.
+      return raw as unknown as T;
+    }
+  };
+
   // State to store our value
   // Pass initial state function to useState so logic is only executed once
   const [storedValue, setStoredValue] = useState<T>(() => {
@@ -23,7 +32,7 @@ export function useLocalStorage<T>(
       // Get from local storage by key
       const item = window.localStorage.getItem(key);
       // Parse stored json or if none return initialValue
-      return item ? JSON.parse(item) : initialValue;
+      return item ? parseStoredValue(item) : initialValue;
     } catch (error) {
       // If error also return initialValue
       console.error("Error reading from localStorage:", error);
@@ -61,7 +70,7 @@ export function useLocalStorage<T>(
     function handleStorageChange(e: StorageEvent) {
       if (e.key === key && e.newValue !== null) {
         try {
-          setStoredValue(JSON.parse(e.newValue));
+          setStoredValue(parseStoredValue(e.newValue));
         } catch (error) {
           console.error("Error parsing localStorage change:", error);
         }

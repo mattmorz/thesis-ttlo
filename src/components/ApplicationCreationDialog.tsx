@@ -183,15 +183,13 @@ export function ApplicationCreationDialog({
       // Clear form data BEFORE creating application to start with a clean slate
       clearFormData();
 
-      // Determine the actual IP type to send to the API
-      const finalIpType = newAppType === "other" ? otherIpType : newAppType;
-
       // Create the application
       const result = await createApplicationMutation.mutateAsync({
         userId,
         title: newAppTitle.trim(),
         description: newAppDescription.trim() || undefined,
-        ipType: finalIpType as any,
+        ipType: newAppType as any,
+        otherIpType: newAppType === "other" ? otherIpType.trim() : undefined,
       });
 
       // Close dialog and reset form first, BEFORE manipulating app state

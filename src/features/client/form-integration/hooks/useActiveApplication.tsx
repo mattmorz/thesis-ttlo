@@ -16,6 +16,7 @@ interface Application {
   progress: number;
   createdAt: string | null;
   ipType: string;
+  otherIpType?: string | null;
   selectedIpTypes?: NormalizedIpTypes | null;
 }
 

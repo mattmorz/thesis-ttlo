@@ -486,22 +486,8 @@ export const applicantsInfoSchema = z
       .refine((value) => value === true, {
         message: "This confirmation is required.",
       }),
-    isApplicantAlsoInventor: z.boolean().default(false),
     authorizedRepresentative: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      // If "other" is selected, otherIpType must be provided
-      if (data.ipTypes.other) {
-        return !!data.otherIpType;
-      }
-      return true;
-    },
-    {
-      message: "Please specify the type of IP in the 'Other' field",
-      path: ["otherIpType"],
-    }
-  );
+  });
 
 // Single definition of ApplicantsInfo derived from the schema
 export type ApplicantsInfo = z.infer<typeof applicantsInfoSchema>;

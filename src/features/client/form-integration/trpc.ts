@@ -94,6 +94,7 @@ export const formIntegrationRouter = router({
                 ? new Date(app.createdAt).toISOString()
                 : null,
               ipType: app.ipType,
+              otherIpType: app.otherIpType || null,
               selectedIpTypes:
                 normalizedApplicationIpTypes ??
                 deriveIpTypesFromApplicationIpType(app.ipType).ipTypes,
@@ -116,13 +117,14 @@ export const formIntegrationRouter = router({
    */
   createApplication: publicProcedure
     .input(
-      z.object({
-        userId: z.string(),
-        title: z.string().min(1, "Title is required"),
-        description: z.string().optional(),
-        ipType: z.enum([
-          "patent",
-          "copyright",
+        z.object({
+          userId: z.string(),
+          title: z.string().min(1, "Title is required"),
+          description: z.string().optional(),
+          otherIpType: z.string().optional(),
+          ipType: z.enum([
+            "patent",
+            "copyright",
           "trademark",
           "utility_model",
           "industrial_design",
@@ -171,6 +173,8 @@ export const formIntegrationRouter = router({
         const selectedIpTypes = input.selectedIpTypes
           ? normalizeIpTypes(input.selectedIpTypes)
           : deriveIpTypesFromApplicationIpType(input.ipType).ipTypes;
+        const otherIpType =
+          input.ipType === "other" ? input.otherIpType?.trim() || null : null;
 
         // Create the application directly with the database
         const newAppId = uuid();
@@ -188,6 +192,7 @@ export const formIntegrationRouter = router({
             status: "draft" as const,
             progress: 0,
             ipType: getPrimaryApplicationIpType(selectedIpTypes),
+            otherIpType,
             selectedIpTypes,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -222,6 +227,7 @@ export const formIntegrationRouter = router({
             status: "draft" as const,
             progress: 0,
             ipType: getPrimaryApplicationIpType(selectedIpTypes),
+            otherIpType,
             selectedIpTypes,
             createdAt: new Date().toISOString(),
           };

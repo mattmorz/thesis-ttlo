@@ -80,7 +80,6 @@ const ApplicantsInfoFormSchema = z
       .refine((value) => value === true, {
         message: "This confirmation is required.",
       }),
-    isApplicantAlsoInventor: z.boolean().default(false),
     authorizedRepresentative: z.string().trim().optional(),
   })
   .superRefine((data, ctx) => {
@@ -93,14 +92,6 @@ const ApplicantsInfoFormSchema = z
         code: z.ZodIssueCode.custom,
         message: "Please select at least one IP type.",
         path: ["ipTypes"],
-      });
-    }
-
-    if (data.ipTypes.other && !data.otherIpType) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Please specify the type of IP in the 'Other' field.",
-        path: ["otherIpType"],
       });
     }
   });
@@ -133,7 +124,6 @@ const createEmptyApplicantsInfoForm = (): ApplicantsInfoFormType => ({
   },
   otherIpType: "",
   isRightfulOwner: false,
-  isApplicantAlsoInventor: false,
   authorizedRepresentative: "",
 });
 
@@ -163,7 +153,6 @@ const hasMeaningfulApplicantsData = (
     hasText(data.otherIpType) ||
     hasText(data.authorizedRepresentative) ||
     data.isRightfulOwner === true ||
-    data.isApplicantAlsoInventor === true ||
     hasPeople(data.applicants) ||
     hasPeople(data.inventors) ||
     Boolean(data.ipTypes) &&
@@ -181,6 +170,34 @@ interface PersonInfo {
 interface ApplicantsInformationProps {
   onIpTypeSelect: (ipTypes: IpTypes) => void;
 }
+
+type PersonRow = {
+  firstName?: string;
+  middleInitial?: string;
+  lastName?: string;
+};
+
+const isBlankPersonRow = (person?: PersonRow) =>
+  !person?.firstName?.trim() &&
+  !person?.middleInitial?.trim() &&
+  !person?.lastName?.trim();
+
+const isCompletePersonRow = (person?: PersonRow) =>
+  Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim());
+
+const hasPartialPersonRow = (person?: PersonRow) =>
+  !isBlankPersonRow(person) && !isCompletePersonRow(person);
+
+const stripBlankPersonRows = (people?: PersonRow[]) =>
+  Array.isArray(people)
+    ? people
+        .map((person) => ({
+          firstName: person?.firstName || "",
+          middleInitial: person?.middleInitial || "",
+          lastName: person?.lastName || "",
+        }))
+        .filter((person) => !isBlankPersonRow(person))
+    : [];
 
 export function ApplicantsInformation() {
 
@@ -228,12 +245,11 @@ export function ApplicantsInformation() {
       tradeSecret: false,
       other: false,
       notSure: false,
-    },
-    otherIpType: "",
-    isRightfulOwner: false,
-    isApplicantAlsoInventor: false,
-    authorizedRepresentative: "",
-  });
+  },
+  otherIpType: "",
+  isRightfulOwner: false,
+  authorizedRepresentative: "",
+});
 
   // Initialize form with the local state
   const form = useForm<ApplicantsInfoFormType>({
@@ -244,18 +260,34 @@ export function ApplicantsInformation() {
   });
   const derivedIpTypesResult = React.useMemo(
     () => {
+      const activeApplicationHasOther =
+        activeApplication?.selectedIpTypes?.other === true ||
+        activeApplication?.ipType === "other";
+
       if (activeApplication?.selectedIpTypes) {
         return {
           ipTypes: normalizeIpTypes(activeApplication.selectedIpTypes),
-          otherIpType: "",
+          otherIpType: activeApplicationHasOther
+            ? activeApplication.otherIpType?.trim() || ""
+            : "",
         };
       }
 
-      return deriveIpTypesFromApplicationIpType(
+      const derived = deriveIpTypesFromApplicationIpType(
         activeApplication?.ipType ?? undefined
       );
+      return {
+        ...derived,
+        otherIpType: activeApplicationHasOther
+          ? activeApplication.otherIpType?.trim() || derived.otherIpType
+          : derived.otherIpType,
+      };
     },
-    [activeApplication?.ipType, activeApplication?.selectedIpTypes]
+    [
+      activeApplication?.ipType,
+      activeApplication?.otherIpType,
+      activeApplication?.selectedIpTypes,
+    ]
   );
 
   useEffect(() => {
@@ -308,6 +340,7 @@ export function ApplicantsInformation() {
     fields: inventorFields,
     append: appendInventor,
     remove: removeInventor,
+    replace: replaceInventors,
   } = useFieldArray({
     control: form.control,
     name: "inventors",
@@ -509,9 +542,6 @@ export function ApplicantsInformation() {
               isRightfulOwner: Boolean(
                 loadedData.applicantsInfo.isRightfulOwner
               ),
-              isApplicantAlsoInventor: Boolean(
-                loadedData.applicantsInfo.isApplicantAlsoInventor
-              ),
               authorizedRepresentative:
                 loadedData.applicantsInfo.authorizedRepresentative || "",
             };
@@ -519,6 +549,7 @@ export function ApplicantsInformation() {
             // Update our local state
             console.log("Setting form data:", formattedData);
             setFormData(formattedData);
+            setCopyApplicantNamesEnabled(false);
 
             // Also update the form context for IP types
             setSelectedIpTypes(formattedIpTypes);
@@ -535,10 +566,6 @@ export function ApplicantsInformation() {
                 // Then manually set each field to be extra sure
                 form.setValue("email", formattedData.email);
                 form.setValue("isRightfulOwner", formattedData.isRightfulOwner);
-                form.setValue(
-                  "isApplicantAlsoInventor",
-                  formattedData.isApplicantAlsoInventor
-                );
                 form.setValue(
                   "authorizedRepresentative",
                   formattedData.authorizedRepresentative
@@ -592,6 +619,7 @@ export function ApplicantsInformation() {
           ...createEmptyApplicantsInfoForm(),
         };
         setFormData(defaultValues);
+        setCopyApplicantNamesEnabled(false);
         setSelectedIpTypes(defaultValues.ipTypes);
         form.reset(defaultValues);
       };
@@ -653,9 +681,6 @@ export function ApplicantsInformation() {
         ipTypes: formattedIpTypes,
         otherIpType: applicantsInfo.otherIpType || "",
         isRightfulOwner: Boolean(applicantsInfo.isRightfulOwner),
-        isApplicantAlsoInventor: Boolean(
-          applicantsInfo.isApplicantAlsoInventor
-        ),
         authorizedRepresentative: applicantsInfo.authorizedRepresentative || "",
       };
 
@@ -675,10 +700,6 @@ export function ApplicantsInformation() {
         // Manually set each field to be extra sure
         form.setValue("email", formattedData.email);
         form.setValue("isRightfulOwner", formattedData.isRightfulOwner);
-        form.setValue(
-          "isApplicantAlsoInventor",
-          formattedData.isApplicantAlsoInventor
-        );
         form.setValue(
           "authorizedRepresentative",
           formattedData.authorizedRepresentative
@@ -746,6 +767,7 @@ export function ApplicantsInformation() {
 
           // Update local state and form
           setFormData(resetData);
+          setCopyApplicantNamesEnabled(false);
           form.reset(resetData);
 
           // Manually set each field as needed
@@ -753,10 +775,6 @@ export function ApplicantsInformation() {
           form.setValue(
             "isRightfulOwner",
             Boolean(applicantsInfo.isRightfulOwner)
-          );
-          form.setValue(
-            "isApplicantAlsoInventor",
-            Boolean(applicantsInfo.isApplicantAlsoInventor)
           );
           form.setValue(
             "authorizedRepresentative",
@@ -867,15 +885,13 @@ export function ApplicantsInformation() {
             },
             otherIpType: data.applicantsInfo.otherIpType || "",
             isRightfulOwner: Boolean(data.applicantsInfo.isRightfulOwner),
-            isApplicantAlsoInventor: Boolean(
-              data.applicantsInfo.isApplicantAlsoInventor
-            ),
             authorizedRepresentative:
               data.applicantsInfo.authorizedRepresentative || "",
           };
 
           // Update local form state
           setFormData(formattedData);
+          setCopyApplicantNamesEnabled(false);
           form.reset(formattedData);
 
           // Update context
@@ -1118,13 +1134,38 @@ export function ApplicantsInformation() {
 
     setIsSubmitting(true); // 🔥 START loading
     const { ipTypes: resolvedIpTypes, otherIpType } = derivedIpTypesResult;
+    const cleanedApplicants = stripBlankPersonRows(form.getValues("applicants"));
+    const cleanedInventors = stripBlankPersonRows(form.getValues("inventors"));
+    form.setValue(
+      "applicants",
+      cleanedApplicants as ApplicantsInfoFormType["applicants"],
+      { shouldDirty: true, shouldValidate: false }
+    );
+    form.setValue(
+      "inventors",
+      cleanedInventors as ApplicantsInfoFormType["inventors"],
+      { shouldDirty: true, shouldValidate: false }
+    );
     form.setValue("ipTypes", resolvedIpTypes, { shouldValidate: true });
     form.setValue("otherIpType", otherIpType, { shouldValidate: true });
+    console.log("Applicants Next debug:", {
+      rawApplicants: form.getValues("applicants"),
+      rawInventors: form.getValues("inventors"),
+      cleanedApplicants,
+      cleanedInventors,
+      email: form.getValues("email"),
+      isRightfulOwner: form.getValues("isRightfulOwner"),
+      ipTypes: resolvedIpTypes,
+      otherIpType,
+    });
 
     // Validate the form
     const isValid = await form.trigger();
     if (!isValid) {
-      console.log("Form validation failed");
+      console.log("Form validation failed", {
+        errors: form.formState.errors,
+        valuesAfterTrigger: form.getValues(),
+      });
       toast("Please fill in all required fields", {
         icon: "❌",
         style: {
@@ -1141,6 +1182,8 @@ export function ApplicantsInformation() {
       const values = form.getValues();
       values.ipTypes = resolvedIpTypes;
       values.otherIpType = otherIpType;
+      values.applicants = cleanedApplicants as ApplicantsInfoFormType["applicants"];
+      values.inventors = cleanedInventors as ApplicantsInfoFormType["inventors"];
 
       // Log the values for debugging
       console.log("Form values before saving:", {
@@ -1287,7 +1330,8 @@ export function ApplicantsInformation() {
     };
   }, [form, setSelectedIpTypes]);
 
-  const isApplicantAlsoInventor = form.watch("isApplicantAlsoInventor");
+  const [copyApplicantNamesEnabled, setCopyApplicantNamesEnabled] =
+    useState(false);
   const watchedApplicants = form.watch("applicants");
   const watchedIpTypes = form.watch("ipTypes");
   const watchedInventors = form.watch("inventors");
@@ -1296,25 +1340,25 @@ export function ApplicantsInformation() {
   const hasSelectedIpType = hasSelectedIpTypes(watchedIpTypes);
   const hasApplicantNames =
     (watchedApplicants?.length ?? 0) > 0 &&
-    watchedApplicants.every(
-      (applicant) =>
-        Boolean(applicant?.firstName?.trim()) &&
-        Boolean(applicant?.lastName?.trim())
-    );
+    watchedApplicants.some(isCompletePersonRow);
+  const hasIncompleteApplicantRows = Boolean(
+    watchedApplicants?.some(hasPartialPersonRow)
+  );
 
   const hasInventorNames =
     (watchedInventors?.length ?? 0) > 0 &&
-    watchedInventors.every(
-      (inventor) =>
-        Boolean(inventor?.firstName?.trim()) &&
-        Boolean(inventor?.lastName?.trim())
-    );
+    watchedInventors.some(isCompletePersonRow);
+  const hasIncompleteInventorRows = Boolean(
+    watchedInventors?.some(hasPartialPersonRow)
+  );
 
   const hasEmail = Boolean(watchedEmail?.trim());
   const isNextDisabled =
     !hasEmail ||
     !hasApplicantNames ||
     !hasInventorNames ||
+    hasIncompleteApplicantRows ||
+    hasIncompleteInventorRows ||
     !hasSelectedIpType ||
     !watchedIsRightfulOwner;
 
@@ -1357,6 +1401,32 @@ export function ApplicantsInformation() {
     setApplicantsInfo(nextValues);
   };
 
+  const copyApplicantsToInventors = () => {
+    const nextApplicants = form.getValues("applicants") || [];
+    const currentInventors = form.getValues("inventors") || [];
+    const normalizedInventors = nextApplicants.map((applicant) => ({
+      firstName: applicant?.firstName || "",
+      middleInitial: applicant?.middleInitial || "",
+      lastName: applicant?.lastName || "",
+    }));
+    const preservedInventors = currentInventors.slice(nextApplicants.length);
+    const nextInventors = [...normalizedInventors, ...preservedInventors];
+
+    if (normalizedInventors.length === 0) return;
+
+    replaceInventors(nextInventors);
+    setFormData((prev) => ({
+      ...prev,
+      applicants: nextApplicants,
+      inventors: nextInventors,
+    }));
+    setApplicantsInfo({
+      ...form.getValues(),
+      applicants: nextApplicants,
+      inventors: nextInventors,
+    });
+  };
+
   const scheduleApplicantsSync = () => {
     if (applicantsSyncTimeoutRef.current) {
       clearTimeout(applicantsSyncTimeoutRef.current);
@@ -1367,7 +1437,7 @@ export function ApplicantsInformation() {
   };
 
   useEffect(() => {
-    if (!isApplicantAlsoInventor) return;
+    if (!copyApplicantNamesEnabled) return;
     if (!watchedApplicants || watchedApplicants.length === 0) return;
 
     const normalizedApplicants = watchedApplicants.map((applicant) => ({
@@ -1377,24 +1447,29 @@ export function ApplicantsInformation() {
     }));
 
     const currentInventors = form.getValues("inventors") || [];
+    const nextInventors = normalizedApplicants.map((applicant, index) => ({
+      ...(currentInventors[index] || {}),
+      firstName: applicant.firstName,
+      middleInitial: applicant.middleInitial,
+      lastName: applicant.lastName,
+    }));
+    const preservedInventors = currentInventors.slice(normalizedApplicants.length);
+    const mergedInventors = [...nextInventors, ...preservedInventors];
     const isSame =
-      currentInventors.length === normalizedApplicants.length &&
+      currentInventors.length === mergedInventors.length &&
       currentInventors.every((inventor, index) => {
-        const applicant = normalizedApplicants[index];
+        const nextInventor = mergedInventors[index];
         return (
-          inventor?.firstName === applicant.firstName &&
-          inventor?.middleInitial === applicant.middleInitial &&
-          inventor?.lastName === applicant.lastName
+          inventor?.firstName === nextInventor.firstName &&
+          inventor?.middleInitial === nextInventor.middleInitial &&
+          inventor?.lastName === nextInventor.lastName
         );
       });
 
     if (!isSame) {
-      form.setValue("inventors", normalizedApplicants, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      replaceInventors(mergedInventors);
     }
-  }, [form, isApplicantAlsoInventor, watchedApplicants]);
+  }, [copyApplicantNamesEnabled, replaceInventors, watchedApplicants]);
 
   useEffect(() => {
     let updateTimeout: NodeJS.Timeout | null = null;
@@ -1621,45 +1696,57 @@ export function ApplicantsInformation() {
                     <FormLabel className="text-base">
                       Name of Author/Inventor/Creator<span className="text-red-500"> *</span>
                     </FormLabel>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        appendInventor({
-                          firstName: "",
-                          middleInitial: "",
-                          lastName: "",
-                        })
-                      }
-                      className="border-green-200 text-green-700 hover:bg-green-50"
-                    >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setCopyApplicantNamesEnabled(true);
+                          copyApplicantsToInventors();
+                        }}
+                        className="border-green-200 text-green-700 hover:bg-green-50"
+                      >
+                        Copy from Applicant(s)
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          appendInventor({
+                            firstName: "",
+                            middleInitial: "",
+                            lastName: "",
+                          })
+                        }
+                        className="border-green-200 text-green-700 hover:bg-green-50"
+                      >
                         <Plus className="h-4 w-4 mr-2" />
                         Add {getCreatorLabel()}
-                    </Button>
+                      </Button>
+                    </div>
                   </div>
-                  {/* <FormField
-                    control={form.control}
-                    name="isApplicantAlsoInventor"
-                    render={({ field }) => (
-                      <FormItem className="flex items-start space-x-2">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel className="text-sm font-normal">
-                            Applicant is also the Author/Inventor/Creator
-                          </FormLabel>
-                          <FormDescription>
-                            This will copy the applicant name(s) below
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  /> */}
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      checked={copyApplicantNamesEnabled}
+                      onCheckedChange={(checked) => {
+                        const nextChecked = checked === true;
+                        setCopyApplicantNamesEnabled(nextChecked);
+                        if (nextChecked) {
+                          copyApplicantsToInventors();
+                        }
+                      }}
+                    />
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm font-normal">
+                        Applicant is also the Author/Inventor/Creator
+                      </FormLabel>
+                      <FormDescription>
+                        This will copy the applicant name(s) below
+                      </FormDescription>
+                    </div>
+                  </div>
                   {inventorFields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
                       <div className="flex-1 flex gap-2">
@@ -1672,13 +1759,6 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="First Name"
                                   {...field}
-                                  readOnly={isApplicantAlsoInventor}
-                                  aria-readonly={isApplicantAlsoInventor}
-                                  className={
-                                    isApplicantAlsoInventor
-                                      ? "bg-slate-100 text-slate-500"
-                                      : undefined
-                                  }
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -1700,13 +1780,6 @@ export function ApplicantsInformation() {
                                   placeholder="M.I."
                                   maxLength={2}
                                   {...field}
-                                  readOnly={isApplicantAlsoInventor}
-                                  aria-readonly={isApplicantAlsoInventor}
-                                  className={
-                                    isApplicantAlsoInventor
-                                      ? "bg-slate-100 text-slate-500"
-                                      : undefined
-                                  }
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -1727,13 +1800,6 @@ export function ApplicantsInformation() {
                                 <Input
                                   placeholder="Last Name"
                                   {...field}
-                                  readOnly={isApplicantAlsoInventor}
-                                  aria-readonly={isApplicantAlsoInventor}
-                                  className={
-                                    isApplicantAlsoInventor
-                                      ? "bg-slate-100 text-slate-500"
-                                      : undefined
-                                  }
                                   onChange={(e) =>
                                     field.onChange(e.target.value.toUpperCase())
                                   }
@@ -1760,6 +1826,39 @@ export function ApplicantsInformation() {
                   ))}
                 </CardContent>
               </Card>
+
+              {watchedIpTypes?.other && (
+                <Card className="border-green-200">
+                  <CardContent className="pt-6">
+                    <FormField
+                      control={form.control}
+                      name="otherIpType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-base">
+                            Please specify the type of IP in the "Other" field
+                            <span className="text-red-500"> *</span>
+                          </FormLabel>
+                          <FormDescription>
+                            This field is required because "Other" was selected
+                            for the IP type.
+                          </FormDescription>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter the specific IP type"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(e.target.value.toUpperCase())
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+              )}
             </div>
 {/*}
            <div className="space-y-6">

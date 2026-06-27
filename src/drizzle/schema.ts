@@ -1034,6 +1034,7 @@ export const ipApplication = pgTable(
     status: applicationStatus().default("draft"),
     progress: integer().default(0),
     inventors: text().array(),
+    otherIpType: varchar("other_ip_type", { length: 255 }),
     technicalField: text("technical_field").array(),
     keywords: text().array(),
     researchField: varchar("research_field", { length: 255 }),

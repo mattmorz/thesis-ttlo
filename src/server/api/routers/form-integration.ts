@@ -41,6 +41,7 @@ interface Application {
   status: string;
   progress: number;
   ipType: string;
+  otherIpType: string | null;
   selectedIpTypes: NormalizedIpTypes | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -112,6 +113,7 @@ export const formIntegrationRouter = createTRPCRouter({
               ? new Date(app.createdAt).toISOString()
               : null,
             ipType: app.ipType,
+            otherIpType: app.otherIpType || null,
             selectedIpTypes:
               selectedIpTypes ??
               deriveIpTypesFromApplicationIpType(app.ipType).ipTypes,
@@ -126,13 +128,14 @@ export const formIntegrationRouter = createTRPCRouter({
   // Create a new IP application
   createApplication: protectedProcedure
     .input(
-      z.object({
-        userId: z.string(),
-        title: z.string(),
-        description: z.string().optional(),
-        ipType: z.enum([
-          "patent",
-          "copyright",
+        z.object({
+          userId: z.string(),
+          title: z.string(),
+          description: z.string().optional(),
+          otherIpType: z.string().optional(),
+          ipType: z.enum([
+            "patent",
+            "copyright",
           "trademark",
           "utility_model",
           "industrial_design",
@@ -169,6 +172,8 @@ export const formIntegrationRouter = createTRPCRouter({
         const selectedIpTypes = input.selectedIpTypes
           ? normalizeIpTypes(input.selectedIpTypes)
           : deriveIpTypesFromApplicationIpType(input.ipType).ipTypes;
+        const otherIpType =
+          input.ipType === "other" ? input.otherIpType?.trim() || null : null;
 
         // Insert the new application
         await db.insert(ipApplication).values({
@@ -179,6 +184,7 @@ export const formIntegrationRouter = createTRPCRouter({
           status: "draft",
           progress: 0,
           ipType: getPrimaryApplicationIpType(selectedIpTypes),
+          otherIpType,
           selectedIpTypes,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -207,6 +213,7 @@ export const formIntegrationRouter = createTRPCRouter({
           status: "draft",
           progress: 0,
           ipType: getPrimaryApplicationIpType(selectedIpTypes),
+          otherIpType,
           selectedIpTypes,
           createdAt: new Date().toISOString(),
         };

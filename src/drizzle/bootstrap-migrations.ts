@@ -1,15 +1,12 @@
 import "dotenv/config";
 import crypto from "node:crypto";
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import postgres from "postgres";
 
 type JournalEntry = {
-  idx: number;
   when: number;
   tag: string;
-  breakpoints: boolean;
 };
 
 type MigrationFile = {
@@ -61,41 +58,6 @@ async function main() {
     prepare: false,
   });
 
-  const [{ migration_count }] = await sql<{ migration_count: number }[]>`
-    select case
-      when to_regclass('drizzle.__drizzle_migrations') is null then 0
-      else (
-        select count(*)::int
-        from drizzle.__drizzle_migrations
-      )
-    end as migration_count
-  `;
-
-  if (migration_count > 0) {
-    console.log("Drizzle migration history already exists, skipping bootstrap.");
-    await sql.end({ timeout: 5 });
-    return;
-  }
-
-  const drizzleKitBin = path.join(
-    process.cwd(),
-    "node_modules",
-    ".bin",
-    process.platform === "win32" ? "drizzle-kit.cmd" : "drizzle-kit"
-  );
-
-  const pushResult = spawnSync(drizzleKitBin, ["push", "--force"], {
-    cwd: process.cwd(),
-    stdio: "inherit",
-    env: process.env,
-  });
-
-  if (pushResult.status !== 0) {
-    throw new Error("drizzle-kit push failed");
-  }
-
-  const migrations = readMigrationFiles();
-
   await sql.begin(async (tx) => {
     await tx`CREATE SCHEMA IF NOT EXISTS drizzle`;
     await tx`
@@ -105,18 +67,44 @@ async function main() {
         created_at bigint
       )
     `;
-
-    for (const migration of migrations) {
-      await tx`
-        INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
-        VALUES (${migration.hash}, ${migration.createdAt})
-      `;
-    }
   });
 
-  console.log(
-    `Bootstrapped ${migrations.length} Drizzle migration records into drizzle.__drizzle_migrations.`
-  );
+  const [{ migration_count }] = await sql<{ migration_count: number }[]>`
+    select count(*)::int as migration_count
+    from drizzle.__drizzle_migrations
+  `;
+
+  if (migration_count > 0) {
+    console.log("Drizzle migration history already exists, skipping bootstrap.");
+    await sql.end({ timeout: 5 });
+    return;
+  }
+
+  const [{ has_existing_schema }] = await sql<{ has_existing_schema: boolean }[]>`
+    select to_regclass('public.account') is not null as has_existing_schema
+  `;
+
+  if (has_existing_schema) {
+    const migrations = readMigrationFiles();
+    const appliedMigrations = migrations.slice(0, Math.max(0, migrations.length - 1));
+
+    await sql.begin(async (tx) => {
+      for (const migration of appliedMigrations) {
+        await tx`
+          INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+          VALUES (${migration.hash}, ${migration.createdAt})
+        `;
+      }
+    });
+
+    console.log(
+      `Bootstrapped ${appliedMigrations.length} existing Drizzle migration records into drizzle.__drizzle_migrations.`
+    );
+  } else {
+    console.log(
+      "Created drizzle.__drizzle_migrations bootstrap table for a fresh database."
+    );
+  }
 
   await sql.end({ timeout: 5 });
 }

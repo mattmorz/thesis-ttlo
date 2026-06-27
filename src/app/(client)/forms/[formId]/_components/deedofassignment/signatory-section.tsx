@@ -7,10 +7,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
-import {
-  DriveUploadButton,
-  useDriveUpload,
-} from "@/components/global/drive-upload";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -115,7 +111,6 @@ export function SignatorySection({
   const [creators, setCreators] = useState<Creator[]>([]);
   const [isYearView, setIsYearView] = useState<boolean>(false);
   const [month, setMonth] = useState<Date>(new Date());
-  const [notarizedFiles, setNotarizedFiles] = useState<File[]>([]);
   const startDate = subYears(new Date(), 10);
   const endDate = addYears(new Date(), 10);
 
@@ -129,13 +124,6 @@ export function SignatorySection({
 
   // Get form ID from URL if available
   const formId = searchParams.get("formId") || undefined;
-  const resolvedFormId =
-    formId &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      formId
-    )
-      ? formId
-      : undefined;
 
   // Get store functions
   const { updateSignatoryData, deed: storeDeedData } = useDeedAssignmentStore();
@@ -441,45 +429,15 @@ export function SignatorySection({
     setIsSubmitting(true);
 
     try {
-      if (
-        notarizedFiles.length > 0 &&
-        !form.getValues("notarizedDocumentPath")
-      ) {
-        const isUuid =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-            activeApplicationId
-          );
-        if (!isUuid) {
-          toast.error("Invalid application ID for upload", {
-            description: "Please reselect your application and try again.",
-            duration: 5000,
-          });
-          setIsSubmitting(false);
-          return;
-        }
-
-        const uploadResult = await notarizedUploader.upload(notarizedFiles);
-        if (!uploadResult.success) {
-          console.error(
-            "[SignatorySection] Notarized upload failed:",
-            uploadResult.error,
-            uploadResult.result
-          );
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      const latestValues = form.getValues();
       // Update values with creators and ensure assignorIds is properly formatted
-      let assignorIdsArray = latestValues.assignorIds || [];
+      let assignorIdsArray = values.assignorIds || [];
 
       // If we have a legacy assignorId value but no assignorIds array, use it
       if (
-        latestValues.assignorId &&
+        values.assignorId &&
         (!assignorIdsArray || assignorIdsArray.length === 0)
       ) {
-        assignorIdsArray = latestValues.assignorId
+        assignorIdsArray = values.assignorId
           .split(",")
           .map((id: string) => id.trim());
       }
@@ -495,7 +453,7 @@ export function SignatorySection({
       }
 
       const submitData = {
-        ...latestValues,
+        ...values,
         creators, // Include creators for reference
         assignorIds: assignorIdsArray,
         // For backward compatibility, store as comma-separated string too
@@ -849,10 +807,7 @@ setShowCompleteModal(true);
     }
   }
 
-  const handleDocumentUpload = async (
-    documentPath: string,
-    options?: { showToast?: boolean }
-  ) => {
+  const handleDocumentUpload = async (documentPath: string) => {
     try {
       // Update the form field with the document path
       form.setValue("notarizedDocumentPath", documentPath);
@@ -877,9 +832,7 @@ setShowCompleteModal(true);
         window.dispatchEvent(new CustomEvent("signatory-data-updated"));
       }
 
-      if (options?.showToast !== false) {
-        toast.success("Document uploaded successfully");
-      }
+      toast.success("Document uploaded successfully");
     } catch (error) {
       console.error(
         "[SignatorySection] Error handling document upload:",
@@ -1834,7 +1787,7 @@ setShowCompleteModal(true);
                                     >
                                       <span className="flex items-center gap-2">
                                         <Upload className="h-4 w-4" />
-                                        Choose File
+                                        Upload File
                                       </span>
                                     </Button>
                                   </label>

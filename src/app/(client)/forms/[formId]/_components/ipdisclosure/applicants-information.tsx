@@ -1133,9 +1133,22 @@ export function ApplicantsInformation() {
     }
 
     setIsSubmitting(true); // 🔥 START loading
-    const { ipTypes: resolvedIpTypes, otherIpType } = derivedIpTypesResult;
+    const { ipTypes: resolvedIpTypes } = derivedIpTypesResult;
     const cleanedApplicants = stripBlankPersonRows(form.getValues("applicants"));
     const cleanedInventors = stripBlankPersonRows(form.getValues("inventors"));
+    const enteredOtherIpType = (form.getValues("otherIpType") || "").trim();
+    const otherIpType = resolvedIpTypes.other ? enteredOtherIpType : "";
+
+    if (resolvedIpTypes.other && !otherIpType) {
+      form.setError("otherIpType", {
+        type: "manual",
+        message:
+          'Please specify the type of IP in the "Other" field.',
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     form.setValue(
       "applicants",
       cleanedApplicants as ApplicantsInfoFormType["applicants"],
@@ -1156,6 +1169,7 @@ export function ApplicantsInformation() {
       email: form.getValues("email"),
       isRightfulOwner: form.getValues("isRightfulOwner"),
       ipTypes: resolvedIpTypes,
+      enteredOtherIpType,
       otherIpType,
     });
 

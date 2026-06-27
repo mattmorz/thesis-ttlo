@@ -174,7 +174,9 @@ export const formIntegrationRouter = router({
           ? normalizeIpTypes(input.selectedIpTypes)
           : deriveIpTypesFromApplicationIpType(input.ipType).ipTypes;
         const otherIpType =
-          input.ipType === "other" ? input.otherIpType?.trim() || null : null;
+          input.ipType === "other" || selectedIpTypes.other
+            ? input.otherIpType?.trim() || null
+            : null;
 
         // Create the application directly with the database
         const newAppId = uuid();

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/drizzle/db";
-import { ipDisclosure, ipApplication } from "@/drizzle/migrations/schema";
+import {
+  ipDisclosure,
+  ipApplication,
+  formSubmissionRegistry,
+} from "@/drizzle/migrations/schema";
 import { and, eq, isNull, or } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -26,21 +30,30 @@ export async function GET(request: Request) {
       });
     }
 
-    // Build conditions for the query based on available parameters
-    let conditions = [];
+    let disclosures = [];
 
     if (disclosureId) {
-      conditions.push(eq(ipDisclosure.disclosureId, disclosureId));
+      disclosures = await db
+        .select()
+        .from(ipDisclosure)
+        .where(eq(ipDisclosure.disclosureId, disclosureId))
+        .limit(1);
     } else if (applicationId) {
-      conditions.push(eq(ipDisclosure.applicationId, applicationId));
-    }
+      const registryEntry = await db.query.formSubmissionRegistry.findFirst({
+        where: and(
+          eq(formSubmissionRegistry.ipApplicationId, applicationId),
+          eq(formSubmissionRegistry.sourceType, "ip_disclosure")
+        ),
+      });
 
-    // Execute the query to get the disclosure
-    const disclosures = await db
-      .select()
-      .from(ipDisclosure)
-      .where(and(...conditions))
-      .limit(1);
+      if (registryEntry?.sourceId) {
+        disclosures = await db
+          .select()
+          .from(ipDisclosure)
+          .where(eq(ipDisclosure.disclosureId, registryEntry.sourceId))
+          .limit(1);
+      }
+    }
 
     if (disclosures.length === 0) {
       // If no disclosure is found, check if we need to create one for the application

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { appRouter } from "@/trpc/router";
 import { db } from "@/drizzle/db";
-import { ipDisclosure } from "@/drizzle/migrations/schema";
+import { ipDisclosure, formSubmissionRegistry } from "@/drizzle/migrations/schema";
 import { and, eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -27,13 +27,27 @@ export async function GET(request: NextRequest) {
         `Fetching IP disclosure for application ID: ${applicationId}`
       );
 
-      // Direct database query for disclosure with this application ID
+      const registryEntry = await db.query.formSubmissionRegistry.findFirst({
+        where: and(
+          eq(formSubmissionRegistry.ipApplicationId, applicationId),
+          eq(formSubmissionRegistry.sourceType, "ip_disclosure")
+        ),
+      });
+
+      if (!registryEntry?.sourceId) {
+        console.log(`No disclosure found for application ID: ${applicationId}`);
+        return NextResponse.json(
+          { error: "Disclosure not found" },
+          { status: 404 }
+        );
+      }
+
       const disclosures = await db
         .select()
         .from(ipDisclosure)
         .where(
           and(
-            eq(ipDisclosure.applicationId, applicationId),
+            eq(ipDisclosure.disclosureId, registryEntry.sourceId),
             eq(ipDisclosure.clientId, userId)
           )
         )
@@ -53,10 +67,9 @@ export async function GET(request: NextRequest) {
         `Found disclosure for application ID: ${applicationId}, disclosure ID: ${disclosure.disclosureId}`
       );
 
-      // Return just the disclosure details
       return NextResponse.json({
         disclosureId: disclosure.disclosureId,
-        applicationId: disclosure.applicationId,
+        applicationId,
       });
     }
 

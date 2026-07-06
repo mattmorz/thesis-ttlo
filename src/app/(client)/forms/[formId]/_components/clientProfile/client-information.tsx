@@ -1005,6 +1005,7 @@ export function ClientInformation({
             contactNumber: formattedValues.contactNumber,
             email: formattedValues.email,
             occupation: formattedValues.occupation,
+            affiliationType: formattedValues.affiliationType,
             hasCompany: true,
             // Company fields
             companyName: formattedValues.companyName || "",
@@ -1032,6 +1033,7 @@ export function ClientInformation({
             contactNumber: formattedValues.contactNumber,
             email: formattedValues.email,
             occupation: formattedValues.occupation,
+            affiliationType: formattedValues.affiliationType,
             hasCompany: false,
             // Explicitly set company fields to empty strings
             companyName: "",
@@ -1043,9 +1045,14 @@ export function ClientInformation({
             institutionName: formattedValues.isCSUAffiliated
               ? "Caraga State University"
               : formattedValues.institutionName || "",
+            isAffiliated:
+              formattedValues.affiliationType === "academic"
+                ? Boolean(formattedValues.isCSUAffiliated)
+                : false,
             isCSUAffiliated: formattedValues.isCSUAffiliated ?? null,
             // College fields
             collegeName: formattedValues.collegeName || "",
+            department: formattedValues.departmentName || "",
             departmentName: formattedValues.departmentName || "",
           };
 
@@ -1353,43 +1360,50 @@ export function ClientInformation({
           const expectedHasCompany = ensureBool(
             apiData.personalInfo.hasCompany,
           );
-          const actualHasCompany = responseData.hasCompany;
+          const responseHasCompany =
+            typeof responseData.hasCompany === "boolean"
+              ? responseData.hasCompany
+              : typeof responseData.isAffiliated === "boolean"
+                ? !responseData.isAffiliated
+                : undefined;
 
-          // Check if hasCompany in response matches what we sent
-          if (expectedHasCompany !== actualHasCompany) {
-            console.error(
+          if (
+            typeof responseHasCompany === "boolean" &&
+            expectedHasCompany !== responseHasCompany
+          ) {
+            console.warn(
               "[ClientInformation] Server response hasCompany mismatch:",
               {
                 expected: expectedHasCompany,
-                actual: actualHasCompany,
+                actual: responseHasCompany,
               },
             );
+          }
 
-            // If we're sending academic institution data (hasCompany=false) but it's not saved
-            if (
-              expectedHasCompany === false &&
-              (!responseData.collegeName || !responseData.departmentName)
-            ) {
-              console.error(
-                "[ClientInformation] College data not saved correctly:",
-                {
-                  expected: {
-                    collegeName: apiData.personalInfo.collegeName,
-                    departmentName: apiData.personalInfo.departmentName,
-                  },
-                  actual: {
-                    collegeName: responseData.collegeName,
-                    departmentName: responseData.departmentName,
-                  },
+          if (
+            expectedHasCompany === false &&
+            responseData.clientId &&
+            !(
+              responseData.isAffiliated !== undefined ||
+              responseData.institutionName ||
+              responseData.department ||
+              responseData.departmentName ||
+              responseData.collegeName
+            )
+          ) {
+            console.warn(
+              "[ClientInformation] Academic affiliation fields were not returned by the server.",
+              {
+                expected: {
+                  collegeName: apiData.personalInfo.collegeName,
+                  departmentName: apiData.personalInfo.departmentName,
                 },
-              );
-
-              // Show error about college data not saving
-              toast.error("College data not saved correctly", {
-                description:
-                  "Your academic institution information was not saved correctly. Please try again.",
-              });
-            }
+                actual: {
+                  collegeName: responseData.collegeName,
+                  departmentName: responseData.departmentName,
+                },
+              },
+            );
           }
 
           // Get the clientId and registryId from the response
@@ -1816,6 +1830,7 @@ export function ClientInformation({
             contactNumber: personalInfo.contactNumber,
             email: personalInfo.email,
             occupation: personalInfo.occupation,
+            affiliationType: personalInfo.affiliationType,
             hasCompany: true,
             // Company fields
             companyName: personalInfo.companyName || "",
@@ -1842,6 +1857,7 @@ export function ClientInformation({
             contactNumber: personalInfo.contactNumber,
             email: personalInfo.email,
             occupation: personalInfo.occupation,
+            affiliationType: personalInfo.affiliationType,
             hasCompany: false,
             // Explicitly set company fields to empty strings
             companyName: "",
@@ -1853,9 +1869,14 @@ export function ClientInformation({
             institutionName: personalInfo.isCSUAffiliated
               ? "Caraga State University"
               : personalInfo.institutionName || "",
+            isAffiliated:
+              personalInfo.affiliationType === "academic"
+                ? Boolean(personalInfo.isCSUAffiliated)
+                : false,
             isCSUAffiliated: personalInfo.isCSUAffiliated ?? null,
             // College fields
             collegeName: personalInfo.collegeName || "",
+            department: personalInfo.departmentName || "",
             departmentName: personalInfo.departmentName || "",
           };
 
@@ -1962,47 +1983,54 @@ export function ClientInformation({
 
       // Try to parse the response and check if it contains the expected data
       try {
-        const responseData = result && result.data;
+        const responseData = result?.data ?? result ?? {};
 
         // Use the current value of hasCompany from the form
         const expectedHasCompany = ensureBoolean(personalInfo.hasCompany);
-        const actualHasCompany = responseData.hasCompany;
+        const actualHasCompany =
+          typeof responseData.hasCompany === "boolean"
+            ? responseData.hasCompany
+            : typeof responseData.isAffiliated === "boolean"
+              ? !responseData.isAffiliated
+              : undefined;
 
-        // Check if hasCompany in response matches what we sent
-        if (expectedHasCompany !== actualHasCompany) {
-          console.error(
+        if (
+          typeof actualHasCompany === "boolean" &&
+          expectedHasCompany !== actualHasCompany
+        ) {
+          console.warn(
             "[ClientInformation] Server response hasCompany mismatch:",
             {
               expected: expectedHasCompany,
               actual: actualHasCompany,
             },
           );
+        }
 
-          // If we're sending academic institution data (hasCompany=false) but it's not saved
-          if (
-            expectedHasCompany === false &&
-            (!responseData.collegeName || !responseData.departmentName)
-          ) {
-            console.error(
-              "[ClientInformation] College data not saved correctly:",
-              {
-                expected: {
-                  collegeName: apiData.personalInfo.collegeName,
-                  departmentName: apiData.personalInfo.departmentName,
-                },
-                actual: {
-                  collegeName: responseData.collegeName,
-                  departmentName: responseData.departmentName,
-                },
+        if (
+          expectedHasCompany === false &&
+          responseData.clientId &&
+          !(
+            responseData.isAffiliated !== undefined ||
+            responseData.institutionName ||
+            responseData.department ||
+            responseData.departmentName ||
+            responseData.collegeName
+          )
+        ) {
+          console.warn(
+            "[ClientInformation] Academic affiliation fields were not returned by the server.",
+            {
+              expected: {
+                collegeName: apiData.personalInfo.collegeName,
+                departmentName: apiData.personalInfo.departmentName,
               },
-            );
-
-            // Show error about college data not saving
-            toast.error("College data not saved correctly", {
-              description:
-                "Your academic institution information was not saved correctly. Please try again.",
-            });
-          }
+              actual: {
+                collegeName: responseData.collegeName,
+                departmentName: responseData.departmentName,
+              },
+            },
+          );
         }
 
         // Update the client profile form status

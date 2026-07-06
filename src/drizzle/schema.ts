@@ -254,37 +254,134 @@ export const calendarEvent = pgTable(
   ]
 );
 
+// export const clientProfile = pgTable(
+//   "client_profile",
+//   {
+//     clientId: uuid("client_id").defaultRandom().primaryKey().notNull(),
+//     userId: uuid("user_id"),
+//     firstName: varchar("first_name", { length: 100 }).notNull(),
+//     middleName: varchar("middle_name", { length: 100 }),
+//     lastName: varchar("last_name", { length: 100 }).notNull(),
+//     contactNumber: varchar("contact_number", { length: 20 }),
+//     email: varchar({ length: 255 }).notNull(),
+//     mailingAddress: text("mailing_address"),
+//     companyName: varchar("company_name", { length: 255 }),
+//     companyEmail: varchar("company_email", { length: 255 }),
+//     occupation: varchar({ length: 255 }),
+//     createdAt: timestamp("created_at", { mode: "string" }).default(
+//       sql`CURRENT_TIMESTAMP`
+//     ),
+//     updatedAt: timestamp("updated_at", { mode: "string" }).default(
+//       sql`CURRENT_TIMESTAMP`
+//     ),
+//     age: integer(),
+//     companyStreet: text("company_street"),
+//     companyBarangay: text("company_barangay"),
+//     companyCityMunicipality: text("company_city_municipality"),
+//     companyProvince: text("company_province"),
+//     degree: varchar({ length: 255 }),
+//     profession: varchar({ length: 255 }),
+//     publishedResearch: jsonb("published_research").default({ value: "no" }),
+//     developedMaterials: jsonb("developed_materials").default({ value: "no" }),
+//     ipExperience: jsonb("ip_experience"),
+//     status: varchar({ length: 20 }).default("draft"),
+//     gender: jsonb(),
+//     citizenship: jsonb(),
+//     highestDegree: jsonb("highest_degree"),
+//     familiarWithIpRights: jsonb("familiar_with_ip_rights"),
+//   },
+//   (table) => [
+//     index("idx_client_profile_email").using(
+//       "btree",
+//       table.email.asc().nullsLast().op("text_ops")
+//     ),
+//     index("idx_client_profile_user").using(
+//       "btree",
+//       table.userId.asc().nullsLast().op("uuid_ops")
+//     ),
+//     foreignKey({
+//       columns: [table.userId],
+//       foreignColumns: [userAccount.id],
+//       name: "client_profile_user_id_fkey",
+//     }).onDelete("cascade"),
+//     check(
+//       "check_citizenship_jsonb",
+//       sql`(citizenship ->> 'value'::text) = ANY (ARRAY['filipino'::text, 'other'::text])`
+//     ),
+//     check(
+//       "check_gender_jsonb",
+//       sql`(gender ->> 'value'::text) = ANY (ARRAY['male'::text, 'female'::text, 'prefer_not_to_say'::text])`
+//     ),
+//     check(
+//       "check_highest_degree_jsonb",
+//       sql`(highest_degree ->> 'value'::text) = ANY (ARRAY['bachelor'::text, 'master'::text, 'doctorate'::text, 'other'::text])`
+//     ),
+//     check("client_profile_age_check", sql`age > 0`),
+//   ]
+// );
+
+
+
 export const clientProfile = pgTable(
   "client_profile",
   {
     clientId: uuid("client_id").defaultRandom().primaryKey().notNull(),
     userId: uuid("user_id"),
+
     firstName: varchar("first_name", { length: 100 }).notNull(),
     middleName: varchar("middle_name", { length: 100 }),
     lastName: varchar("last_name", { length: 100 }).notNull(),
+
     contactNumber: varchar("contact_number", { length: 20 }),
     email: varchar({ length: 255 }).notNull(),
     mailingAddress: text("mailing_address"),
+
     companyName: varchar("company_name", { length: 255 }),
     companyEmail: varchar("company_email", { length: 255 }),
     occupation: varchar({ length: 255 }),
+
     createdAt: timestamp("created_at", { mode: "string" }).default(
       sql`CURRENT_TIMESTAMP`
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
       sql`CURRENT_TIMESTAMP`
     ),
+
     age: integer(),
+
     companyStreet: text("company_street"),
     companyBarangay: text("company_barangay"),
     companyCityMunicipality: text("company_city_municipality"),
     companyProvince: text("company_province"),
+
     degree: varchar({ length: 255 }),
     profession: varchar({ length: 255 }),
-    publishedResearch: jsonb("published_research").default({ value: "no" }),
-    developedMaterials: jsonb("developed_materials").default({ value: "no" }),
+
+    // NEW FIELDS
+    isAffiliated: boolean("is_affiliated")
+      .default(false)
+      .notNull(),
+
+    institutionName: varchar("institution_name", {
+      length: 255,
+    }),
+
+    department: varchar("department", {
+      length: 255,
+    }),
+
+    publishedResearch: jsonb("published_research").default({
+      value: "no",
+    }),
+
+    developedMaterials: jsonb("developed_materials").default({
+      value: "no",
+    }),
+
     ipExperience: jsonb("ip_experience"),
+
     status: varchar({ length: 20 }).default("draft"),
+
     gender: jsonb(),
     citizenship: jsonb(),
     highestDegree: jsonb("highest_degree"),
@@ -295,28 +392,76 @@ export const clientProfile = pgTable(
       "btree",
       table.email.asc().nullsLast().op("text_ops")
     ),
+
     index("idx_client_profile_user").using(
       "btree",
       table.userId.asc().nullsLast().op("uuid_ops")
     ),
+
     foreignKey({
       columns: [table.userId],
       foreignColumns: [userAccount.id],
       name: "client_profile_user_id_fkey",
     }).onDelete("cascade"),
+
     check(
       "check_citizenship_jsonb",
-      sql`(citizenship ->> 'value'::text) = ANY (ARRAY['filipino'::text, 'other'::text])`
+      sql`
+        (citizenship ->> 'value'::text)
+        = ANY (
+          ARRAY[
+            'filipino'::text,
+            'other'::text
+          ]
+        )
+      `
     ),
+
     check(
       "check_gender_jsonb",
-      sql`(gender ->> 'value'::text) = ANY (ARRAY['male'::text, 'female'::text, 'prefer_not_to_say'::text])`
+      sql`
+        (gender ->> 'value'::text)
+        = ANY (
+          ARRAY[
+            'male'::text,
+            'female'::text,
+            'prefer_not_to_say'::text
+          ]
+        )
+      `
     ),
+
     check(
       "check_highest_degree_jsonb",
-      sql`(highest_degree ->> 'value'::text) = ANY (ARRAY['bachelor'::text, 'master'::text, 'doctorate'::text, 'other'::text])`
+      sql`
+        (highest_degree ->> 'value'::text)
+        = ANY (
+          ARRAY[
+            'bachelor'::text,
+            'master'::text,
+            'doctorate'::text,
+            'other'::text
+          ]
+        )
+      `
     ),
-    check("client_profile_age_check", sql`age > 0`),
+
+    check(
+      "client_profile_age_check",
+      sql`age > 0`
+    ),
+
+    // If affiliated, institution and department are required
+    check(
+      "check_affiliation_fields",
+      sql`
+        is_affiliated = false
+        OR (
+          institution_name IS NOT NULL
+          AND department IS NOT NULL
+        )
+      `
+    ),
   ]
 );
 

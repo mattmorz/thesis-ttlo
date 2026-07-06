@@ -23,6 +23,9 @@ const CLIENT_PROFILE_FIELDS = {
   companyName: liveClientProfile.companyName,
   companyEmail: liveClientProfile.companyEmail,
   occupation: liveClientProfile.occupation,
+  isAffiliated: liveClientProfile.isAffiliated,
+  institutionName: liveClientProfile.institutionName,
+  department: liveClientProfile.department,
   createdAt: liveClientProfile.createdAt,
   updatedAt: liveClientProfile.updatedAt,
   age: liveClientProfile.age,
@@ -260,6 +263,27 @@ export async function POST(req: Request) {
         personalInfo?.companyEmail?.trim() || null,
 
       occupation: personalInfo?.occupation?.trim() || null,
+
+      // Affiliation fields
+      isAffiliated:
+        typeof personalInfo?.isAffiliated === "boolean"
+          ? personalInfo.isAffiliated
+          : Boolean(
+              personalInfo?.affiliationType === "academic" ||
+                personalInfo?.isCSUAffiliated === true ||
+                personalInfo?.isCSUAffiliated === false ||
+                personalInfo?.institutionName?.trim() ||
+                personalInfo?.departmentName?.trim() ||
+                personalInfo?.department?.trim()
+            ),
+      institutionName:
+        personalInfo?.institutionName?.trim() ||
+        personalInfo?.institution?.trim() ||
+        null,
+      department:
+        personalInfo?.department?.trim() ||
+        personalInfo?.departmentName?.trim() ||
+        null,
 
       // Educational Background
       highestDegree: educationalBackground?.highestDegree || {
@@ -594,8 +618,26 @@ export async function POST(req: Request) {
     }
 
     // Transform the result to camelCase to match frontend expectations
+    const compatibilityProfile = {
+      hasCompany: normalizeHasCompany({
+        ...savedProfile,
+        collegeName: savedProfile?.institutionName?.trim() || null,
+        departmentName: savedProfile?.department?.trim() || null,
+      }),
+      collegeName: savedProfile?.institutionName?.trim() || null,
+      departmentName: savedProfile?.department?.trim() || null,
+      isAffiliated:
+        typeof savedProfile?.isAffiliated === "boolean"
+          ? savedProfile.isAffiliated
+          : Boolean(
+              savedProfile?.institutionName?.trim() ||
+                savedProfile?.department?.trim()
+            ),
+    };
+
     const camelCaseResult = {
       ...savedProfile,
+      ...compatibilityProfile,
       // Add registry information to the response
       registryId: registryId || null,
     };
@@ -976,6 +1018,25 @@ export async function PUT(req: Request) {
       formattedData.companyEmail = personalInfo.companyEmail?.trim() || null;
 
       formattedData.occupation = personalInfo.occupation?.trim() || null;
+      formattedData.isAffiliated =
+        typeof personalInfo.isAffiliated === "boolean"
+          ? personalInfo.isAffiliated
+          : Boolean(
+              personalInfo.affiliationType === "academic" ||
+                personalInfo.isCSUAffiliated === true ||
+                personalInfo.isCSUAffiliated === false ||
+                personalInfo.institutionName?.trim() ||
+                personalInfo.departmentName?.trim() ||
+                personalInfo.department?.trim()
+            );
+      formattedData.institutionName =
+        personalInfo.institutionName?.trim() ||
+        personalInfo.institution?.trim() ||
+        null;
+      formattedData.department =
+        personalInfo.department?.trim() ||
+        personalInfo.departmentName?.trim() ||
+        null;
     }
 
     if (educationalBackground) {

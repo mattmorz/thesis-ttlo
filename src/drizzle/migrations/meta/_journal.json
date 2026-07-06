@@ -288,6 +288,13 @@
       "when": 1782570869021,
       "tag": "0040_add_other_ip_type_to_ip_application",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1783255614439,
+      "tag": "0041_sweet_katie_power",
+      "breakpoints": true
     }
   ]
 }

@@ -77,7 +77,7 @@ export const getVisibleIpDisclosureTabs = (
   }
 
   if (normalized.patent || normalized.utilityModel) {
-    tabs.push("patent-application", "matrix-sample", "patent-search");
+    tabs.push("patent-application", "matrix-sample");
   }
 
   if (normalized.trademark) {

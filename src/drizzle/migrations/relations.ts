@@ -1,5 +1,48 @@
 import { relations } from "drizzle-orm/relations";
-import { ipApplication, activityLog, applicationPhase, userAccount, archives, authenticator, clientProfile, calendarEvent, comment, contactMessage, account, copyrightBasicApplication, ipDisclosure, deedOfAssignment, digitalSignature, documents, documentsValidation, externalCollaboration, formSubmissionRegistry, disclosureConfirmation, documentManagement, formDataMapping, ipContributors, ipDetails, ipDisclosureApplicant, internalValidation, ipApplicationNotification, ipDisclosureAttachment, otherDocuments, patentMatrixSample, patentUtilityModelApplication, ipDisclosureReview, notification, patentSearchReport, phaseReview, phaseReviewAttachment, phaseTask, session, substantialUse, tradeSecretApplication, trademarkApplication, phaseReminder, ipDisclosureInventor, internalValidationAssignee, phaseTaskAssignee, ipApplicationEnrollment, eventParticipant } from "./schema";
+import { userAccount, clientProfile, ipApplication, activityLog, applicationPhase, ipDisclosure, patentSearchReport, patentUtilityModelApplication, copyrightBasicApplication, disclosureConfirmation, ipDisclosureApplicant, ipDisclosureAttachment, ipDisclosureInventor, ipDisclosureReview, patentMatrixSample, tradeSecretApplication, trademarkApplication, session, digitalSignature, calendarEvent, documentManagement, externalCollaboration, internalValidation, phaseReminder, phaseReview, phaseTask, phaseReviewAttachment, taskAssignment, archives, ipDetails, authenticator, comment, contactMessage, account, deedOfAssignment, documents, documentsValidation, ipApplicationNotification, formSubmissionRegistry, formDataMapping, ipContributors, otherDocuments, substantialUse, trackingCode, trackingOtp, notification, eventParticipant } from "./schema";
+
+export const clientProfileRelations = relations(clientProfile, ({one}) => ({
+	userAccount: one(userAccount, {
+		fields: [clientProfile.userId],
+		references: [userAccount.id]
+	}),
+}));
+
+export const userAccountRelations = relations(userAccount, ({many}) => ({
+	clientProfiles: many(clientProfile),
+	activityLogs: many(activityLog),
+	ipDisclosures: many(ipDisclosure),
+	ipDisclosureReviews: many(ipDisclosureReview),
+	sessions: many(session),
+	digitalSignatures: many(digitalSignature),
+	calendarEvents: many(calendarEvent),
+	documentManagements_uploadedBy: many(documentManagement, {
+		relationName: "documentManagement_uploadedBy_userAccount_id"
+	}),
+	documentManagements_verifiedBy: many(documentManagement, {
+		relationName: "documentManagement_verifiedBy_userAccount_id"
+	}),
+	internalValidations: many(internalValidation),
+	phaseReviews: many(phaseReview),
+	phaseTasks: many(phaseTask),
+	taskAssignments: many(taskAssignment),
+	archives: many(archives),
+	authenticators: many(authenticator),
+	comments: many(comment),
+	contactMessages: many(contactMessage),
+	accounts: many(account),
+	deedOfAssignments: many(deedOfAssignment),
+	documents: many(documents),
+	documentsValidations: many(documentsValidation),
+	ipApplicationNotifications: many(ipApplicationNotification),
+	formSubmissionRegistries: many(formSubmissionRegistry),
+	ipApplications: many(ipApplication),
+	otherDocuments: many(otherDocuments),
+	substantialUses: many(substantialUse),
+	trackingCodes: many(trackingCode),
+	notifications: many(notification),
+	eventParticipants: many(eventParticipant),
+}));
 
 export const activityLogRelations = relations(activityLog, ({one}) => ({
 	ipApplication: one(ipApplication, {
@@ -19,24 +62,22 @@ export const activityLogRelations = relations(activityLog, ({one}) => ({
 export const ipApplicationRelations = relations(ipApplication, ({one, many}) => ({
 	activityLogs: many(activityLog),
 	applicationPhases: many(applicationPhase),
-	archives: many(archives),
-	clientProfiles: many(clientProfile),
 	calendarEvents: many(calendarEvent),
+	documentManagements: many(documentManagement),
+	archives: many(archives),
+	ipDetails: many(ipDetails),
 	deedOfAssignments: many(deedOfAssignment),
 	documents: many(documents),
+	ipApplicationNotifications: many(ipApplicationNotification),
 	formSubmissionRegistries: many(formSubmissionRegistry),
-	documentManagements: many(documentManagement),
-	ipContributors: many(ipContributors),
-	ipDetails: many(ipDetails),
-	ipDisclosures: many(ipDisclosure),
 	userAccount: one(userAccount, {
 		fields: [ipApplication.userId],
 		references: [userAccount.id]
 	}),
-	ipApplicationNotifications: many(ipApplicationNotification),
+	ipContributors: many(ipContributors),
 	otherDocuments: many(otherDocuments),
 	substantialUses: many(substantialUse),
-	ipApplicationEnrollments: many(ipApplicationEnrollment),
+	trackingCodes: many(trackingCode),
 }));
 
 export const applicationPhaseRelations = relations(applicationPhase, ({one, many}) => ({
@@ -45,47 +86,240 @@ export const applicationPhaseRelations = relations(applicationPhase, ({one, many
 		fields: [applicationPhase.applicationId],
 		references: [ipApplication.id]
 	}),
-	externalCollaborations: many(externalCollaboration),
+	calendarEvents: many(calendarEvent),
 	documentManagements: many(documentManagement),
+	externalCollaborations: many(externalCollaboration),
 	internalValidations: many(internalValidation),
+	phaseReminders: many(phaseReminder),
 	phaseReviews: many(phaseReview),
 	phaseTasks: many(phaseTask),
-	phaseReminders: many(phaseReminder),
 }));
 
-export const userAccountRelations = relations(userAccount, ({many}) => ({
-	activityLogs: many(activityLog),
-	archives: many(archives),
-	authenticators: many(authenticator),
-	clientProfiles: many(clientProfile),
-	calendarEvents: many(calendarEvent),
-	comments: many(comment),
-	contactMessages: many(contactMessage),
-	accounts: many(account),
-	deedOfAssignments: many(deedOfAssignment),
-	digitalSignatures: many(digitalSignature),
-	documents: many(documents),
-	documentsValidations: many(documentsValidation),
-	formSubmissionRegistries: many(formSubmissionRegistry),
-	documentManagements_uploadedBy: many(documentManagement, {
+export const patentSearchReportRelations = relations(patentSearchReport, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [patentSearchReport.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+	patentUtilityModelApplication: one(patentUtilityModelApplication, {
+		fields: [patentSearchReport.patentId],
+		references: [patentUtilityModelApplication.patentId]
+	}),
+}));
+
+export const ipDisclosureRelations = relations(ipDisclosure, ({one, many}) => ({
+	patentSearchReports: many(patentSearchReport),
+	userAccount: one(userAccount, {
+		fields: [ipDisclosure.clientId],
+		references: [userAccount.id]
+	}),
+	copyrightBasicApplications: many(copyrightBasicApplication),
+	disclosureConfirmations: many(disclosureConfirmation),
+	ipDisclosureApplicants: many(ipDisclosureApplicant),
+	ipDisclosureAttachments: many(ipDisclosureAttachment),
+	ipDisclosureInventors: many(ipDisclosureInventor),
+	ipDisclosureReviews: many(ipDisclosureReview),
+	patentMatrixSamples: many(patentMatrixSample),
+	patentUtilityModelApplications: many(patentUtilityModelApplication),
+	tradeSecretApplications: many(tradeSecretApplication),
+	trademarkApplications: many(trademarkApplication),
+}));
+
+export const patentUtilityModelApplicationRelations = relations(patentUtilityModelApplication, ({one, many}) => ({
+	patentSearchReports: many(patentSearchReport),
+	patentMatrixSamples: many(patentMatrixSample),
+	ipDisclosure: one(ipDisclosure, {
+		fields: [patentUtilityModelApplication.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+}));
+
+export const copyrightBasicApplicationRelations = relations(copyrightBasicApplication, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [copyrightBasicApplication.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+}));
+
+export const disclosureConfirmationRelations = relations(disclosureConfirmation, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [disclosureConfirmation.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+}));
+
+export const ipDisclosureApplicantRelations = relations(ipDisclosureApplicant, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [ipDisclosureApplicant.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+}));
+
+export const ipDisclosureAttachmentRelations = relations(ipDisclosureAttachment, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [ipDisclosureAttachment.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+}));
+
+export const ipDisclosureInventorRelations = relations(ipDisclosureInventor, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [ipDisclosureInventor.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+}));
+
+export const ipDisclosureReviewRelations = relations(ipDisclosureReview, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [ipDisclosureReview.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+	userAccount: one(userAccount, {
+		fields: [ipDisclosureReview.reviewerId],
+		references: [userAccount.id]
+	}),
+}));
+
+export const patentMatrixSampleRelations = relations(patentMatrixSample, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [patentMatrixSample.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+	patentUtilityModelApplication: one(patentUtilityModelApplication, {
+		fields: [patentMatrixSample.patentId],
+		references: [patentUtilityModelApplication.patentId]
+	}),
+}));
+
+export const tradeSecretApplicationRelations = relations(tradeSecretApplication, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [tradeSecretApplication.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+}));
+
+export const trademarkApplicationRelations = relations(trademarkApplication, ({one}) => ({
+	ipDisclosure: one(ipDisclosure, {
+		fields: [trademarkApplication.disclosureId],
+		references: [ipDisclosure.disclosureId]
+	}),
+}));
+
+export const sessionRelations = relations(session, ({one}) => ({
+	userAccount: one(userAccount, {
+		fields: [session.userId],
+		references: [userAccount.id]
+	}),
+}));
+
+export const digitalSignatureRelations = relations(digitalSignature, ({one}) => ({
+	userAccount: one(userAccount, {
+		fields: [digitalSignature.signerId],
+		references: [userAccount.id]
+	}),
+}));
+
+export const calendarEventRelations = relations(calendarEvent, ({one, many}) => ({
+	ipApplication: one(ipApplication, {
+		fields: [calendarEvent.applicationId],
+		references: [ipApplication.id]
+	}),
+	userAccount: one(userAccount, {
+		fields: [calendarEvent.createdBy],
+		references: [userAccount.id]
+	}),
+	applicationPhase: one(applicationPhase, {
+		fields: [calendarEvent.phaseId],
+		references: [applicationPhase.phaseId]
+	}),
+	eventParticipants: many(eventParticipant),
+}));
+
+export const documentManagementRelations = relations(documentManagement, ({one}) => ({
+	ipApplication: one(ipApplication, {
+		fields: [documentManagement.applicationId],
+		references: [ipApplication.id]
+	}),
+	applicationPhase: one(applicationPhase, {
+		fields: [documentManagement.phaseId],
+		references: [applicationPhase.phaseId]
+	}),
+	userAccount_uploadedBy: one(userAccount, {
+		fields: [documentManagement.uploadedBy],
+		references: [userAccount.id],
 		relationName: "documentManagement_uploadedBy_userAccount_id"
 	}),
-	documentManagements_verifiedBy: many(documentManagement, {
+	userAccount_verifiedBy: one(userAccount, {
+		fields: [documentManagement.verifiedBy],
+		references: [userAccount.id],
 		relationName: "documentManagement_verifiedBy_userAccount_id"
 	}),
-	ipDisclosures: many(ipDisclosure),
-	ipApplications: many(ipApplication),
-	ipApplicationNotifications: many(ipApplicationNotification),
-	otherDocuments: many(otherDocuments),
-	ipDisclosureReviews: many(ipDisclosureReview),
-	notifications: many(notification),
-	phaseReviews: many(phaseReview),
-	sessions: many(session),
-	substantialUses: many(substantialUse),
-	internalValidationAssignees: many(internalValidationAssignee),
-	phaseTaskAssignees: many(phaseTaskAssignee),
-	ipApplicationEnrollments: many(ipApplicationEnrollment),
-	eventParticipants: many(eventParticipant),
+}));
+
+export const externalCollaborationRelations = relations(externalCollaboration, ({one}) => ({
+	applicationPhase: one(applicationPhase, {
+		fields: [externalCollaboration.phaseId],
+		references: [applicationPhase.phaseId]
+	}),
+}));
+
+export const internalValidationRelations = relations(internalValidation, ({one}) => ({
+	userAccount: one(userAccount, {
+		fields: [internalValidation.assignedTo],
+		references: [userAccount.id]
+	}),
+	applicationPhase: one(applicationPhase, {
+		fields: [internalValidation.phaseId],
+		references: [applicationPhase.phaseId]
+	}),
+}));
+
+export const phaseReminderRelations = relations(phaseReminder, ({one}) => ({
+	applicationPhase: one(applicationPhase, {
+		fields: [phaseReminder.phaseId],
+		references: [applicationPhase.phaseId]
+	}),
+}));
+
+export const phaseReviewRelations = relations(phaseReview, ({one, many}) => ({
+	applicationPhase: one(applicationPhase, {
+		fields: [phaseReview.phaseId],
+		references: [applicationPhase.phaseId]
+	}),
+	userAccount: one(userAccount, {
+		fields: [phaseReview.reviewerId],
+		references: [userAccount.id]
+	}),
+	phaseReviewAttachments: many(phaseReviewAttachment),
+}));
+
+export const phaseTaskRelations = relations(phaseTask, ({one, many}) => ({
+	userAccount: one(userAccount, {
+		fields: [phaseTask.assigneeId],
+		references: [userAccount.id]
+	}),
+	applicationPhase: one(applicationPhase, {
+		fields: [phaseTask.phaseId],
+		references: [applicationPhase.phaseId]
+	}),
+	taskAssignments: many(taskAssignment),
+}));
+
+export const phaseReviewAttachmentRelations = relations(phaseReviewAttachment, ({one}) => ({
+	phaseReview: one(phaseReview, {
+		fields: [phaseReviewAttachment.reviewId],
+		references: [phaseReview.reviewId]
+	}),
+}));
+
+export const taskAssignmentRelations = relations(taskAssignment, ({one}) => ({
+	phaseTask: one(phaseTask, {
+		fields: [taskAssignment.taskId],
+		references: [phaseTask.taskId]
+	}),
+	userAccount: one(userAccount, {
+		fields: [taskAssignment.userId],
+		references: [userAccount.id]
+	}),
 }));
 
 export const archivesRelations = relations(archives, ({one}) => ({
@@ -99,34 +333,18 @@ export const archivesRelations = relations(archives, ({one}) => ({
 	}),
 }));
 
+export const ipDetailsRelations = relations(ipDetails, ({one}) => ({
+	ipApplication: one(ipApplication, {
+		fields: [ipDetails.applicationId],
+		references: [ipApplication.id]
+	}),
+}));
+
 export const authenticatorRelations = relations(authenticator, ({one}) => ({
 	userAccount: one(userAccount, {
 		fields: [authenticator.userId],
 		references: [userAccount.id]
 	}),
-}));
-
-export const clientProfileRelations = relations(clientProfile, ({one}) => ({
-	ipApplication: one(ipApplication, {
-		fields: [clientProfile.ipApplicationId],
-		references: [ipApplication.id]
-	}),
-	userAccount: one(userAccount, {
-		fields: [clientProfile.userId],
-		references: [userAccount.id]
-	}),
-}));
-
-export const calendarEventRelations = relations(calendarEvent, ({one, many}) => ({
-	ipApplication: one(ipApplication, {
-		fields: [calendarEvent.projectId],
-		references: [ipApplication.id]
-	}),
-	userAccount: one(userAccount, {
-		fields: [calendarEvent.createdBy],
-		references: [userAccount.id]
-	}),
-	eventParticipants: many(eventParticipant),
 }));
 
 export const commentRelations = relations(comment, ({one, many}) => ({
@@ -158,35 +376,6 @@ export const accountRelations = relations(account, ({one}) => ({
 	}),
 }));
 
-export const copyrightBasicApplicationRelations = relations(copyrightBasicApplication, ({one, many}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [copyrightBasicApplication.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-}));
-
-export const ipDisclosureRelations = relations(ipDisclosure, ({one, many}) => ({
-	copyrightBasicApplications: many(copyrightBasicApplication),
-	disclosureConfirmations: many(disclosureConfirmation),
-	ipDisclosureApplicants: many(ipDisclosureApplicant),
-	ipApplication: one(ipApplication, {
-		fields: [ipDisclosure.applicationId],
-		references: [ipApplication.id]
-	}),
-	userAccount: one(userAccount, {
-		fields: [ipDisclosure.clientId],
-		references: [userAccount.id]
-	}),
-	ipDisclosureAttachments: many(ipDisclosureAttachment),
-	patentMatrixSamples: many(patentMatrixSample),
-	ipDisclosureReviews: many(ipDisclosureReview),
-	patentSearchReports: many(patentSearchReport),
-	tradeSecretApplications: many(tradeSecretApplication),
-	trademarkApplications: many(trademarkApplication),
-	patentUtilityModelApplications: many(patentUtilityModelApplication),
-	ipDisclosureInventors: many(ipDisclosureInventor),
-}));
-
 export const deedOfAssignmentRelations = relations(deedOfAssignment, ({one}) => ({
 	ipApplication: one(ipApplication, {
 		fields: [deedOfAssignment.applicationId],
@@ -194,13 +383,6 @@ export const deedOfAssignmentRelations = relations(deedOfAssignment, ({one}) => 
 	}),
 	userAccount: one(userAccount, {
 		fields: [deedOfAssignment.userId],
-		references: [userAccount.id]
-	}),
-}));
-
-export const digitalSignatureRelations = relations(digitalSignature, ({one}) => ({
-	userAccount: one(userAccount, {
-		fields: [digitalSignature.signerId],
 		references: [userAccount.id]
 	}),
 }));
@@ -228,14 +410,23 @@ export const documentsValidationRelations = relations(documentsValidation, ({one
 	}),
 }));
 
-export const externalCollaborationRelations = relations(externalCollaboration, ({one}) => ({
-	applicationPhase: one(applicationPhase, {
-		fields: [externalCollaboration.phaseId],
-		references: [applicationPhase.phaseId]
+export const ipApplicationNotificationRelations = relations(ipApplicationNotification, ({one}) => ({
+	userAccount: one(userAccount, {
+		fields: [ipApplicationNotification.adminId],
+		references: [userAccount.id]
+	}),
+	formSubmissionRegistry: one(formSubmissionRegistry, {
+		fields: [ipApplicationNotification.formRegistryId],
+		references: [formSubmissionRegistry.registryId]
+	}),
+	ipApplication: one(ipApplication, {
+		fields: [ipApplicationNotification.ipApplicationId],
+		references: [ipApplication.id]
 	}),
 }));
 
 export const formSubmissionRegistryRelations = relations(formSubmissionRegistry, ({one, many}) => ({
+	ipApplicationNotifications: many(ipApplicationNotification),
 	ipApplication: one(ipApplication, {
 		fields: [formSubmissionRegistry.ipApplicationId],
 		references: [ipApplication.id]
@@ -245,35 +436,6 @@ export const formSubmissionRegistryRelations = relations(formSubmissionRegistry,
 		references: [userAccount.id]
 	}),
 	formDataMappings: many(formDataMapping),
-	ipApplicationNotifications: many(ipApplicationNotification),
-}));
-
-export const disclosureConfirmationRelations = relations(disclosureConfirmation, ({one}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [disclosureConfirmation.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-}));
-
-export const documentManagementRelations = relations(documentManagement, ({one}) => ({
-	ipApplication: one(ipApplication, {
-		fields: [documentManagement.applicationId],
-		references: [ipApplication.id]
-	}),
-	applicationPhase: one(applicationPhase, {
-		fields: [documentManagement.phaseId],
-		references: [applicationPhase.phaseId]
-	}),
-	userAccount_uploadedBy: one(userAccount, {
-		fields: [documentManagement.uploadedBy],
-		references: [userAccount.id],
-		relationName: "documentManagement_uploadedBy_userAccount_id"
-	}),
-	userAccount_verifiedBy: one(userAccount, {
-		fields: [documentManagement.verifiedBy],
-		references: [userAccount.id],
-		relationName: "documentManagement_verifiedBy_userAccount_id"
-	}),
 }));
 
 export const formDataMappingRelations = relations(formDataMapping, ({one}) => ({
@@ -290,141 +452,14 @@ export const ipContributorsRelations = relations(ipContributors, ({one}) => ({
 	}),
 }));
 
-export const ipDetailsRelations = relations(ipDetails, ({one}) => ({
-	ipApplication: one(ipApplication, {
-		fields: [ipDetails.applicationId],
-		references: [ipApplication.id]
-	}),
-}));
-
-export const ipDisclosureApplicantRelations = relations(ipDisclosureApplicant, ({one}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [ipDisclosureApplicant.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-}));
-
-export const internalValidationRelations = relations(internalValidation, ({one, many}) => ({
-	applicationPhase: one(applicationPhase, {
-		fields: [internalValidation.phaseId],
-		references: [applicationPhase.phaseId]
-	}),
-	internalValidationAssignees: many(internalValidationAssignee),
-}));
-
-export const ipApplicationNotificationRelations = relations(ipApplicationNotification, ({one}) => ({
-	userAccount: one(userAccount, {
-		fields: [ipApplicationNotification.adminId],
-		references: [userAccount.id]
-	}),
-	formSubmissionRegistry: one(formSubmissionRegistry, {
-		fields: [ipApplicationNotification.formRegistryId],
-		references: [formSubmissionRegistry.registryId]
-	}),
-	ipApplication: one(ipApplication, {
-		fields: [ipApplicationNotification.ipApplicationId],
-		references: [ipApplication.id]
-	}),
-}));
-
-export const ipDisclosureAttachmentRelations = relations(ipDisclosureAttachment, ({one}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [ipDisclosureAttachment.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-}));
-
 export const otherDocumentsRelations = relations(otherDocuments, ({one}) => ({
-	ipApplication: one(ipApplication, {
-		fields: [otherDocuments.ipApplicationId],
-		references: [ipApplication.id]
-	}),
 	userAccount: one(userAccount, {
 		fields: [otherDocuments.userId],
 		references: [userAccount.id]
 	}),
-}));
-
-export const patentMatrixSampleRelations = relations(patentMatrixSample, ({one}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [patentMatrixSample.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-	patentUtilityModelApplication: one(patentUtilityModelApplication, {
-		fields: [patentMatrixSample.patentId],
-		references: [patentUtilityModelApplication.patentId]
-	}),
-}));
-
-export const patentUtilityModelApplicationRelations = relations(patentUtilityModelApplication, ({one, many}) => ({
-	patentMatrixSamples: many(patentMatrixSample),
-	patentSearchReports: many(patentSearchReport),
-	ipDisclosure: one(ipDisclosure, {
-		fields: [patentUtilityModelApplication.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-}));
-
-export const ipDisclosureReviewRelations = relations(ipDisclosureReview, ({one}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [ipDisclosureReview.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-	userAccount: one(userAccount, {
-		fields: [ipDisclosureReview.reviewerId],
-		references: [userAccount.id]
-	}),
-}));
-
-export const notificationRelations = relations(notification, ({one}) => ({
-	userAccount: one(userAccount, {
-		fields: [notification.userId],
-		references: [userAccount.id]
-	}),
-}));
-
-export const patentSearchReportRelations = relations(patentSearchReport, ({one}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [patentSearchReport.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-	patentUtilityModelApplication: one(patentUtilityModelApplication, {
-		fields: [patentSearchReport.patentId],
-		references: [patentUtilityModelApplication.patentId]
-	}),
-}));
-
-export const phaseReviewRelations = relations(phaseReview, ({one, many}) => ({
-	applicationPhase: one(applicationPhase, {
-		fields: [phaseReview.phaseId],
-		references: [applicationPhase.phaseId]
-	}),
-	userAccount: one(userAccount, {
-		fields: [phaseReview.reviewerId],
-		references: [userAccount.id]
-	}),
-	phaseReviewAttachments: many(phaseReviewAttachment),
-}));
-
-export const phaseReviewAttachmentRelations = relations(phaseReviewAttachment, ({one}) => ({
-	phaseReview: one(phaseReview, {
-		fields: [phaseReviewAttachment.reviewId],
-		references: [phaseReview.reviewId]
-	}),
-}));
-
-export const phaseTaskRelations = relations(phaseTask, ({one, many}) => ({
-	applicationPhase: one(applicationPhase, {
-		fields: [phaseTask.phaseId],
-		references: [applicationPhase.phaseId]
-	}),
-	phaseTaskAssignees: many(phaseTaskAssignee),
-}));
-
-export const sessionRelations = relations(session, ({one}) => ({
-	userAccount: one(userAccount, {
-		fields: [session.userId],
-		references: [userAccount.id]
+	ipApplication: one(ipApplication, {
+		fields: [otherDocuments.ipApplicationId],
+		references: [ipApplication.id]
 	}),
 }));
 
@@ -439,63 +474,28 @@ export const substantialUseRelations = relations(substantialUse, ({one}) => ({
 	}),
 }));
 
-export const tradeSecretApplicationRelations = relations(tradeSecretApplication, ({one}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [tradeSecretApplication.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-}));
-
-export const trademarkApplicationRelations = relations(trademarkApplication, ({one}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [trademarkApplication.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-}));
-
-export const phaseReminderRelations = relations(phaseReminder, ({one}) => ({
-	applicationPhase: one(applicationPhase, {
-		fields: [phaseReminder.phaseId],
-		references: [applicationPhase.phaseId]
-	}),
-}));
-
-export const ipDisclosureInventorRelations = relations(ipDisclosureInventor, ({one}) => ({
-	ipDisclosure: one(ipDisclosure, {
-		fields: [ipDisclosureInventor.disclosureId],
-		references: [ipDisclosure.disclosureId]
-	}),
-}));
-
-export const internalValidationAssigneeRelations = relations(internalValidationAssignee, ({one}) => ({
-	internalValidation: one(internalValidation, {
-		fields: [internalValidationAssignee.internalValidationId],
-		references: [internalValidation.validationId]
-	}),
-	userAccount: one(userAccount, {
-		fields: [internalValidationAssignee.userId],
-		references: [userAccount.id]
-	}),
-}));
-
-export const phaseTaskAssigneeRelations = relations(phaseTaskAssignee, ({one}) => ({
-	phaseTask: one(phaseTask, {
-		fields: [phaseTaskAssignee.taskId],
-		references: [phaseTask.taskId]
-	}),
-	userAccount: one(userAccount, {
-		fields: [phaseTaskAssignee.userId],
-		references: [userAccount.id]
-	}),
-}));
-
-export const ipApplicationEnrollmentRelations = relations(ipApplicationEnrollment, ({one}) => ({
+export const trackingCodeRelations = relations(trackingCode, ({one, many}) => ({
 	ipApplication: one(ipApplication, {
-		fields: [ipApplicationEnrollment.applicationId],
+		fields: [trackingCode.ipApplicationId],
 		references: [ipApplication.id]
 	}),
 	userAccount: one(userAccount, {
-		fields: [ipApplicationEnrollment.userId],
+		fields: [trackingCode.userId],
+		references: [userAccount.id]
+	}),
+	trackingOtps: many(trackingOtp),
+}));
+
+export const trackingOtpRelations = relations(trackingOtp, ({one}) => ({
+	trackingCode: one(trackingCode, {
+		fields: [trackingOtp.trackingId],
+		references: [trackingCode.trackingId]
+	}),
+}));
+
+export const notificationRelations = relations(notification, ({one}) => ({
+	userAccount: one(userAccount, {
+		fields: [notification.userId],
 		references: [userAccount.id]
 	}),
 }));
@@ -503,7 +503,7 @@ export const ipApplicationEnrollmentRelations = relations(ipApplicationEnrollmen
 export const eventParticipantRelations = relations(eventParticipant, ({one}) => ({
 	calendarEvent: one(calendarEvent, {
 		fields: [eventParticipant.eventId],
-		references: [calendarEvent.id]
+		references: [calendarEvent.eventId]
 	}),
 	userAccount: one(userAccount, {
 		fields: [eventParticipant.userId],

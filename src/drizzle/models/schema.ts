@@ -63,6 +63,9 @@ export const clientProfile = pgTable(
     companyName: varchar("company_name", { length: 255 }),
     companyEmail: varchar("company_email", { length: 255 }),
     occupation: varchar("occupation", { length: 255 }),
+    isAffiliated: boolean("is_affiliated").default(false),
+    institutionName: varchar("institution_name", { length: 255 }),
+    department: varchar("department", { length: 255 }),
     createdAt: timestamp("created_at", { mode: "string" }).default(
       sql`CURRENT_TIMESTAMP`
     ),

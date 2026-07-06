@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       const registryEntry = await db.query.formSubmissionRegistry.findFirst({
         where: and(
           eq(formSubmissionRegistry.ipApplicationId, applicationId),
-          eq(formSubmissionRegistry.sourceType, "ip_disclosure")
+          eq(formSubmissionRegistry.sourceType, "ip_disclosure"),
         ),
       });
 
@@ -176,8 +176,8 @@ export async function POST(request: Request) {
         .where(
           and(
             eq(ipDisclosure.applicationId, applicationId),
-            eq(ipDisclosure.clientId, session.user.id as string)
-          )
+            eq(ipDisclosure.clientId, session.user.id as string),
+          ),
         )
         .limit(1);
 

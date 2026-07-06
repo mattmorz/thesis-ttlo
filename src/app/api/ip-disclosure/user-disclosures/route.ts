@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { appRouter } from "@/trpc/router";
 import { db } from "@/drizzle/db";
-import { ipDisclosure, formSubmissionRegistry } from "@/drizzle/migrations/schema";
+import {
+  ipDisclosure,
+  formSubmissionRegistry,
+} from "@/drizzle/migrations/schema";
 import { and, eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -24,13 +27,13 @@ export async function GET(request: NextRequest) {
 
     if (applicationId) {
       console.log(
-        `Fetching IP disclosure for application ID: ${applicationId}`
+        `Fetching IP disclosure for application ID: ${applicationId}`,
       );
 
       const registryEntry = await db.query.formSubmissionRegistry.findFirst({
         where: and(
           eq(formSubmissionRegistry.ipApplicationId, applicationId),
-          eq(formSubmissionRegistry.sourceType, "ip_disclosure")
+          eq(formSubmissionRegistry.sourceType, "ip_disclosure"),
         ),
       });
 
@@ -38,7 +41,7 @@ export async function GET(request: NextRequest) {
         console.log(`No disclosure found for application ID: ${applicationId}`);
         return NextResponse.json(
           { error: "Disclosure not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -48,8 +51,8 @@ export async function GET(request: NextRequest) {
         .where(
           and(
             eq(ipDisclosure.disclosureId, registryEntry.sourceId),
-            eq(ipDisclosure.clientId, userId)
-          )
+            eq(ipDisclosure.clientId, userId),
+          ),
         )
         .limit(1);
 
@@ -57,14 +60,14 @@ export async function GET(request: NextRequest) {
         console.log(`No disclosure found for application ID: ${applicationId}`);
         return NextResponse.json(
           { error: "Disclosure not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
       const disclosure = disclosures[0];
 
       console.log(
-        `Found disclosure for application ID: ${applicationId}, disclosure ID: ${disclosure.disclosureId}`
+        `Found disclosure for application ID: ${applicationId}, disclosure ID: ${disclosure.disclosureId}`,
       );
 
       return NextResponse.json({
@@ -103,7 +106,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching user IP disclosures:", error);
     return NextResponse.json(
       { error: "Failed to fetch user IP disclosures" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

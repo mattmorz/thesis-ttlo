@@ -58,47 +58,47 @@ import {
 
 const formSchema = z
   .object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  middleName: z.string().optional(),
-  gender: z.object({
-    value: z
-      .string()
-      .min(1, "Gender is required")
-      .refine(
-        (value) => ["male", "female", "prefer_not_to_say"].includes(value),
-        "Gender is required"
-      ),
-  }),
-  age: z
-    .number({
-      required_error: "Age is required",
-      invalid_type_error: "Age is required",
-    })
-    .min(1, "Age is required")
-    .max(100, "Age must be 100 or less"),
-  citizenship: z.object({
-    value: z.enum(["filipino", "other"]),
-    otherValue: z.string().optional().nullable(),
-  }),
-  mailingAddress: z.string().min(1, "Mailing address is required"),
-  email: z.string().email("Invalid email address"),
-  hasCompany: z.boolean().default(true),
-  companyName: z.string().optional(),
-  companyStreet: z.string().optional(),
-  companyBarangay: z.string().optional(),
-  companyCityMunicipality: z.string().optional(),
-  companyProvince: z.string().optional(),
-  companyEmail: z.string().email("Invalid email address").optional(),
-  institutionName: z.string().optional(),
-  isCSUAffiliated: z.boolean().nullable().optional(),
-  collegeName: z.string().optional(),
-  departmentName: z.string().optional(),
-  occupation: z.string().min(1, "Occupation is required"),
-  affiliationType: z.enum(["company", "academic", "none"], {
-    required_error: "Affiliation type is required",
-  }),
-})
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    middleName: z.string().optional(),
+    gender: z.object({
+      value: z
+        .string()
+        .min(1, "Gender is required")
+        .refine(
+          (value) => ["male", "female", "prefer_not_to_say"].includes(value),
+          "Gender is required",
+        ),
+    }),
+    age: z
+      .number({
+        required_error: "Age is required",
+        invalid_type_error: "Age is required",
+      })
+      .min(1, "Age is required")
+      .max(100, "Age must be 100 or less"),
+    citizenship: z.object({
+      value: z.enum(["filipino", "other"]),
+      otherValue: z.string().optional().nullable(),
+    }),
+    mailingAddress: z.string().min(1, "Mailing address is required"),
+    email: z.string().email("Invalid email address"),
+    hasCompany: z.boolean().default(true),
+    companyName: z.string().optional(),
+    companyStreet: z.string().optional(),
+    companyBarangay: z.string().optional(),
+    companyCityMunicipality: z.string().optional(),
+    companyProvince: z.string().optional(),
+    companyEmail: z.string().email("Invalid email address").optional(),
+    institutionName: z.string().optional(),
+    isCSUAffiliated: z.boolean().nullable().optional(),
+    collegeName: z.string().optional(),
+    departmentName: z.string().optional(),
+    occupation: z.string().min(1, "Occupation is required"),
+    affiliationType: z.enum(["company", "academic", "none"], {
+      required_error: "Affiliation type is required",
+    }),
+  })
   .superRefine((data, ctx) => {
     if (data.affiliationType === "company") {
       if (!data.companyName?.trim()) {
@@ -251,8 +251,7 @@ export function ClientInformation({
   // Get active application for registry integration
   const { activeApplicationId } = useActiveApplication();
 
-  const canUseStorage =
-    !disableLocalStorage && typeof window !== "undefined";
+  const canUseStorage = !disableLocalStorage && typeof window !== "undefined";
   const getStorageItem = (key: string) =>
     canUseStorage ? localStorage.getItem(key) : null;
   const getSharedStorageItem = (baseKey: string) => {
@@ -514,7 +513,8 @@ export function ClientInformation({
 
           // Ensure specific objects are properly merged
           gender: {
-            value: parsedData.gender?.value || formattedData.gender?.value || "",
+            value:
+              parsedData.gender?.value || formattedData.gender?.value || "",
           },
 
           citizenship: {
@@ -552,7 +552,7 @@ export function ClientInformation({
       }
 
       // Fix citizenship data
-        if (formattedData.citizenship) {
+      if (formattedData.citizenship) {
         // Make sure we have a valid value
         const hasValidValue =
           formattedData.citizenship.value === "filipino" ||
@@ -663,9 +663,7 @@ export function ClientInformation({
             ...formattedData,
             gender: {
               value:
-                formattedData.gender?.value ??
-                defaultValues.gender.value ??
-                "",
+                formattedData.gender?.value ?? defaultValues.gender.value ?? "",
             },
             citizenship: {
               value:
@@ -673,7 +671,7 @@ export function ClientInformation({
                 defaultValues.citizenship.value,
               otherValue:
                 formattedData.citizenship?.value === "other"
-                  ? formattedData.citizenship.otherValue ?? ""
+                  ? (formattedData.citizenship.otherValue ?? "")
                   : null,
             },
           };
@@ -735,10 +733,10 @@ export function ClientInformation({
           formattedValues,
         );
         setStorageItem(storageKey, JSON.stringify(formattedValues));
-        console.log(
-          "[ClientInformation] Saved (tab change) birthDate:",
-          { storageKey, birthDate },
-        );
+        console.log("[ClientInformation] Saved (tab change) birthDate:", {
+          storageKey,
+          birthDate,
+        });
       }
     };
 
@@ -765,10 +763,10 @@ export function ClientInformation({
           "[ClientInformation] Page unload detected, saving form state",
         );
         setStorageItem(storageKey, JSON.stringify(formattedValues));
-        console.log(
-          "[ClientInformation] Saved (beforeunload) birthDate:",
-          { storageKey, birthDate },
-        );
+        console.log("[ClientInformation] Saved (beforeunload) birthDate:", {
+          storageKey,
+          birthDate,
+        });
       }
     };
 
@@ -777,11 +775,11 @@ export function ClientInformation({
     // Also listen for tab navigation/page refresh
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-      // Cleanup function
-      return () => {
-        // Save state when component unmounts
-        if (isFormLoaded) {
-          const values = form.getValues();
+    // Cleanup function
+    return () => {
+      // Save state when component unmounts
+      if (isFormLoaded) {
+        const values = form.getValues();
 
         // Ensure gender data is properly formatted
         const formattedValues = {
@@ -799,10 +797,10 @@ export function ClientInformation({
           ? `clientInformationData-${activeApplicationId}`
           : "clientInformationData";
         setStorageItem(storageKey, JSON.stringify(formattedValues));
-        console.log(
-          "[ClientInformation] Saved (unmount) birthDate:",
-          { storageKey, birthDate },
-        );
+        console.log("[ClientInformation] Saved (unmount) birthDate:", {
+          storageKey,
+          birthDate,
+        });
       }
 
       // Remove event listeners
@@ -847,10 +845,10 @@ export function ClientInformation({
             "[ClientInformation] Saved personal information data on tab change:",
             formattedValues,
           );
-          console.log(
-            "[ClientInformation] Saved (tab switch) birthDate:",
-            { storageKey, birthDate },
-          );
+          console.log("[ClientInformation] Saved (tab switch) birthDate:", {
+            storageKey,
+            birthDate,
+          });
         } catch (error) {
           console.error(
             "[ClientInformation] Error saving personal data:",
@@ -935,7 +933,7 @@ export function ClientInformation({
             : undefined,
         isCSUAffiliated:
           values.affiliationType === "academic"
-            ? values.isCSUAffiliated ?? null
+            ? (values.isCSUAffiliated ?? null)
             : null,
         // Fix citizenship data
         citizenship: {
@@ -964,10 +962,10 @@ export function ClientInformation({
 
       setStorageItem(storageKey, JSON.stringify(formattedValues));
       setFormData(formattedValues);
-      console.log(
-        "[ClientInformation] Saved (submit) birthDate:",
-        { storageKey, birthDate },
-      );
+      console.log("[ClientInformation] Saved (submit) birthDate:", {
+        storageKey,
+        birthDate,
+      });
 
       // Show loading toast
       const toastId = toast.loading("Submitting Form", {
@@ -1640,7 +1638,7 @@ export function ClientInformation({
             : undefined,
         isCSUAffiliated:
           values.affiliationType === "academic"
-            ? values.isCSUAffiliated ?? null
+            ? (values.isCSUAffiliated ?? null)
             : null,
         // Fix citizenship data
         citizenship: {
@@ -2151,10 +2149,10 @@ export function ClientInformation({
         "[ClientInformation] Personal information saved to localStorage:",
         enhancedValues,
       );
-      console.log(
-        "[ClientInformation] Saved (next click) birthDate:",
-        { storageKey, birthDate },
-      );
+      console.log("[ClientInformation] Saved (next click) birthDate:", {
+        storageKey,
+        birthDate,
+      });
 
       // If we have an active application, update the form status silently
       if (activeApplicationId && window.updateIPFormStatus) {
@@ -2637,7 +2635,9 @@ export function ClientInformation({
                           </option>
                         </optgroup>
                         <optgroup label="Business and Management Occupations">
-                          <option value="Chief Executive">Chief Executive</option>
+                          <option value="Chief Executive">
+                            Chief Executive
+                          </option>
                           <option value="Operations Manager">
                             General / Operations Manager
                           </option>
@@ -2645,7 +2645,9 @@ export function ClientInformation({
                             Marketing / Sales Manager
                           </option>
                           <option value="IT Manager">IT / HR Manager</option>
-                          <option value="Accountant">Accountant / Auditor</option>
+                          <option value="Accountant">
+                            Accountant / Auditor
+                          </option>
                           <option value="Business Owner">Business Owner</option>
                         </optgroup>
                         <optgroup label="Education Occupations">
@@ -2668,14 +2670,16 @@ export function ClientInformation({
                     <FormDescription>
                       Select your occupation. Scroll to see more options.
                     </FormDescription>
-                   {field.value === "Other" && (
-                    <input
-                      type="text"
-                      placeholder="Enter your occupation"
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm mt-2"
-                      onChange={(e) => form.setValue("occupationOther", e.target.value)}
-                    />
-                  )}
+                    {field.value === "Other" && (
+                      <input
+                        type="text"
+                        placeholder="Enter your occupation"
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm mt-2"
+                        onChange={(e) =>
+                          form.setValue("occupationOther", e.target.value)
+                        }
+                      />
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -2701,7 +2705,9 @@ export function ClientInformation({
                 name="affiliationType"
                 render={({ field }) => (
                   <FormItem className="rounded-md border p-4 shadow-sm space-y-2">
-                    <FormLabel>Affiliation Type <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>
+                      Affiliation Type <span className="text-red-500">*</span>
+                    </FormLabel>
 
                     <Select
                       value={field.value}
@@ -2803,7 +2809,7 @@ export function ClientInformation({
                     <FormMessage />
                   </FormItem>
                 )}
-              /> 
+              />
 
               {/* COMPANY / INSTITUTION FIELDS */}
               {form.watch("affiliationType") === "company" && (

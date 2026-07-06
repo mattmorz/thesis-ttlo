@@ -67,10 +67,10 @@ export const clientProfile = pgTable(
     institutionName: varchar("institution_name", { length: 255 }),
     department: varchar("department", { length: 255 }),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     age: integer(),
     companyStreet: text("company_street"),
@@ -91,11 +91,11 @@ export const clientProfile = pgTable(
   (table) => [
     index("idx_client_profile_email").using(
       "btree",
-      table.email.asc().nullsLast().op("text_ops")
+      table.email.asc().nullsLast().op("text_ops"),
     ),
     index("idx_client_profile_user").using(
       "btree",
-      table.userId.asc().nullsLast().op("uuid_ops")
+      table.userId.asc().nullsLast().op("uuid_ops"),
     ),
     foreignKey({
       columns: [table.userId],
@@ -104,18 +104,18 @@ export const clientProfile = pgTable(
     }).onDelete("cascade"),
     check(
       "check_citizenship_jsonb",
-      sql`(citizenship ->> 'value'::text) = ANY (ARRAY['filipino'::text, 'other'::text])`
+      sql`(citizenship ->> 'value'::text) = ANY (ARRAY['filipino'::text, 'other'::text])`,
     ),
     check(
       "check_gender_jsonb",
-      sql`(gender ->> 'value'::text) = ANY (ARRAY['male'::text, 'female'::text, 'prefer_not_to_say'::text])`
+      sql`(gender ->> 'value'::text) = ANY (ARRAY['male'::text, 'female'::text, 'prefer_not_to_say'::text])`,
     ),
     check(
       "check_highest_degree_jsonb",
-      sql`(highest_degree ->> 'value'::text) = ANY (ARRAY['bachelor'::text, 'master'::text, 'doctorate'::text, 'other'::text])`
+      sql`(highest_degree ->> 'value'::text) = ANY (ARRAY['bachelor'::text, 'master'::text, 'doctorate'::text, 'other'::text])`,
     ),
     check("client_profile_age_check", sql`age > 0`),
-  ]
+  ],
 );
 
 export const substantialUse = pgTable(
@@ -132,10 +132,10 @@ export const substantialUse = pgTable(
     fundingResources: jsonb("funding_resources").notNull(),
     remarks: text(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     status: varchar("status", { length: 20 }).default("draft"),
     applicationId: uuid("application_id"),
@@ -144,15 +144,15 @@ export const substantialUse = pgTable(
   (table) => [
     index("idx_substantial_use_status").using(
       "btree",
-      table.status.asc().nullsLast().op("text_ops")
+      table.status.asc().nullsLast().op("text_ops"),
     ),
     index("idx_substantial_use_user").using(
       "btree",
-      table.userId.asc().nullsLast().op("uuid_ops")
+      table.userId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_substantial_use_application").using(
       "btree",
-      table.applicationId.asc().nullsLast().op("uuid_ops")
+      table.applicationId.asc().nullsLast().op("uuid_ops"),
     ),
     foreignKey({
       columns: [table.userId],
@@ -166,9 +166,9 @@ export const substantialUse = pgTable(
     }).onDelete("set null"),
     check(
       "substantial_use_status_check",
-      sql`(status)::text = ANY ((ARRAY['draft'::character varying, 'submitted'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['draft'::character varying, 'submitted'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const clientProfileBackup = pgTable("client_profile_backup", {
@@ -212,7 +212,7 @@ export const deedOfAssignment = pgTable(
     creators: jsonb().default([]).notNull(),
     creatorAddress: text("creator_address"),
     assigneeName: varchar("assignee_name", { length: 255 }).default(
-      "CARAGA STATE UNIVERSITY"
+      "CARAGA STATE UNIVERSITY",
     ),
     assigneeRepresentative: varchar("assignee_representative", {
       length: 255,
@@ -223,35 +223,35 @@ export const deedOfAssignment = pgTable(
     assigneeId: varchar("assignee_id", { length: 50 }).default("M98 – 009"),
     assigneeDate: varchar("assignee_date", { length: 50 }),
     assigneePlace: varchar("assignee_place", { length: 100 }).default(
-      "Butuan City"
+      "Butuan City",
     ),
     notarizedDocumentPath: varchar("notarized_document_path", { length: 255 }),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     status: varchar({ length: 20 }).default("draft"),
     metadata: jsonb(),
     assignorId: varchar("assignor_id", { length: 50 }),
     assignorDate: varchar("assignor_date", { length: 50 }),
     assignorPlace: varchar("assignor_place", { length: 100 }).default(
-      "Butuan City"
+      "Butuan City",
     ),
   },
   (table) => [
     index("idx_deed_of_assignment_status").using(
       "btree",
-      table.status.asc().nullsLast().op("text_ops")
+      table.status.asc().nullsLast().op("text_ops"),
     ),
     index("idx_deed_of_assignment_user").using(
       "btree",
-      table.userId.asc().nullsLast().op("uuid_ops")
+      table.userId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_deed_of_assignment_application").using(
       "btree",
-      table.applicationId.asc().nullsLast().op("uuid_ops")
+      table.applicationId.asc().nullsLast().op("uuid_ops"),
     ),
     foreignKey({
       columns: [table.userId],
@@ -265,9 +265,9 @@ export const deedOfAssignment = pgTable(
     }).onDelete("cascade"),
     check(
       "deed_of_assignment_status_check",
-      sql`(status)::text = ANY ((ARRAY['draft'::character varying, 'submitted'::character varying, 'approved'::character varying, 'rejected'::character varying, 'pending_revision'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['draft'::character varying, 'submitted'::character varying, 'approved'::character varying, 'rejected'::character varying, 'pending_revision'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const ipDisclosureApplicant = pgTable(
@@ -279,10 +279,10 @@ export const ipDisclosureApplicant = pgTable(
     middleInitial: varchar("middle_initial", { length: 10 }),
     lastName: varchar("last_name", { length: 100 }).notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -291,7 +291,7 @@ export const ipDisclosureApplicant = pgTable(
       foreignColumns: [ipDisclosure.disclosureId],
       name: "ip_disclosure_applicant_disclosure_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const tradeSecretApplication = pgTable(
@@ -305,10 +305,10 @@ export const tradeSecretApplication = pgTable(
     description: text().notNull(),
     confidentialityMeasures: text("confidentiality_measures").notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -317,7 +317,7 @@ export const tradeSecretApplication = pgTable(
       foreignColumns: [ipDisclosure.disclosureId],
       name: "trade_secret_application_disclosure_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const ipDisclosureInventor = pgTable(
@@ -329,10 +329,10 @@ export const ipDisclosureInventor = pgTable(
     middleInitial: varchar("middle_initial", { length: 10 }),
     lastName: varchar("last_name", { length: 100 }).notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -341,7 +341,7 @@ export const ipDisclosureInventor = pgTable(
       foreignColumns: [ipDisclosure.disclosureId],
       name: "ip_disclosure_inventor_disclosure_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const trademarkApplication = pgTable(
@@ -358,10 +358,10 @@ export const trademarkApplication = pgTable(
       .notNull(),
     legalName: varchar("legal_name", { length: 255 }).notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -370,7 +370,7 @@ export const trademarkApplication = pgTable(
       foreignColumns: [ipDisclosure.disclosureId],
       name: "trademark_application_disclosure_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const copyrightApplication = pgTable(
@@ -386,10 +386,10 @@ export const copyrightApplication = pgTable(
     publicationCountry: varchar("publication_country", { length: 100 }),
     description: text().notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -398,7 +398,7 @@ export const copyrightApplication = pgTable(
       foreignColumns: [ipDisclosure.disclosureId],
       name: "copyright_application_disclosure_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const patentUtilityModelApplication = pgTable(
@@ -437,10 +437,10 @@ export const patentUtilityModelApplication = pgTable(
     ownPublications: text("own_publications"),
     files: jsonb(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -451,9 +451,9 @@ export const patentUtilityModelApplication = pgTable(
     }).onDelete("cascade"),
     check(
       "patent_utility_model_application_type_check",
-      sql`(type)::text = ANY ((ARRAY['patent'::character varying, 'utility_model'::character varying])::text[])`
+      sql`(type)::text = ANY ((ARRAY['patent'::character varying, 'utility_model'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const patentInventors = pgTable(
@@ -468,10 +468,10 @@ export const patentInventors = pgTable(
     address: text(),
     isPrimaryInventor: boolean("is_primary_inventor").default(false),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -480,7 +480,7 @@ export const patentInventors = pgTable(
       foreignColumns: [patentUtilityModelApplication.patentId],
       name: "patent_inventors_patent_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const patentSearchReport = pgTable(
@@ -502,10 +502,10 @@ export const patentSearchReport = pgTable(
       })
       .notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -519,7 +519,7 @@ export const patentSearchReport = pgTable(
       foreignColumns: [patentUtilityModelApplication.patentId],
       name: "patent_search_report_patent_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const patentSearchDocuments = pgTable(
@@ -535,10 +535,10 @@ export const patentSearchDocuments = pgTable(
     relevanceNotes: text("relevance_notes"),
     documentUrl: text("document_url"),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -549,9 +549,9 @@ export const patentSearchDocuments = pgTable(
     }).onDelete("cascade"),
     check(
       "patent_search_documents_relevance_rating_check",
-      sql`(relevance_rating >= 1) AND (relevance_rating <= 5)`
+      sql`(relevance_rating >= 1) AND (relevance_rating <= 5)`,
     ),
-  ]
+  ],
 );
 
 export const patentMatrixSample = pgTable(
@@ -567,20 +567,20 @@ export const patentMatrixSample = pgTable(
     analysisSummary: text("analysis_summary").notNull(),
     conclusion: text().notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
     index("idx_patent_matrix_sample_disclosure_id").using(
       "btree",
-      table.disclosureId.asc().nullsLast().op("uuid_ops")
+      table.disclosureId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_patent_matrix_sample_patent_id").using(
       "btree",
-      table.patentId.asc().nullsLast().op("uuid_ops")
+      table.patentId.asc().nullsLast().op("uuid_ops"),
     ),
     foreignKey({
       columns: [table.disclosureId],
@@ -592,7 +592,7 @@ export const patentMatrixSample = pgTable(
       foreignColumns: [patentUtilityModelApplication.patentId],
       name: "patent_matrix_sample_patent_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const matrixFeatures = pgTable(
@@ -603,10 +603,10 @@ export const matrixFeatures = pgTable(
     featureDescription: text("feature_description").notNull(),
     isEssential: boolean("is_essential").default(false),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -615,7 +615,7 @@ export const matrixFeatures = pgTable(
       foreignColumns: [patentMatrixSample.matrixId],
       name: "matrix_features_matrix_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const disclosureConfirmation = pgTable(
@@ -637,10 +637,10 @@ export const disclosureConfirmation = pgTable(
       .default(false)
       .notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -649,7 +649,7 @@ export const disclosureConfirmation = pgTable(
       foreignColumns: [ipDisclosure.disclosureId],
       name: "disclosure_confirmation_disclosure_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const ipDisclosureAttachment = pgTable(
@@ -664,7 +664,7 @@ export const ipDisclosureAttachment = pgTable(
     fileSize: integer("file_size").notNull(),
     description: text(),
     uploadedAt: timestamp("uploaded_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -673,7 +673,7 @@ export const ipDisclosureAttachment = pgTable(
       foreignColumns: [ipDisclosure.disclosureId],
       name: "ip_disclosure_attachment_disclosure_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const ipDisclosureReview = pgTable(
@@ -685,13 +685,13 @@ export const ipDisclosureReview = pgTable(
     status: varchar({ length: 50 }).notNull(),
     comments: text(),
     reviewDate: timestamp("review_date", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -707,9 +707,9 @@ export const ipDisclosureReview = pgTable(
     }).onDelete("restrict"),
     check(
       "ip_disclosure_review_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'needs_revision'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'needs_revision'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const ipDisclosure = pgTable(
@@ -721,10 +721,10 @@ export const ipDisclosure = pgTable(
     selectedIpTypes: jsonb("selected_ip_types"),
     status: varchar({ length: 50 }).default("draft"),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     email: varchar({ length: 255 }),
     authorizedRepresentative: varchar("authorized_representative", {
@@ -735,18 +735,18 @@ export const ipDisclosure = pgTable(
   (table) => [
     index("idx_ip_disclosure_client").using(
       "btree",
-      table.clientId.asc().nullsLast().op("uuid_ops")
+      table.clientId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_ip_disclosure_status").using(
       "btree",
-      table.status.asc().nullsLast().op("text_ops")
+      table.status.asc().nullsLast().op("text_ops"),
     ),
     foreignKey({
       columns: [table.clientId],
       foreignColumns: [userAccount.id],
       name: "ip_disclosure_client_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const verificationToken = pgTable("verificationToken", {
@@ -770,16 +770,14 @@ export const userAccount = pgTable(
       mode: "string",
     }),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     emailVerified: timestamp({ mode: "string" }),
   },
-  (table) => [
-    unique("user_account_email_key").on(table.email),
-  ]
+  (table) => [unique("user_account_email_key").on(table.email)],
 );
 
 export const trackingCode = pgTable(
@@ -793,7 +791,7 @@ export const trackingCode = pgTable(
     email: varchar({ length: 255 }).notNull(),
     phoneNumber: varchar("phone_number", { length: 30 }),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     revokedAt: timestamp("revoked_at", { mode: "string" }),
     lastUsedAt: timestamp("last_used_at", { mode: "string" }),
@@ -803,11 +801,11 @@ export const trackingCode = pgTable(
     unique("tracking_code_hash_key").on(table.codeHash),
     index("idx_tracking_code_application").using(
       "btree",
-      table.ipApplicationId.asc().nullsLast().op("uuid_ops")
+      table.ipApplicationId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_tracking_code_user").using(
       "btree",
-      table.userId.asc().nullsLast().op("uuid_ops")
+      table.userId.asc().nullsLast().op("uuid_ops"),
     ),
     foreignKey({
       columns: [table.ipApplicationId],
@@ -819,7 +817,7 @@ export const trackingCode = pgTable(
       foreignColumns: [userAccount.id],
       name: "tracking_code_user_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const trackingOtp = pgTable(
@@ -833,20 +831,20 @@ export const trackingOtp = pgTable(
     attempts: integer().default(0),
     expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
     lastSentAt: timestamp("last_sent_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
     index("idx_tracking_otp_tracking").using(
       "btree",
-      table.trackingId.asc().nullsLast().op("uuid_ops")
+      table.trackingId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_tracking_otp_identifier").using(
       "btree",
-      table.identifier.asc().nullsLast().op("text_ops")
+      table.identifier.asc().nullsLast().op("text_ops"),
     ),
     foreignKey({
       columns: [table.trackingId],
@@ -855,9 +853,9 @@ export const trackingOtp = pgTable(
     }).onDelete("cascade"),
     check(
       "tracking_otp_channel_check",
-      sql`(channel)::text = ANY (ARRAY[('email'::character varying)::text, ('sms'::character varying)::text])`
+      sql`(channel)::text = ANY (ARRAY[('email'::character varying)::text, ('sms'::character varying)::text])`,
     ),
-  ]
+  ],
 );
 
 export const account = pgTable(
@@ -881,7 +879,7 @@ export const account = pgTable(
       foreignColumns: [userAccount.id],
       name: "account_userId_user_id_fk",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const authenticator = pgTable(
@@ -903,7 +901,7 @@ export const authenticator = pgTable(
       name: "authenticator_userId_user_id_fk",
     }).onDelete("cascade"),
     unique("authenticator_credentialID_unique").on(table.credentialId),
-  ]
+  ],
 );
 
 export const session = pgTable(
@@ -919,7 +917,7 @@ export const session = pgTable(
       foreignColumns: [userAccount.id],
       name: "session_userId_user_id_fk",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const copyrightBasicApplication = pgTable(
@@ -932,10 +930,10 @@ export const copyrightBasicApplication = pgTable(
     creationDate: date("creation_date").notNull(),
     status: varchar({ length: 50 }).default("draft"),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -944,7 +942,7 @@ export const copyrightBasicApplication = pgTable(
       foreignColumns: [ipDisclosure.disclosureId],
       name: "copyright_basic_application_disclosure_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const patentBasicApplication = pgTable(
@@ -968,10 +966,10 @@ export const patentBasicApplication = pgTable(
     patentType: varchar("patent_type", { length: 20 }),
     status: varchar({ length: 50 }).default("draft"),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -982,9 +980,9 @@ export const patentBasicApplication = pgTable(
     }).onDelete("cascade"),
     check(
       "patent_basic_application_patent_type_check",
-      sql`(patent_type)::text = ANY ((ARRAY['patent'::character varying, 'utility_model'::character varying])::text[])`
+      sql`(patent_type)::text = ANY ((ARRAY['patent'::character varying, 'utility_model'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const patentMatrix = pgTable(
@@ -995,10 +993,10 @@ export const patentMatrix = pgTable(
     title: varchar({ length: 255 }).notNull(),
     description: text().notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -1007,7 +1005,7 @@ export const patentMatrix = pgTable(
       foreignColumns: [patentBasicApplication.patentId],
       name: "patent_matrix_patent_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const matrixFeature = pgTable(
@@ -1024,7 +1022,7 @@ export const matrixFeature = pgTable(
       foreignColumns: [patentMatrix.matrixId],
       name: "matrix_feature_matrix_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const matrixPriorArt = pgTable(
@@ -1043,7 +1041,7 @@ export const matrixPriorArt = pgTable(
       foreignColumns: [patentMatrix.matrixId],
       name: "matrix_prior_art_matrix_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const ipApplication = pgTable(
@@ -1071,28 +1069,28 @@ export const ipApplication = pgTable(
       length: 50,
     }).default("not_licensed"),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
     index("idx_ip_application_type").using(
       "btree",
-      table.ipType.asc().nullsLast().op("enum_ops")
+      table.ipType.asc().nullsLast().op("enum_ops"),
     ),
     index("ix_ip_application_status").using(
       "btree",
-      table.status.asc().nullsLast().op("enum_ops")
+      table.status.asc().nullsLast().op("enum_ops"),
     ),
     index("ix_ip_application_type").using(
       "btree",
-      table.ipType.asc().nullsLast().op("enum_ops")
+      table.ipType.asc().nullsLast().op("enum_ops"),
     ),
     index("ix_ip_application_user").using(
       "btree",
-      table.userId.asc().nullsLast().op("uuid_ops")
+      table.userId.asc().nullsLast().op("uuid_ops"),
     ),
     foreignKey({
       columns: [table.userId],
@@ -1101,10 +1099,10 @@ export const ipApplication = pgTable(
     }).onDelete("restrict"),
     check(
       "ck_commercialization",
-      sql`(commercialization_status)::text = ANY ((ARRAY['not_licensed'::character varying, 'licensed'::character varying, 'in_negotiation'::character varying, 'technology_transfer'::character varying, 'internal_use'::character varying])::text[])`
+      sql`(commercialization_status)::text = ANY ((ARRAY['not_licensed'::character varying, 'licensed'::character varying, 'in_negotiation'::character varying, 'technology_transfer'::character varying, 'internal_use'::character varying])::text[])`,
     ),
     check("ck_progress", sql`(progress >= 0) AND (progress <= 100)`),
-  ]
+  ],
 );
 
 export const archives = pgTable(
@@ -1113,7 +1111,7 @@ export const archives = pgTable(
     id: uuid().defaultRandom().primaryKey().notNull(),
     applicationId: uuid("application_id").notNull(),
     archiveAt: timestamp("archive_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     archiveReason: text("archive_reason"),
     archivedBy: uuid("archived_by").notNull(),
@@ -1129,7 +1127,7 @@ export const archives = pgTable(
       foreignColumns: [userAccount.id],
       name: "fk_archive_user",
     }).onDelete("restrict"),
-  ]
+  ],
 );
 
 export const applicationPhase = pgTable(
@@ -1145,20 +1143,20 @@ export const applicationPhase = pgTable(
     progress: integer().default(0),
     orderIndex: integer("order_index").notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
     index("idx_phase_application_id").using(
       "btree",
-      table.applicationId.asc().nullsLast().op("uuid_ops")
+      table.applicationId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_phase_status").using(
       "btree",
-      table.status.asc().nullsLast().op("text_ops")
+      table.status.asc().nullsLast().op("text_ops"),
     ),
     foreignKey({
       columns: [table.applicationId],
@@ -1168,9 +1166,9 @@ export const applicationPhase = pgTable(
     check("ck_phase_progress", sql`(progress >= 0) AND (progress <= 100)`),
     check(
       "ck_phase_status",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'active'::character varying, 'completed'::character varying, 'blocked'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'active'::character varying, 'completed'::character varying, 'blocked'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const phaseTask = pgTable(
@@ -1185,10 +1183,10 @@ export const phaseTask = pgTable(
     dueDate: date("due_date"),
     completed: boolean().default(false),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     assigneeId: uuid("assignee_id"),
     startDate: date("start_date"),
@@ -1197,7 +1195,7 @@ export const phaseTask = pgTable(
   (table) => [
     index("idx_task_phase_id").using(
       "btree",
-      table.phaseId.asc().nullsLast().op("uuid_ops")
+      table.phaseId.asc().nullsLast().op("uuid_ops"),
     ),
     foreignKey({
       columns: [table.assigneeId],
@@ -1211,14 +1209,14 @@ export const phaseTask = pgTable(
     }).onDelete("cascade"),
     check(
       "task_priority_check",
-      sql`(priority)::text = ANY ((ARRAY['low'::character varying, 'medium'::character varying, 'high'::character varying])::text[])`
+      sql`(priority)::text = ANY ((ARRAY['low'::character varying, 'medium'::character varying, 'high'::character varying])::text[])`,
     ),
     check(
       "task_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'blocked'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'blocked'::character varying])::text[])`,
     ),
     check("task_weight_check", sql`(weight >= 0) AND (weight <= 100)`),
-  ]
+  ],
 );
 
 export const taskAssignment = pgTable(
@@ -1228,7 +1226,7 @@ export const taskAssignment = pgTable(
     taskId: uuid("task_id").notNull(),
     staffId: uuid("staff_id").notNull(),
     assignedAt: timestamp("assigned_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     status: varchar({ length: 50 }).default("pending"),
   },
@@ -1245,13 +1243,13 @@ export const taskAssignment = pgTable(
     }).onDelete("cascade"),
     unique("task_assignment_task_id_staff_id_key").on(
       table.taskId,
-      table.staffId
+      table.staffId,
     ),
     check(
       "task_assignment_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying, 'completed'::character varying, 'rejected'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying, 'completed'::character varying, 'rejected'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const phaseReminder = pgTable(
@@ -1264,10 +1262,10 @@ export const phaseReminder = pgTable(
     reminderTime: time("reminder_time"),
     isActive: boolean("is_active").default(true),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -1278,9 +1276,9 @@ export const phaseReminder = pgTable(
     }).onDelete("cascade"),
     check(
       "phase_reminder_frequency_check",
-      sql`(frequency)::text = ANY ((ARRAY['daily'::character varying, 'weekly'::character varying, 'custom'::character varying])::text[])`
+      sql`(frequency)::text = ANY ((ARRAY['daily'::character varying, 'weekly'::character varying, 'custom'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const documents = pgTable(
@@ -1297,7 +1295,7 @@ export const documents = pgTable(
     status: varchar({ length: 50 }).default("pending"),
     uploadedBy: uuid("uploaded_by").notNull(),
     uploadedAt: timestamp("uploaded_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     verifiedBy: uuid("verified_by"),
     verifiedAt: timestamp("verified_at", { mode: "string" }),
@@ -1311,7 +1309,7 @@ export const documents = pgTable(
   (table) => [
     index("idx_documents_validation").using(
       "btree",
-      table.validationStatus.asc().nullsLast().op("text_ops")
+      table.validationStatus.asc().nullsLast().op("text_ops"),
     ),
     foreignKey({
       columns: [table.applicationId],
@@ -1340,17 +1338,17 @@ export const documents = pgTable(
     }).onDelete("set null"),
     check(
       "document_category_check",
-      sql`(category)::text = ANY ((ARRAY['forms'::character varying, 'attachments'::character varying, 'requirements'::character varying])::text[])`
+      sql`(category)::text = ANY ((ARRAY['forms'::character varying, 'attachments'::character varying, 'requirements'::character varying])::text[])`,
     ),
     check(
       "document_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'verified'::character varying, 'rejected'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'verified'::character varying, 'rejected'::character varying])::text[])`,
     ),
     check(
       "document_validation_status_check",
-      sql`(validation_status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'needs_revision'::character varying])::text[])`
+      sql`(validation_status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'needs_revision'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const internalValidation = pgTable(
@@ -1365,10 +1363,10 @@ export const internalValidation = pgTable(
     dueDate: date("due_date").notNull(),
     remarks: text(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -1389,13 +1387,13 @@ export const internalValidation = pgTable(
     }).onDelete("cascade"),
     check(
       "internal_validation_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])`,
     ),
     check(
       "internal_validation_validator_role_check",
-      sql`(validator_role)::text = ANY ((ARRAY['superadmin'::character varying, 'director'::character varying])::text[])`
+      sql`(validator_role)::text = ANY ((ARRAY['superadmin'::character varying, 'director'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const externalCollaboration = pgTable(
@@ -1414,10 +1412,10 @@ export const externalCollaboration = pgTable(
     responseRequired: boolean("response_required").default(false),
     remarks: text(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -1428,9 +1426,9 @@ export const externalCollaboration = pgTable(
     }).onDelete("cascade"),
     check(
       "external_collaboration_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const activityLog = pgTable(
@@ -1444,33 +1442,33 @@ export const activityLog = pgTable(
     title: varchar({ length: 255 }).notNull(),
     description: text(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
     index("idx_activity_log_application").using(
       "btree",
-      table.applicationId.asc().nullsLast().op("uuid_ops")
+      table.applicationId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_activity_log_phase").using(
       "btree",
-      table.phaseId.asc().nullsLast().op("uuid_ops")
+      table.phaseId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_activity_log_user").using(
       "btree",
-      table.userId.asc().nullsLast().op("uuid_ops")
+      table.userId.asc().nullsLast().op("uuid_ops"),
     ),
     index("ix_activity_log_application").using(
       "btree",
-      table.applicationId.asc().nullsLast().op("uuid_ops")
+      table.applicationId.asc().nullsLast().op("uuid_ops"),
     ),
     index("ix_activity_log_phase").using(
       "btree",
-      table.phaseId.asc().nullsLast().op("uuid_ops")
+      table.phaseId.asc().nullsLast().op("uuid_ops"),
     ),
     index("ix_activity_log_user").using(
       "btree",
-      table.userId.asc().nullsLast().op("uuid_ops")
+      table.userId.asc().nullsLast().op("uuid_ops"),
     ),
     foreignKey({
       columns: [table.applicationId],
@@ -1487,7 +1485,7 @@ export const activityLog = pgTable(
       foreignColumns: [userAccount.id],
       name: "fk_activity_log_user",
     }).onDelete("restrict"),
-  ]
+  ],
 );
 
 export const calendarEvent = pgTable(
@@ -1503,10 +1501,10 @@ export const calendarEvent = pgTable(
     priority: varchar({ length: 20 }),
     createdBy: uuid("created_by"),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     applicationId: uuid("application_id"),
     phaseId: uuid("phase_id"),
@@ -1529,17 +1527,17 @@ export const calendarEvent = pgTable(
     }).onDelete("set null"),
     check(
       "calendar_event_event_type_check",
-      sql`(event_type)::text = ANY ((ARRAY['meeting'::character varying, 'deadline'::character varying, 'review'::character varying, 'other'::character varying])::text[])`
+      sql`(event_type)::text = ANY ((ARRAY['meeting'::character varying, 'deadline'::character varying, 'review'::character varying, 'other'::character varying])::text[])`,
     ),
     check(
       "calendar_event_priority_check",
-      sql`(priority)::text = ANY ((ARRAY['high'::character varying, 'medium'::character varying, 'low'::character varying])::text[])`
+      sql`(priority)::text = ANY ((ARRAY['high'::character varying, 'medium'::character varying, 'low'::character varying])::text[])`,
     ),
     check(
       "calendar_event_status_check",
-      sql`(status)::text = ANY ((ARRAY['scheduled'::character varying, 'in-progress'::character varying, 'completed'::character varying, 'cancelled'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['scheduled'::character varying, 'in-progress'::character varying, 'completed'::character varying, 'cancelled'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const documentManagement = pgTable(
@@ -1557,17 +1555,17 @@ export const documentManagement = pgTable(
     status: varchar({ length: 50 }).default("pending"),
     uploadedBy: uuid("uploaded_by"),
     uploadDate: timestamp("upload_date", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     verifiedBy: uuid("verified_by"),
     verificationDate: timestamp("verification_date", { mode: "string" }),
     remarks: text(),
     metadata: jsonb(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     applicationId: uuid("application_id"),
     phaseId: uuid("phase_id"),
@@ -1595,13 +1593,13 @@ export const documentManagement = pgTable(
     }),
     check(
       "document_management_entity_type_check",
-      sql`(entity_type)::text = ANY ((ARRAY['application'::character varying, 'phase'::character varying, 'task'::character varying])::text[])`
+      sql`(entity_type)::text = ANY ((ARRAY['application'::character varying, 'phase'::character varying, 'task'::character varying])::text[])`,
     ),
     check(
       "document_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const digitalSignature = pgTable(
@@ -1614,17 +1612,17 @@ export const digitalSignature = pgTable(
     signerType: varchar("signer_type", { length: 50 }).notNull(),
     signatureImage: text("signature_image").notNull(),
     signatureDate: timestamp("signature_date", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     ipAddress: varchar("ip_address", { length: 45 }),
     isValid: boolean("is_valid").default(true),
     verificationToken: varchar("verification_token", { length: 255 }),
     metadata: jsonb(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -1635,9 +1633,9 @@ export const digitalSignature = pgTable(
     }),
     check(
       "digital_signature_signer_type_check",
-      sql`(signer_type)::text = ANY ((ARRAY['author'::character varying, 'applicant'::character varying, 'representative'::character varying, 'staff'::character varying])::text[])`
+      sql`(signer_type)::text = ANY ((ARRAY['author'::character varying, 'applicant'::character varying, 'representative'::character varying, 'staff'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const contactMessage = pgTable(
@@ -1651,10 +1649,10 @@ export const contactMessage = pgTable(
     status: varchar({ length: 50 }).default("pending"),
     assignedTo: uuid("assigned_to"),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -1665,9 +1663,9 @@ export const contactMessage = pgTable(
     }),
     check(
       "contact_message_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'in-progress'::character varying, 'resolved'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'in-progress'::character varying, 'resolved'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const comment = pgTable(
@@ -1680,10 +1678,10 @@ export const comment = pgTable(
     content: text().notNull(),
     parentId: uuid("parent_id"),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -1697,7 +1695,7 @@ export const comment = pgTable(
       foreignColumns: [userAccount.id],
       name: "comment_user_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const notification = pgTable(
@@ -1714,7 +1712,7 @@ export const notification = pgTable(
     status: varchar({ length: 20 }).default("unread"),
     link: text(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     readAt: timestamp("read_at", { mode: "string" }),
   },
@@ -1726,13 +1724,13 @@ export const notification = pgTable(
     }).onDelete("cascade"),
     check(
       "notification_status_check",
-      sql`(status)::text = ANY ((ARRAY['read'::character varying, 'unread'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['read'::character varying, 'unread'::character varying])::text[])`,
     ),
     check(
       "notification_type_check",
-      sql`(type)::text = ANY ((ARRAY['info'::character varying, 'warning'::character varying, 'success'::character varying, 'error'::character varying])::text[])`
+      sql`(type)::text = ANY ((ARRAY['info'::character varying, 'warning'::character varying, 'success'::character varying, 'error'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const ipContributors = pgTable(
@@ -1758,9 +1756,9 @@ export const ipContributors = pgTable(
     }).onDelete("cascade"),
     check(
       "ip_contributors_role_check",
-      sql`(role)::text = ANY ((ARRAY['inventor'::character varying, 'author'::character varying, 'applicant'::character varying])::text[])`
+      sql`(role)::text = ANY ((ARRAY['inventor'::character varying, 'author'::character varying, 'applicant'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const ipDetails = pgTable(
@@ -1786,9 +1784,9 @@ export const ipDetails = pgTable(
     }).onDelete("cascade"),
     check(
       "ip_details_commercialization_status_check",
-      sql`(commercialization_status)::text = ANY ((ARRAY['not_licensed'::character varying, 'licensed'::character varying, 'in_negotiation'::character varying])::text[])`
+      sql`(commercialization_status)::text = ANY ((ARRAY['not_licensed'::character varying, 'licensed'::character varying, 'in_negotiation'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const phaseReview = pgTable(
@@ -1800,33 +1798,33 @@ export const phaseReview = pgTable(
     comment: text().notNull(),
     status: varchar({ length: 50 }).notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     updatedAt: timestamp("updated_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     rating: integer(),
     reviewDate: timestamp("review_date", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
     attachments: text().array(),
   },
   (table) => [
     index("idx_phase_review_date").using(
       "btree",
-      table.reviewDate.asc().nullsLast().op("timestamp_ops")
+      table.reviewDate.asc().nullsLast().op("timestamp_ops"),
     ),
     index("idx_phase_review_phase_id").using(
       "btree",
-      table.phaseId.asc().nullsLast().op("uuid_ops")
+      table.phaseId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_phase_review_reviewer").using(
       "btree",
-      table.reviewerId.asc().nullsLast().op("uuid_ops")
+      table.reviewerId.asc().nullsLast().op("uuid_ops"),
     ),
     index("idx_phase_review_status").using(
       "btree",
-      table.status.asc().nullsLast().op("text_ops")
+      table.status.asc().nullsLast().op("text_ops"),
     ),
     foreignKey({
       columns: [table.phaseId],
@@ -1841,9 +1839,9 @@ export const phaseReview = pgTable(
     check("phase_review_rating_check", sql`(rating >= 1) AND (rating <= 5)`),
     check(
       "review_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'needs_revision'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'needs_revision'::character varying])::text[])`,
     ),
-  ]
+  ],
 );
 
 export const phaseReviewAttachment = pgTable(
@@ -1856,7 +1854,7 @@ export const phaseReviewAttachment = pgTable(
     fileType: varchar("file_type", { length: 50 }).notNull(),
     fileSize: integer("file_size").notNull(),
     uploadedAt: timestamp("uploaded_at", { mode: "string" }).default(
-      sql`CURRENT_TIMESTAMP`
+      sql`CURRENT_TIMESTAMP`,
     ),
   },
   (table) => [
@@ -1865,7 +1863,7 @@ export const phaseReviewAttachment = pgTable(
       foreignColumns: [phaseReview.reviewId],
       name: "phase_review_attachment_review_id_fkey",
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const eventParticipant = pgTable(
@@ -1892,7 +1890,7 @@ export const eventParticipant = pgTable(
     }),
     check(
       "event_participant_status_check",
-      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying, 'declined'::character varying])::text[])`
+      sql`(status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying, 'declined'::character varying])::text[])`,
     ),
-  ]
+  ],
 );

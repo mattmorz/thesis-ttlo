@@ -78,7 +78,7 @@ const HIGHEST_DEGREE_LEGACY_VALUES = new Set([
 
 function normalizeHighestDegree(
   highestDegree: { value?: unknown; otherValue?: unknown } | undefined,
-  subType?: unknown
+  subType?: unknown,
 ) {
   if (!highestDegree || typeof highestDegree !== "object") {
     return { value: "bachelor", otherValue: null };
@@ -103,9 +103,7 @@ function normalizeHighestDegree(
     return {
       value: "other",
       otherValue:
-        typeof subType === "string" && subType.trim()
-          ? subType
-          : rawValue,
+        typeof subType === "string" && subType.trim() ? subType : rawValue,
     };
   }
 
@@ -117,10 +115,7 @@ function normalizeHighestDegree(
 }
 
 function denormalizeHighestDegree(
-  highestDegree:
-    | { value?: unknown; otherValue?: unknown }
-    | null
-    | undefined
+  highestDegree: { value?: unknown; otherValue?: unknown } | null | undefined,
 ) {
   if (!highestDegree || typeof highestDegree !== "object") return highestDegree;
   if (highestDegree.value !== "other") return highestDegree;
@@ -175,7 +170,7 @@ export async function POST(req: Request) {
       console.error("❌ No user session found");
       return NextResponse.json(
         { error: "Unauthorized: No user session" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -189,7 +184,7 @@ export async function POST(req: Request) {
         console.log("[POST] Permission denied: User cannot submit form");
         return NextResponse.json(
           { error: "Permission denied: Cannot submit form" },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -251,16 +246,12 @@ export async function POST(req: Request) {
 
       // Company Information - only save if hasCompany is true
       companyName: personalInfo?.companyName?.trim() || null,
-      companyStreet:
-        personalInfo?.companyStreet?.trim() || null,
-      companyBarangay:
-        personalInfo?.companyBarangay?.trim() || null,
+      companyStreet: personalInfo?.companyStreet?.trim() || null,
+      companyBarangay: personalInfo?.companyBarangay?.trim() || null,
       companyCityMunicipality:
         personalInfo?.companyCityMunicipality?.trim() || null,
-      companyProvince:
-        personalInfo?.companyProvince?.trim() || null,
-      companyEmail:
-        personalInfo?.companyEmail?.trim() || null,
+      companyProvince: personalInfo?.companyProvince?.trim() || null,
+      companyEmail: personalInfo?.companyEmail?.trim() || null,
 
       occupation: personalInfo?.occupation?.trim() || null,
 
@@ -270,11 +261,11 @@ export async function POST(req: Request) {
           ? personalInfo.isAffiliated
           : Boolean(
               personalInfo?.affiliationType === "academic" ||
-                personalInfo?.isCSUAffiliated === true ||
-                personalInfo?.isCSUAffiliated === false ||
-                personalInfo?.institutionName?.trim() ||
-                personalInfo?.departmentName?.trim() ||
-                personalInfo?.department?.trim()
+              personalInfo?.isCSUAffiliated === true ||
+              personalInfo?.isCSUAffiliated === false ||
+              personalInfo?.institutionName?.trim() ||
+              personalInfo?.departmentName?.trim() ||
+              personalInfo?.department?.trim(),
             ),
       institutionName:
         personalInfo?.institutionName?.trim() ||
@@ -318,7 +309,7 @@ export async function POST(req: Request) {
     // Normalize highest degree to align with DB constraints
     formattedData.highestDegree = normalizeHighestDegree(
       educationalBackground?.highestDegree,
-      educationalBackground?.subType
+      educationalBackground?.subType,
     );
 
     // Right after formattedData is created, update the validation for citizenship
@@ -344,7 +335,7 @@ export async function POST(req: Request) {
 
     console.log(
       "📝 Formatted data for database:",
-      JSON.stringify(formattedData, null, 2)
+      JSON.stringify(formattedData, null, 2),
     );
 
     let result;
@@ -358,34 +349,36 @@ export async function POST(req: Request) {
       const registryEntry = await db.query.formSubmissionRegistry.findFirst({
         where: and(
           eq(formSubmissionRegistry.ipApplicationId, applicationId),
-          eq(formSubmissionRegistry.sourceType, "client_profile")
+          eq(formSubmissionRegistry.sourceType, "client_profile"),
         ),
       });
 
       if (registryEntry?.sourceId) {
         console.log(
-          `✓ Found registry entry for application ${applicationId}, sourceId=${registryEntry.sourceId}`
+          `✓ Found registry entry for application ${applicationId}, sourceId=${registryEntry.sourceId}`,
         );
         // If there's a registry entry, check if the profile exists
         const profileForThisApp = await getClientProfileById(
-          registryEntry.sourceId
+          registryEntry.sourceId,
         );
 
         if (profileForThisApp) {
           existingProfileId = profileForThisApp.clientId;
           console.log(
-            `✓ Found existing profile for this application: ${existingProfileId}`
+            `✓ Found existing profile for this application: ${existingProfileId}`,
           );
         }
       }
     } else {
-      console.log("ℹ️ No applicationId provided; creating an unlinked client profile");
+      console.log(
+        "ℹ️ No applicationId provided; creating an unlinked client profile",
+      );
     }
 
     // If we have an existing profile for this application, update it
     if (existingProfileId) {
       console.log(
-        `🔄 Updating existing profile for application: ${existingProfileId}`
+        `🔄 Updating existing profile for application: ${existingProfileId}`,
       );
 
       // If only updating status, just update the status field
@@ -398,7 +391,7 @@ export async function POST(req: Request) {
         ) {
           return NextResponse.json(
             { error: "Permission denied: Cannot approve/reject forms" },
-            { status: 403 }
+            { status: 403 },
           );
         }
 
@@ -438,14 +431,14 @@ export async function POST(req: Request) {
     if (!savedProfile) {
       return NextResponse.json(
         { error: "Failed to load saved client profile" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // If an application ID was provided, register this profile in the form submission registry
     if (applicationId && result[0].clientId) {
       console.log(
-        `🔗 Registering client profile for application ${applicationId} with registerForm=${registerForm}`
+        `🔗 Registering client profile for application ${applicationId} with registerForm=${registerForm}`,
       );
 
       // First, try to handle registry within the same transaction
@@ -456,7 +449,7 @@ export async function POST(req: Request) {
             where: and(
               eq(formSubmissionRegistry.ipApplicationId, applicationId),
               eq(formSubmissionRegistry.sourceType, "client_profile"),
-              eq(formSubmissionRegistry.userId, session.user.id)
+              eq(formSubmissionRegistry.userId, session.user.id),
             ),
           });
 
@@ -501,7 +494,7 @@ export async function POST(req: Request) {
             registryMessage = "Form registry created successfully";
             console.log(
               "✅ Created form submission registry entry:",
-              registryId
+              registryId,
             );
           }
         } else {
@@ -533,7 +526,10 @@ export async function POST(req: Request) {
             .update(formSubmissionRegistry)
             .set(updateData)
             .where(
-              eq(formSubmissionRegistry.registryId, existingRegistry.registryId)
+              eq(
+                formSubmissionRegistry.registryId,
+                existingRegistry.registryId,
+              ),
             )
             .returning();
 
@@ -543,7 +539,7 @@ export async function POST(req: Request) {
             registryMessage = "Form registry updated successfully";
             console.log(
               "✅ Updated form submission registry entry:",
-              registryId
+              registryId,
             );
           }
         }
@@ -582,7 +578,7 @@ export async function POST(req: Request) {
                   },
                 ],
               }),
-            }
+            },
           );
 
           if (directRegistryResponse.ok) {
@@ -590,7 +586,7 @@ export async function POST(req: Request) {
             if (directRegistryResult?.data?.registryId) {
               console.log(
                 "Direct registry API call successful:",
-                directRegistryResult
+                directRegistryResult,
               );
               registryId = directRegistryResult.data.registryId;
               registrySuccess = true;
@@ -600,7 +596,7 @@ export async function POST(req: Request) {
           } else {
             console.error(
               "Direct registry API call failed with status:",
-              directRegistryResponse.status
+              directRegistryResponse.status,
             );
           }
         } catch (directRegError) {
@@ -631,7 +627,7 @@ export async function POST(req: Request) {
           ? savedProfile.isAffiliated
           : Boolean(
               savedProfile?.institutionName?.trim() ||
-                savedProfile?.department?.trim()
+              savedProfile?.department?.trim(),
             ),
     };
 
@@ -657,7 +653,7 @@ export async function POST(req: Request) {
 
     console.log(
       "🎉 Operation completed. Result:",
-      JSON.stringify(camelCaseResult, null, 2)
+      JSON.stringify(camelCaseResult, null, 2),
     );
 
     // Return success with registry information
@@ -681,7 +677,7 @@ export async function POST(req: Request) {
         error: "Failed to save client profile",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -694,7 +690,7 @@ export async function GET(req: Request) {
       console.error("❌ No user session found");
       return NextResponse.json(
         { error: "Unauthorized: No user session" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -719,7 +715,7 @@ export async function GET(req: Request) {
         where: and(
           eq(formSubmissionRegistry.ipApplicationId, applicationId),
           eq(formSubmissionRegistry.sourceType, "client_profile"),
-          eq(formSubmissionRegistry.userId, session.user.id)
+          eq(formSubmissionRegistry.userId, session.user.id),
         ),
       });
 
@@ -730,7 +726,7 @@ export async function GET(req: Request) {
         // Just return null data so the form can be filled out fresh
         if (isFormLoad) {
           console.log(
-            "📝 Form load without existing profile - returning empty data"
+            "📝 Form load without existing profile - returning empty data",
           );
           return NextResponse.json({
             success: true,
@@ -754,7 +750,7 @@ export async function GET(req: Request) {
           "❌ Profile not found for registry",
           formRegistry.registryId,
           "sourceId:",
-          formRegistry.sourceId
+          formRegistry.sourceId,
         );
 
         // Add additional debug info to help diagnose the problem
@@ -819,7 +815,7 @@ export async function GET(req: Request) {
     // If no applicationId is provided, fall back to the default behavior
     // of fetching the profile by user ID
     console.log("🔍 Fetching profile for user:", session.user.id);
-      const profile = await getClientProfileByUserId(session.user.id);
+    const profile = await getClientProfileByUserId(session.user.id);
 
     if (!profile) {
       console.log("❌ No profile found for user");
@@ -879,7 +875,7 @@ export async function GET(req: Request) {
         error: "Failed to fetch client profile",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -895,7 +891,7 @@ export async function PUT(req: Request) {
       console.error("❌ No user session found");
       return NextResponse.json(
         { error: "Unauthorized: No user session" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -914,7 +910,7 @@ export async function PUT(req: Request) {
         console.log("[PUT] Permission denied: User cannot submit form");
         return NextResponse.json(
           { error: "Permission denied: Cannot submit form" },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -945,7 +941,7 @@ export async function PUT(req: Request) {
     if (!applicationId) {
       return NextResponse.json(
         { error: "Bad request: applicationId is required for updates" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -1014,7 +1010,8 @@ export async function PUT(req: Request) {
         personalInfo.companyBarangay?.trim() || null;
       formattedData.companyCityMunicipality =
         personalInfo.companyCityMunicipality?.trim() || null;
-      formattedData.companyProvince = personalInfo.companyProvince?.trim() || null;
+      formattedData.companyProvince =
+        personalInfo.companyProvince?.trim() || null;
       formattedData.companyEmail = personalInfo.companyEmail?.trim() || null;
 
       formattedData.occupation = personalInfo.occupation?.trim() || null;
@@ -1023,11 +1020,11 @@ export async function PUT(req: Request) {
           ? personalInfo.isAffiliated
           : Boolean(
               personalInfo.affiliationType === "academic" ||
-                personalInfo.isCSUAffiliated === true ||
-                personalInfo.isCSUAffiliated === false ||
-                personalInfo.institutionName?.trim() ||
-                personalInfo.departmentName?.trim() ||
-                personalInfo.department?.trim()
+              personalInfo.isCSUAffiliated === true ||
+              personalInfo.isCSUAffiliated === false ||
+              personalInfo.institutionName?.trim() ||
+              personalInfo.departmentName?.trim() ||
+              personalInfo.department?.trim(),
             );
       formattedData.institutionName =
         personalInfo.institutionName?.trim() ||
@@ -1043,7 +1040,7 @@ export async function PUT(req: Request) {
       // Educational Background
       formattedData.highestDegree = normalizeHighestDegree(
         educationalBackground.highestDegree,
-        educationalBackground.subType
+        educationalBackground.subType,
       );
       formattedData.degree = educationalBackground.degree?.trim();
       formattedData.profession = educationalBackground.profession?.trim();
@@ -1071,14 +1068,14 @@ export async function PUT(req: Request) {
 
     console.log(
       "📝 Formatted data for update:",
-      JSON.stringify(formattedData, null, 2)
+      JSON.stringify(formattedData, null, 2),
     );
 
     console.log("🔍 Looking for existing profile via registry");
     const registryEntry = await db.query.formSubmissionRegistry.findFirst({
       where: and(
         eq(formSubmissionRegistry.ipApplicationId, applicationId),
-        eq(formSubmissionRegistry.sourceType, "client_profile")
+        eq(formSubmissionRegistry.sourceType, "client_profile"),
       ),
     });
 
@@ -1086,7 +1083,7 @@ export async function PUT(req: Request) {
       console.log("❌ No registry entry found for this application");
       return NextResponse.json(
         { error: "No client profile found for this application" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -1127,7 +1124,7 @@ export async function PUT(req: Request) {
       console.log(`❌ Failed to update profile with ID: ${profileId}`);
       return NextResponse.json(
         { error: "Failed to update client profile" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -1160,7 +1157,7 @@ export async function PUT(req: Request) {
       const existingRegistry = await db.query.formSubmissionRegistry.findFirst({
         where: and(
           eq(formSubmissionRegistry.ipApplicationId, applicationId),
-          eq(formSubmissionRegistry.sourceType, "client_profile")
+          eq(formSubmissionRegistry.sourceType, "client_profile"),
         ),
       });
 
@@ -1209,7 +1206,7 @@ export async function PUT(req: Request) {
 
     console.log(
       "🎉 Update operation completed. Result:",
-      JSON.stringify(camelCaseResult, null, 2)
+      JSON.stringify(camelCaseResult, null, 2),
     );
 
     // Return with registry information, matching the POST handler's response format
@@ -1233,7 +1230,7 @@ export async function PUT(req: Request) {
         error: "Failed to update client profile",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -35,6 +35,71 @@ function addRateLimitHeaders(
   return response;
 }
 
+function normalizePersonRows(people: unknown) {
+  if (!Array.isArray(people)) return [];
+
+  return people.flatMap((person: any) => {
+    if (!person || typeof person !== "object") return [];
+
+    const firstName = String(person.firstName || "").trim();
+    const lastName = String(person.lastName || "").trim();
+
+    if (!firstName && !lastName) return [];
+
+    return [
+      {
+        firstName,
+        middleInitial: person.middleInitial
+          ? String(person.middleInitial).trim()
+          : null,
+        lastName,
+      },
+    ];
+  });
+}
+
+async function syncDisclosurePeople(
+  client: any,
+  disclosureId: string,
+  applicants: unknown,
+  inventors: unknown
+) {
+  await client.query(
+    `DELETE FROM ip_disclosure_applicant WHERE disclosure_id = $1`,
+    [disclosureId]
+  );
+  await client.query(
+    `DELETE FROM ip_disclosure_inventor WHERE disclosure_id = $1`,
+    [disclosureId]
+  );
+
+  const normalizedApplicants = normalizePersonRows(applicants);
+  for (const applicant of normalizedApplicants) {
+    await client.query(
+      `INSERT INTO ip_disclosure_applicant (disclosure_id, first_name, middle_initial, last_name) VALUES ($1, $2, $3, $4)`,
+      [
+        disclosureId,
+        applicant.firstName,
+        applicant.middleInitial || null,
+        applicant.lastName,
+      ]
+    );
+  }
+
+  const normalizedInventors = normalizePersonRows(inventors);
+  for (const inventor of normalizedInventors) {
+    await client.query(
+      `INSERT INTO ip_disclosure_inventor (disclosure_id, first_name, middle_initial, last_name) VALUES ($1, $2, $3, $4)`,
+      [
+        disclosureId,
+        inventor.firstName,
+        inventor.middleInitial || null,
+        inventor.lastName,
+      ]
+    );
+  }
+}
+
 // GET handler for retrieving a specific IP disclosure
 export async function GET(
   request: NextRequest,
@@ -321,6 +386,8 @@ export async function PUT(
       try {
         const client = await pool.connect();
         try {
+          await client.query("BEGIN");
+
           // Format data for database update
           const updateData = {
             selectedIpTypes: body.selected_ip_types, // Already JSON stringified
@@ -395,6 +462,15 @@ export async function PUT(
           }
 
           debugData.result = result.rows[0];
+
+          await syncDisclosurePeople(
+            client,
+            disclosureId,
+            applicantsInfo.applicants,
+            applicantsInfo.inventors
+          );
+
+          await client.query("COMMIT");
 
           // Verify the update
           const verificationResult = await client.query(
@@ -535,6 +611,12 @@ export async function PUT(
           client.release();
         }
       } catch (error) {
+        try {
+          await client.query("ROLLBACK");
+        } catch (rollbackError) {
+          console.error("Error rolling back transaction:", rollbackError);
+        }
+
         debugData.firstApproachError =
           error instanceof Error ? error.message : String(error);
         console.error(

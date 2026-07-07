@@ -17,14 +17,14 @@ const pool = new Pool({
 // Add this helper function after imports
 function addRateLimitHeaders(
   response: NextResponse,
-  remaining: number = 50
+  remaining: number = 50,
 ): NextResponse {
   // Add rate limiting headers
   response.headers.set("X-RateLimit-Limit", "60"); // 60 requests per minute
   response.headers.set("X-RateLimit-Remaining", remaining.toString());
   response.headers.set(
     "X-RateLimit-Reset",
-    Math.floor(Date.now() / 1000 + 60).toString()
+    Math.floor(Date.now() / 1000 + 60).toString(),
   );
 
   if (remaining <= 5) {
@@ -62,15 +62,15 @@ async function syncDisclosurePeople(
   client: any,
   disclosureId: string,
   applicants: unknown,
-  inventors: unknown
+  inventors: unknown,
 ) {
   await client.query(
     `DELETE FROM ip_disclosure_applicant WHERE disclosure_id = $1`,
-    [disclosureId]
+    [disclosureId],
   );
   await client.query(
     `DELETE FROM ip_disclosure_inventor WHERE disclosure_id = $1`,
-    [disclosureId]
+    [disclosureId],
   );
 
   const normalizedApplicants = normalizePersonRows(applicants);
@@ -82,7 +82,7 @@ async function syncDisclosurePeople(
         applicant.firstName,
         applicant.middleInitial || null,
         applicant.lastName,
-      ]
+      ],
     );
   }
 
@@ -95,7 +95,7 @@ async function syncDisclosurePeople(
         inventor.firstName,
         inventor.middleInitial || null,
         inventor.lastName,
-      ]
+      ],
     );
   }
 }
@@ -103,7 +103,7 @@ async function syncDisclosurePeople(
 // GET handler for retrieving a specific IP disclosure
 export async function GET(
   request: NextRequest,
-  { params }: { params: { disclosureId: string } }
+  { params }: { params: { disclosureId: string } },
 ) {
   try {
     // Get the disclosure ID from the params
@@ -113,13 +113,13 @@ export async function GET(
     // Validate the ID is a UUID
     const isValidUUID =
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        disclosureId
+        disclosureId,
       );
     if (!isValidUUID) {
       console.error("Invalid disclosure ID format:", disclosureId);
       return NextResponse.json(
         { error: "Invalid disclosure ID format" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -144,7 +144,7 @@ export async function GET(
       console.log("No disclosure found with ID:", disclosureId);
       return NextResponse.json(
         { error: "Disclosure not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -199,7 +199,7 @@ export async function GET(
       type: typeof applicantsInfo.ipTypes,
       keys: Object.keys(applicantsInfo.ipTypes || {}),
       hasTrue: Object.values(applicantsInfo.ipTypes || {}).some(
-        (v) => v === true
+        (v) => v === true,
       ),
     });
 
@@ -230,7 +230,7 @@ export async function GET(
     // If we have copyright data but no IP types selected, set copyright to true
     if (hasCopyrightData && !hasIpTypesSelected) {
       console.log(
-        "Detected copyright data but no IP types selected - setting copyright to true"
+        "Detected copyright data but no IP types selected - setting copyright to true",
       );
       mergedIpTypes.copyright = true;
     }
@@ -296,7 +296,7 @@ export async function GET(
         error: "Failed to retrieve IP disclosure",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -309,7 +309,7 @@ function generateResponse(status: number, message: string, data: any = {}) {
 function generateErrorResponse(
   status: number,
   message: string,
-  debugData: any = {}
+  debugData: any = {},
 ) {
   return NextResponse.json({ error: message, debugData }, { status });
 }
@@ -317,7 +317,7 @@ function generateErrorResponse(
 // PUT handler for updating a specific IP disclosure
 export async function PUT(
   request: Request,
-  { params }: { params: { disclosureId: string } }
+  { params }: { params: { disclosureId: string } },
 ) {
   const { disclosureId } = params;
   const debugData: any = {};
@@ -353,7 +353,7 @@ export async function PUT(
 
           // Validate that at least one type is selected
           const hasSelectedType = Object.values(cleanedIpTypes).some(
-            (v) => v === true
+            (v) => v === true,
           );
           if (!hasSelectedType) {
             debugData.error = "At least one IP type must be selected";
@@ -361,7 +361,7 @@ export async function PUT(
             return generateErrorResponse(
               400,
               "At least one IP type must be selected",
-              debugData
+              debugData,
             );
           }
 
@@ -374,7 +374,7 @@ export async function PUT(
           return generateErrorResponse(
             400,
             "Invalid IP types format",
-            debugData
+            debugData,
           );
         }
       }
@@ -457,7 +457,7 @@ export async function PUT(
             return generateErrorResponse(
               404,
               "IP disclosure not found",
-              debugData
+              debugData,
             );
           }
 
@@ -467,7 +467,7 @@ export async function PUT(
             client,
             disclosureId,
             applicantsInfo.applicants,
-            applicantsInfo.inventors
+            applicantsInfo.inventors,
           );
 
           await client.query("COMMIT");
@@ -475,7 +475,7 @@ export async function PUT(
           // Verify the update
           const verificationResult = await client.query(
             `SELECT disclosure_id, selected_ip_types FROM ip_disclosure WHERE disclosure_id = $1`,
-            [disclosureId]
+            [disclosureId],
           );
           debugData.ipTypesVerification = verificationResult.rows[0];
 
@@ -493,9 +493,8 @@ export async function PUT(
             });
 
             try {
-              const { formSubmissionRegistry } = await import(
-                "@/drizzle/migrations/schema"
-              );
+              const { formSubmissionRegistry } =
+                await import("@/drizzle/migrations/schema");
               const { and, eq } = await import("drizzle-orm");
 
               // Get application ID from the result or database
@@ -508,8 +507,8 @@ export async function PUT(
                 .where(
                   and(
                     eq(formSubmissionRegistry.sourceType, "ip_disclosure"),
-                    eq(formSubmissionRegistry.sourceId, disclosureId)
-                  )
+                    eq(formSubmissionRegistry.sourceId, disclosureId),
+                  ),
                 );
 
               // Get user ID from auth session
@@ -527,7 +526,7 @@ export async function PUT(
                 } catch (e) {
                   console.error(
                     "Error parsing IP types for registry title:",
-                    e
+                    e,
                   );
                   ipTypes = {};
                 }
@@ -549,7 +548,7 @@ export async function PUT(
                 if (existingRegistry && existingRegistry.length > 0) {
                   console.log(
                     "Updating existing registry entry",
-                    existingRegistry[0]
+                    existingRegistry[0],
                   );
 
                   // Update existing registry entry with the latest application ID if available
@@ -567,8 +566,8 @@ export async function PUT(
                     .where(
                       eq(
                         formSubmissionRegistry.registryId,
-                        existingRegistry[0].registryId
-                      )
+                        existingRegistry[0].registryId,
+                      ),
                     );
 
                   console.log("Updated existing registry entry");
@@ -621,7 +620,7 @@ export async function PUT(
           error instanceof Error ? error.message : String(error);
         console.error(
           "Error updating IP disclosure:",
-          debugData.firstApproachError
+          debugData.firstApproachError,
         );
 
         // Fall back to just updating the IP types
@@ -635,7 +634,7 @@ export async function PUT(
                     updated_at = NOW()
                 WHERE disclosure_id = $2
                 RETURNING disclosure_id, selected_ip_types`,
-                [body.selected_ip_types, disclosureId]
+                [body.selected_ip_types, disclosureId],
               );
 
               if (ipUpdateResult.rows.length === 0) {
@@ -643,7 +642,7 @@ export async function PUT(
                 return generateErrorResponse(
                   404,
                   "IP disclosure not found (fallback)",
-                  debugData
+                  debugData,
                 );
               }
 
@@ -660,7 +659,7 @@ export async function PUT(
                 {
                   id: disclosureId,
                   result: ipUpdateResult.rows[0],
-                }
+                },
               );
             } finally {
               client.release();
@@ -672,20 +671,20 @@ export async function PUT(
                 : String(fallbackError);
             console.error(
               "Error updating IP types (fallback):",
-              debugData.fallbackError
+              debugData.fallbackError,
             );
 
             return generateErrorResponse(
               500,
               "Failed to update IP disclosure",
-              debugData
+              debugData,
             );
           }
         } else {
           return generateErrorResponse(
             500,
             "Failed to update IP disclosure and no IP types available for fallback",
-            debugData
+            debugData,
           );
         }
       }
@@ -698,7 +697,7 @@ export async function PUT(
       return generateErrorResponse(
         500,
         `Failed to update disclosure: ${debugData.error}`,
-        debugData
+        debugData,
       );
     }
   } catch (error) {
@@ -707,7 +706,7 @@ export async function PUT(
     return generateErrorResponse(
       500,
       `Server error: ${debugData.error}`,
-      debugData
+      debugData,
     );
   }
 }

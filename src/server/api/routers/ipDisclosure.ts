@@ -2,7 +2,11 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure } from "../trpc";
 import { db } from "@/drizzle/db";
-import { ipDisclosure } from "@/drizzle/migrations/schema";
+import {
+  ipDisclosure,
+  ipDisclosureApplicant,
+  ipDisclosureInventor,
+} from "@/drizzle/migrations/schema";
 import { eq } from "drizzle-orm";
 
 export const ipDisclosureRouter = {
@@ -111,9 +115,46 @@ export const ipDisclosureRouter = {
           .returning();
 
         if (disclosure.length > 0) {
+          const createdDisclosureId = disclosure[0].disclosureId;
+
+          const applicantsToSave = (input.applicants || []).filter(
+            (person) =>
+              Boolean(person?.firstName?.trim()) ||
+              Boolean(person?.middleInitial?.trim()) ||
+              Boolean(person?.lastName?.trim())
+          );
+          const inventorsToSave = (input.inventors || []).filter(
+            (person) =>
+              Boolean(person?.firstName?.trim()) ||
+              Boolean(person?.middleInitial?.trim()) ||
+              Boolean(person?.lastName?.trim())
+          );
+
+          if (applicantsToSave.length > 0) {
+            await db.insert(ipDisclosureApplicant).values(
+              applicantsToSave.map((person) => ({
+                disclosureId: createdDisclosureId,
+                firstName: person.firstName || "",
+                middleInitial: person.middleInitial || null,
+                lastName: person.lastName || "",
+              }))
+            );
+          }
+
+          if (inventorsToSave.length > 0) {
+            await db.insert(ipDisclosureInventor).values(
+              inventorsToSave.map((person) => ({
+                disclosureId: createdDisclosureId,
+                firstName: person.firstName || "",
+                middleInitial: person.middleInitial || null,
+                lastName: person.lastName || "",
+              }))
+            );
+          }
+
           return {
             success: true,
-            disclosure_id: disclosure[0].disclosureId,
+            disclosure_id: createdDisclosureId,
             applicationId: disclosure[0].applicationId,
           };
         }

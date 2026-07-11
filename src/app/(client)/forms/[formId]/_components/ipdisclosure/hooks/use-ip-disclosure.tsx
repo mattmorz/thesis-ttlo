@@ -135,12 +135,18 @@ export const useIpDisclosure = () => {
       return null;
     }
 
+    const hasAnyCompleteApplicant = (data.applicants ?? []).some(
+      (person) =>
+        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim())
+    );
+
+    const hasAnyCompleteInventor = (data.inventors ?? []).some(
+      (person) =>
+        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim())
+    );
+
     // Check for at least one applicant with name
-    if (
-      !data.applicants?.length ||
-      !data.applicants[0]?.firstName ||
-      !data.applicants[0]?.lastName
-    ) {
+    if (!hasAnyCompleteApplicant) {
       console.log("Applicant information is incomplete");
       toast({
         variant: "destructive",
@@ -152,11 +158,7 @@ export const useIpDisclosure = () => {
     }
 
     // Check for at least one inventor with name
-    if (
-      !data.inventors?.length ||
-      !data.inventors[0]?.firstName ||
-      !data.inventors[0]?.lastName
-    ) {
+    if (!hasAnyCompleteInventor) {
       console.log("Inventor information is incomplete");
       toast({
         variant: "destructive",

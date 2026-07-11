@@ -391,10 +391,17 @@ const [showCSUModal, setShowCSUModal] = useState(false);
       return false;
     }
 
-    if (
-      !applicantsInfo?.applicants?.[0]?.firstName ||
-      !applicantsInfo?.applicants?.[0]?.lastName
-    ) {
+    const hasAnyCompleteApplicant = (applicantsInfo?.applicants ?? []).some(
+      (person) =>
+        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim())
+    );
+
+    const hasAnyCompleteInventor = (applicantsInfo?.inventors ?? []).some(
+      (person) =>
+        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim())
+    );
+
+    if (!hasAnyCompleteApplicant) {
       console.error("Missing required applicants data: first/last name");
       toast.error(
         "Missing required applicant name information. Please complete the Applicant's Information tab first.",
@@ -405,10 +412,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
       return false;
     }
 
-    if (
-      !applicantsInfo?.inventors?.[0]?.firstName ||
-      !applicantsInfo?.inventors?.[0]?.lastName
-    ) {
+    if (!hasAnyCompleteInventor) {
       console.error("Missing required inventors data: first/last name");
       toast.error(
         "Missing required inventor information. Please complete the Applicant's Information tab first.",

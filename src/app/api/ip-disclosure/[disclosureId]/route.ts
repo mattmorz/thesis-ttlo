@@ -1,17 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { db } from "@/drizzle/db";
 import { appRouter } from "@/trpc/router";
 import pkg from "pg";
 
 export const dynamic = "force-dynamic";
 const { Pool } = pkg;
 
+const isLocalDatabaseUrl = (connectionString?: string) => {
+  if (!connectionString) return true;
+  return /(?:^|\/\/)(localhost|127\.0\.0\.1)(?::|\/)/i.test(connectionString);
+};
+
 // Create a connection pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: isLocalDatabaseUrl(process.env.DATABASE_URL)
+    ? false
+    : { rejectUnauthorized: false },
 });
 
 // Add this helper function after imports

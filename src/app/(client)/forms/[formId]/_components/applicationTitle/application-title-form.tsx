@@ -32,14 +32,14 @@ import {
 } from "@/lib/utils/ip-types";
 
 const IP_TYPE_VALUES = [
-  "patent",
-  "trademark",
   "copyright",
-  "industrial_design",
+  "patent",
   "utility_model",
+  "industrial_design",
+  "trademark",
   "trade_secret",
-  "other",
   "not_sure",
+  "other",
 ] as const;
 
 const IP_TYPE_OPTIONS = [

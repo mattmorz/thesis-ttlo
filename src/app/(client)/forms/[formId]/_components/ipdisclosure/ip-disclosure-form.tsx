@@ -38,7 +38,7 @@ import {
 
 // Global logging control
 const DEBUG = false;
-
+// !! this is where to change the order of the tabs in the IP disclosure
 const tabs = [
   {
     id: "applicants-information",
@@ -46,6 +46,14 @@ const tabs = [
     component: ApplicantsInformation,
     icon: FileType,
   },
+  {
+    id: "copyright-application",
+    label: "Copyright Application",
+    component: CopyrightApplication,
+    icon: BookmarkCheck,
+    showIf: (types: IpTypes) => types.copyright,
+  },
+  
   {
     id: "patent-application",
     label: "Patent/UM Application",
@@ -67,13 +75,7 @@ const tabs = [
    // icon: Sparkles,
     //showIf: (types: IpTypes) => types.patent || types.utilityModel,
   //},
-  {
-    id: "copyright-application",
-    label: "Copyright Application",
-    component: CopyrightApplication,
-    icon: BookmarkCheck,
-    showIf: (types: IpTypes) => types.copyright,
-  },
+
   {
     id: "trademark",
     label: "Trademark Application",

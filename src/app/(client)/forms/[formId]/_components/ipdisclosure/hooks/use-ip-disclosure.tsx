@@ -66,12 +66,12 @@ export const useIpDisclosure = () => {
     try {
       // Make direct API call to get confirmation data
       const response = await fetch(
-        `/api/ip-disclosure/${disclosureId}/confirmation`
+        `/api/ip-disclosure/${disclosureId}/confirmation`,
       );
 
       if (!response.ok) {
         throw new Error(
-          `Failed to fetch confirmation data: ${response.status}`
+          `Failed to fetch confirmation data: ${response.status}`,
         );
       }
 
@@ -99,13 +99,13 @@ export const useIpDisclosure = () => {
   // Enhanced version of saveApplicantsInfo with validation and form registry control
   const saveApplicantsInfoWithValidation = async (
     data?: ApplicantsInfo,
-    registerForm: boolean = false
+    registerForm: boolean = false,
   ) => {
     console.log(
       "Saving applicants info with validation:",
       data,
       "Register form:",
-      registerForm
+      registerForm,
     );
 
     // If no data provided, get it from the store
@@ -137,12 +137,12 @@ export const useIpDisclosure = () => {
 
     const hasAnyCompleteApplicant = (data.applicants ?? []).some(
       (person) =>
-        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim())
+        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim()),
     );
 
     const hasAnyCompleteInventor = (data.inventors ?? []).some(
       (person) =>
-        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim())
+        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim()),
     );
 
     // Check for at least one applicant with name
@@ -246,7 +246,7 @@ export const useIpDisclosure = () => {
           return data;
         } else {
           console.log(
-            "No existing disclosures found for user, creating new one"
+            "No existing disclosures found for user, creating new one",
           );
           // No existing disclosures, create a new one
           const existingId = await mainHook.checkExistingDisclosure();
@@ -299,11 +299,11 @@ export const useIpDisclosure = () => {
   // Now add registerForm parameter to other save methods
   const saveDisclosureConfirmation = async (
     data: any,
-    registerForm: boolean = false
+    registerForm: boolean = false,
   ) => {
     console.log(
       `Saving disclosure confirmation with registerForm=${registerForm}`,
-      data
+      data,
     );
     if (!data) {
       console.error("No data provided to saveDisclosureConfirmation");
@@ -357,7 +357,7 @@ export const useIpDisclosure = () => {
   // Update other save methods with the registerForm parameter
   const saveTrademarkApplication = async (
     data?: any,
-    registerForm: boolean = false
+    registerForm: boolean = false,
   ) => {
     if (data && typeof data === "object") {
       data.registerForm = registerForm;
@@ -365,7 +365,7 @@ export const useIpDisclosure = () => {
 
     console.log(
       `Saving trademark application with registerForm=${registerForm}:`,
-      data
+      data,
     );
     try {
       // Update the store first if we have data
@@ -382,7 +382,7 @@ export const useIpDisclosure = () => {
 
   const saveCopyrightApplication = async (
     data?: any,
-    registerForm: boolean = false
+    registerForm: boolean = false,
   ) => {
     if (data && typeof data === "object") {
       data.registerForm = registerForm;
@@ -390,7 +390,7 @@ export const useIpDisclosure = () => {
 
     console.log(
       `Saving copyright application with registerForm=${registerForm}:`,
-      data
+      data,
     );
     try {
       // Update the store first if we have data
@@ -407,7 +407,7 @@ export const useIpDisclosure = () => {
 
   const savePatentUtilityModelApplication = async (
     data?: any,
-    registerForm: boolean = false
+    registerForm: boolean = false,
   ) => {
     if (data && typeof data === "object") {
       data.registerForm = registerForm;
@@ -415,7 +415,7 @@ export const useIpDisclosure = () => {
 
     console.log(
       `Saving patent/utility model application with registerForm=${registerForm}:`,
-      data
+      data,
     );
     try {
       // Update the store first if we have data
@@ -432,7 +432,7 @@ export const useIpDisclosure = () => {
 
   const saveTradeSecretApplication = async (
     data?: any,
-    registerForm: boolean = false
+    registerForm: boolean = false,
   ) => {
     if (data && typeof data === "object") {
       data.registerForm = registerForm;
@@ -440,7 +440,7 @@ export const useIpDisclosure = () => {
 
     console.log(
       `Saving trade secret application with registerForm=${registerForm}:`,
-      data
+      data,
     );
     try {
       // Update the store first if we have data
@@ -463,7 +463,7 @@ export const useIpDisclosure = () => {
       // If no disclosure ID exists yet, return false
       if (!disclosureId) {
         console.warn(
-          "Cannot check if trademark exists - no disclosure ID available"
+          "Cannot check if trademark exists - no disclosure ID available",
         );
         return false;
       }

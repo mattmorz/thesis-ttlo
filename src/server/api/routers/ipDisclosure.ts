@@ -33,7 +33,7 @@ export const ipDisclosureRouter = {
               firstName: z.string().optional(),
               middleInitial: z.string().optional(),
               lastName: z.string().optional(),
-            })
+            }),
           )
           .optional(),
         inventors: z
@@ -42,14 +42,14 @@ export const ipDisclosureRouter = {
               firstName: z.string().optional(),
               middleInitial: z.string().optional(),
               lastName: z.string().optional(),
-            })
+            }),
           )
           .optional(),
         email: z.string().email().optional(),
         isRightfulOwner: z.boolean().optional(),
         authorizedRepresentative: z.string().optional(),
         otherIpType: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user) {
@@ -121,13 +121,13 @@ export const ipDisclosureRouter = {
             (person) =>
               Boolean(person?.firstName?.trim()) ||
               Boolean(person?.middleInitial?.trim()) ||
-              Boolean(person?.lastName?.trim())
+              Boolean(person?.lastName?.trim()),
           );
           const inventorsToSave = (input.inventors || []).filter(
             (person) =>
               Boolean(person?.firstName?.trim()) ||
               Boolean(person?.middleInitial?.trim()) ||
-              Boolean(person?.lastName?.trim())
+              Boolean(person?.lastName?.trim()),
           );
 
           if (applicantsToSave.length > 0) {
@@ -137,7 +137,7 @@ export const ipDisclosureRouter = {
                 firstName: person.firstName || "",
                 middleInitial: person.middleInitial || null,
                 lastName: person.lastName || "",
-              }))
+              })),
             );
           }
 
@@ -148,7 +148,7 @@ export const ipDisclosureRouter = {
                 firstName: person.firstName || "",
                 middleInitial: person.middleInitial || null,
                 lastName: person.lastName || "",
-              }))
+              })),
             );
           }
 
@@ -177,7 +177,7 @@ export const ipDisclosureRouter = {
       z.object({
         disclosureId: z.string().uuid(),
         status: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session?.user) {

@@ -43,26 +43,23 @@ const formSchema = z.object({
     notApplicable: z.boolean().default(false),
   }),
   futureWork: z.string().optional().or(z.literal("")),
-  confirmationDeclaration: z.boolean().refine(
-  (val) => val === true,
-  {
+  confirmationDeclaration: z.boolean().refine((val) => val === true, {
     message: "You must accept the declaration",
-  }
-),
+  }),
 });
 
 export function DisclosureConfirmation() {
   const router = useRouter();
 
-const [isCSU, setIsCSU] = useState<boolean | null>(null);
+  const [isCSU, setIsCSU] = useState<boolean | null>(null);
 
-useEffect(() => {
-  const value = localStorage.getItem("isCSUAffiliated");
-  if (value !== null) {
-    setIsCSU(JSON.parse(value));
-  }
-}, []);
-const [showCSUModal, setShowCSUModal] = useState(false);
+  useEffect(() => {
+    const value = localStorage.getItem("isCSUAffiliated");
+    if (value !== null) {
+      setIsCSU(JSON.parse(value));
+    }
+  }, []);
+  const [showCSUModal, setShowCSUModal] = useState(false);
 
   const {
     applicantsInfo,
@@ -110,32 +107,32 @@ const [showCSUModal, setShowCSUModal] = useState(false);
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
 
   const handleSubmissionSuccess = () => {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(
-      new CustomEvent("ipDisclosureFormCompleted", {
-        detail: {
-          completed: true,
-          applicationId,
-          disclosureId,
-        },
-      })
-    );
-  }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("ipDisclosureFormCompleted", {
+          detail: {
+            completed: true,
+            applicationId,
+            disclosureId,
+          },
+        }),
+      );
+    }
 
-  // 🔥 CHECK CSU
-  if (isCSU === false) {
-    setShowCSUModal(true);
-    return;
-  }
+    // 🔥 CHECK CSU
+    if (isCSU === false) {
+      setShowCSUModal(true);
+      return;
+    }
 
-  // ✅ Proceed if CSU
-  router.push("/forms?tab=substantial-use");
-};
+    // ✅ Proceed if CSU
+    router.push("/forms?tab=substantial-use");
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    mode : "onChange",
-  reValidateMode: "onChange",
+    mode: "onChange",
+    reValidateMode: "onChange",
     defaultValues: {
       writtenDisclosures: {
         past: false,
@@ -152,10 +149,10 @@ const [showCSUModal, setShowCSUModal] = useState(false);
     },
   });
   useEffect(() => {
-  setTimeout(() => {
-    form.trigger();
-  }, 100);
-}, [form]);
+    setTimeout(() => {
+      form.trigger();
+    }, 100);
+  }, [form]);
 
   const [tab, setTab] = useState<"confirm" | "review" | "success">("confirm");
 
@@ -171,7 +168,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
   const updateProgress = (
     step: number,
     message: string,
-    isComplete = false
+    isComplete = false,
   ) => {
     setSubmissionProgress({
       step,
@@ -214,7 +211,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           if (data && data.disclosureConfirmation) {
             console.log(
               "Found confirmation data from API:",
-              data.disclosureConfirmation
+              data.disclosureConfirmation,
             );
             form.reset(data.disclosureConfirmation);
             setDisclosureConfirmation(data.disclosureConfirmation);
@@ -249,7 +246,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           setInitialDataLoaded(true);
           toast.error(
             "Error loading data: " +
-              (error instanceof Error ? error.message : "Unknown error")
+              (error instanceof Error ? error.message : "Unknown error"),
           );
         }
       } else {
@@ -262,7 +259,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
     // Helper function to handle confirmation data from API in different formats
     const handleConfirmationDataFromAPI = (
       confirmationData: any,
-      toastId: string | number
+      toastId: string | number,
     ) => {
       // Map database field names to expected form field names
       const mappedData = {
@@ -270,19 +267,19 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           past: Boolean(confirmationData.written_disclosures?.past),
           planned: Boolean(confirmationData.written_disclosures?.planned),
           notApplicable: Boolean(
-            confirmationData.written_disclosures?.notApplicable
+            confirmationData.written_disclosures?.notApplicable,
           ),
         },
         oralDisclosures: {
           past: Boolean(confirmationData.oral_disclosures?.past),
           planned: Boolean(confirmationData.oral_disclosures?.planned),
           notApplicable: Boolean(
-            confirmationData.oral_disclosures?.notApplicable
+            confirmationData.oral_disclosures?.notApplicable,
           ),
         },
         futureWork: confirmationData.future_work || "",
         confirmationDeclaration: Boolean(
-          confirmationData.confirmation_declaration
+          confirmationData.confirmation_declaration,
         ),
       };
 
@@ -302,7 +299,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         if (confirmationData && Object.keys(confirmationData).length > 0) {
           console.log(
             "Retrieved confirmation data directly:",
-            confirmationData
+            confirmationData,
           );
 
           // Determine data format and map appropriately
@@ -324,7 +321,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
             // Unknown format, use defaults
             console.log(
               "Unknown data format, using defaults:",
-              confirmationData
+              confirmationData,
             );
             const defaultValues = form.getValues();
             setDisclosureConfirmation(defaultValues);
@@ -365,7 +362,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
   // Update the saveToDatabase function with better validation and error handling
   const saveToDatabase = async (registerInRegistry = false) => {
     console.log(
-      `Starting to save disclosure confirmation to database (registerInRegistry=${registerInRegistry})`
+      `Starting to save disclosure confirmation to database (registerInRegistry=${registerInRegistry})`,
     );
 
     // Show loading toast
@@ -386,19 +383,19 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         "Missing required applicant information. Please complete the Applicant's Information tab first.",
         {
           id: loadingId,
-        }
+        },
       );
       return false;
     }
 
     const hasAnyCompleteApplicant = (applicantsInfo?.applicants ?? []).some(
       (person) =>
-        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim())
+        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim()),
     );
 
     const hasAnyCompleteInventor = (applicantsInfo?.inventors ?? []).some(
       (person) =>
-        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim())
+        Boolean(person?.firstName?.trim()) && Boolean(person?.lastName?.trim()),
     );
 
     if (!hasAnyCompleteApplicant) {
@@ -407,7 +404,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         "Missing required applicant name information. Please complete the Applicant's Information tab first.",
         {
           id: loadingId,
-        }
+        },
       );
       return false;
     }
@@ -418,7 +415,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         "Missing required inventor information. Please complete the Applicant's Information tab first.",
         {
           id: loadingId,
-        }
+        },
       );
       return false;
     }
@@ -432,7 +429,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         "Please select at least one IP type in the Applicant's Information tab.",
         {
           id: loadingId,
-        }
+        },
       );
       return false;
     }
@@ -456,7 +453,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
       console.log("Saving latest applicant information first");
       const appInfoResult = await saveApplicantsInfo(
         applicantsInfo,
-        registerInRegistry
+        registerInRegistry,
       );
 
       if (!appInfoResult) {
@@ -489,7 +486,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
 
       console.log(
         `Saving disclosure confirmation with data (registerInRegistry=${registerInRegistry}):`,
-        confirmationData
+        confirmationData,
       );
 
       // Update store first
@@ -509,7 +506,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
                 ...confirmationData,
                 registerForm: registerInRegistry, // Add registry flag to API call
               }),
-            }
+            },
           );
 
           if (!response.ok) {
@@ -526,7 +523,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         } catch (apiError) {
           console.warn(
             "Direct API call failed, trying mutation method:",
-            apiError
+            apiError,
           );
           // Continue to mutation method as fallback
         }
@@ -535,7 +532,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
       // Fallback to mutation method
       const result = await saveDisclosureConfirmation(
         { ...confirmationData, registerForm: registerInRegistry },
-        registerInRegistry
+        registerInRegistry,
       );
 
       if (result) {
@@ -556,7 +553,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         }`,
         {
           id: loadingId,
-        }
+        },
       );
       return false;
     } finally {
@@ -644,7 +641,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         try {
           const applicantsInfoSaved = await saveApplicantsInfo(
             applicantsInfo,
-            true
+            true,
           );
           if (!applicantsInfoSaved) {
             console.error("Failed to save applicants information");
@@ -663,7 +660,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
 
       // Save the disclosure confirmation
       console.log(
-        "Saving disclosure confirmation to database with registry..."
+        "Saving disclosure confirmation to database with registry...",
       );
       try {
         // Pass true to register in the form_submission_registry
@@ -679,7 +676,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
       } catch (confirmationError) {
         console.error(
           "Error saving disclosure confirmation:",
-          confirmationError
+          confirmationError,
         );
         toast.error("An error occurred while saving disclosure confirmation");
       } finally {
@@ -730,7 +727,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
 
       // Show a comprehensive toast
       const confirmToastId = toast.loading(
-        "Preparing to submit complete IP disclosure form..."
+        "Preparing to submit complete IP disclosure form...",
       );
 
       // Validate the form first
@@ -767,7 +764,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           // We're submitting, so DO register in the form registry
           const applicantsInfoSaved = await saveApplicantsInfo(
             applicantsInfo,
-            true
+            true,
           );
           if (!applicantsInfoSaved) {
             console.error("Failed to save applicants information");
@@ -782,7 +779,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         } catch (error: unknown) {
           console.error(
             "Error saving applicants info:",
-            error instanceof Error ? error.message : "Unknown error"
+            error instanceof Error ? error.message : "Unknown error",
           );
           toast.error("Error saving applicants information", {
             id: confirmToastId,
@@ -808,13 +805,13 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           try {
             console.log(
               "Saving applicant information for submission:",
-              applicantsInfo
+              applicantsInfo,
             );
             await saveApplicantsInfo(applicantsInfo, true);
           } catch (error: unknown) {
             console.error(
               "Error saving applicant info:",
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : "Unknown error",
             );
           }
         }
@@ -827,7 +824,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           } catch (error: unknown) {
             console.error(
               "Error saving copyright application:",
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : "Unknown error",
             );
           }
         }
@@ -841,16 +838,16 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           try {
             console.log(
               "Saving patent/utility model application:",
-              patentUtilityModelApplication
+              patentUtilityModelApplication,
             );
             await savePatentUtilityModelApplication(
               patentUtilityModelApplication,
-              true
+              true,
             );
           } catch (error: unknown) {
             console.error(
               "Error saving patent/utility model application:",
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : "Unknown error",
             );
           }
         }
@@ -863,7 +860,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           } catch (error: unknown) {
             console.error(
               "Error saving trademark application:",
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : "Unknown error",
             );
           }
         }
@@ -873,13 +870,13 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           try {
             console.log(
               "Saving trade secret application:",
-              tradeSecretApplication
+              tradeSecretApplication,
             );
             await saveTradeSecretApplication(tradeSecretApplication, true);
           } catch (error: unknown) {
             console.error(
               "Error saving trade secret application:",
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : "Unknown error",
             );
           }
         }
@@ -918,7 +915,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
       // Always register in registry when submitting
       const confirmationSaved = await saveDisclosureConfirmation(
         { ...confirmationData, registerForm: true },
-        true
+        true,
       );
 
       if (!confirmationSaved) {
@@ -952,48 +949,48 @@ const [showCSUModal, setShowCSUModal] = useState(false);
       // Log each section of data being submitted
       console.log(
         "SUBMISSION DATA - Disclosure ID:",
-        completeFormData.disclosureId
+        completeFormData.disclosureId,
       );
       console.log(
         "SUBMISSION DATA - Applicants Info:",
-        completeFormData.applicantsInfo
+        completeFormData.applicantsInfo,
       );
       console.log(
         "SUBMISSION DATA - Confirmation:",
-        completeFormData.disclosureConfirmation
+        completeFormData.disclosureConfirmation,
       );
 
       if (completeFormData.copyrightApplication) {
         console.log(
           "SUBMISSION DATA - Copyright:",
-          completeFormData.copyrightApplication
+          completeFormData.copyrightApplication,
         );
       }
 
       if (completeFormData.patentUtilityModelApplication) {
         console.log(
           "SUBMISSION DATA - Patent/Utility Model:",
-          completeFormData.patentUtilityModelApplication
+          completeFormData.patentUtilityModelApplication,
         );
       }
 
       if (completeFormData.trademarkApplication) {
         console.log(
           "SUBMISSION DATA - Trademark:",
-          completeFormData.trademarkApplication
+          completeFormData.trademarkApplication,
         );
       }
 
       if (completeFormData.tradeSecretApplication) {
         console.log(
           "SUBMISSION DATA - Trade Secret:",
-          completeFormData.tradeSecretApplication
+          completeFormData.tradeSecretApplication,
         );
       }
 
       console.log(
         "Submitting complete IP disclosure with ALL tab data:",
-        completeFormData
+        completeFormData,
       );
 
       // Now submit the IP disclosure with all collected data
@@ -1008,12 +1005,12 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         // Show success message that highlights all tab data was included
         toast.success(
           `Complete IP disclosure submitted successfully including ${Object.entries(
-            applicantsInfo?.ipTypes || {}
+            applicantsInfo?.ipTypes || {},
           )
             .filter(([_, isSelected]) => isSelected)
             .map(([type]) => getIpTypeDisplayName(type))
             .join(", ")} data!`,
-          { id: confirmToastId, duration: 5000 }
+          { id: confirmToastId, duration: 5000 },
         );
 
         // Update submission state
@@ -1042,26 +1039,26 @@ const [showCSUModal, setShowCSUModal] = useState(false);
                 disclosureId: useIpDisclosureStore.getState().disclosureId,
                 timestamp: new Date().toISOString(),
               }),
-            }
+            },
           );
 
           if (!directUpdateResponse.ok) {
             throw new Error(
-              `Direct submission failed: ${directUpdateResponse.status}`
+              `Direct submission failed: ${directUpdateResponse.status}`,
             );
           }
 
           const directResult = await directUpdateResponse.json();
           console.log(
             "Direct submission successful via fallback:",
-            directResult
+            directResult,
           );
 
           // Handle success the same way as the normal flow
           updateProgress(
             4,
             "IP disclosure submitted successfully via fallback!",
-            true
+            true,
           );
           toast.success("IP disclosure submitted successfully!", {
             id: confirmToastId,
@@ -1085,7 +1082,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
       toast.error(
         `An error occurred during submission: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
       setIsSubmittingLocal(false);
       updateProgress(0, "Error during submission", true);
@@ -1115,13 +1112,13 @@ const [showCSUModal, setShowCSUModal] = useState(false);
     // Handle "trademark" vs "trademark-application" naming inconsistency
     // If "trademark" is in visibleTabs, map it to "trademark-application" for proper ordering
     const normalizedVisibleTabs = visibleTabs.map((tab) =>
-      tab === "trademark" ? "trademark-application" : tab
+      tab === "trademark" ? "trademark-application" : tab,
     );
     console.log("Normalized visible tabs:", normalizedVisibleTabs);
 
     // Filter to only include the tabs that are currently visible
     const orderedVisibleTabs = tabOrder.filter((tab) =>
-      normalizedVisibleTabs.includes(tab)
+      normalizedVisibleTabs.includes(tab),
     );
     console.log("Ordered visible tabs:", orderedVisibleTabs);
 
@@ -1132,7 +1129,7 @@ const [showCSUModal, setShowCSUModal] = useState(false);
     if (currentIndex <= 0) {
       // If we're at the first tab or can't find the current tab, go to applicants-information
       console.log(
-        "At first tab or can't determine index, going to applicants-information"
+        "At first tab or can't determine index, going to applicants-information",
       );
       useIpDisclosureStore.getState().setActiveTab("applicants-information");
       return;
@@ -1225,7 +1222,9 @@ const [showCSUModal, setShowCSUModal] = useState(false);
           <Card className="border-green-200">
             <CardContent className="pt-6 space-y-6">
               <div className="space-y-4">
-                <FormLabel className="text-base">Written Disclosures<span className="text-red-500"> *</span></FormLabel>
+                <FormLabel className="text-base">
+                  Written Disclosures<span className="text-red-500"> *</span>
+                </FormLabel>
                 <div className="flex gap-6">
                   <FormField
                     control={form.control}
@@ -1281,7 +1280,9 @@ const [showCSUModal, setShowCSUModal] = useState(false);
               </div>
 
               <div className="space-y-4">
-                <FormLabel className="text-base">Oral Disclosures<span className="text-red-500"> *</span></FormLabel>
+                <FormLabel className="text-base">
+                  Oral Disclosures<span className="text-red-500"> *</span>
+                </FormLabel>
                 <div className="flex gap-6">
                   <FormField
                     control={form.control}
@@ -1380,7 +1381,9 @@ const [showCSUModal, setShowCSUModal] = useState(false);
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>Declaration<span className="text-red-500"> *</span></FormLabel>
+                      <FormLabel>
+                        Declaration<span className="text-red-500"> *</span>
+                      </FormLabel>
                       <FormDescription>
                         I hereby declare that the information provided in this
                         application is true and accurate to the best of my
@@ -1434,10 +1437,10 @@ const [showCSUModal, setShowCSUModal] = useState(false);
               <h4 className="font-medium text-green-800">
                 {applicantsInfo?.ipTypes &&
                 Object.entries(applicantsInfo.ipTypes).some(
-                  ([_, isSelected]) => isSelected
+                  ([_, isSelected]) => isSelected,
                 )
                   ? `IP Disclosure Form Submitted: ${Object.entries(
-                      applicantsInfo.ipTypes
+                      applicantsInfo.ipTypes,
                     )
                       .filter(([_, isSelected]) => isSelected)
                       .map(([type]) => getIpTypeDisplayName(type))
@@ -1571,21 +1574,21 @@ const [showCSUModal, setShowCSUModal] = useState(false);
                     {disclosureConfirmation?.writtenDisclosures?.past
                       ? "Past"
                       : disclosureConfirmation?.writtenDisclosures?.planned
-                      ? "Planned"
-                      : disclosureConfirmation?.writtenDisclosures
-                          ?.notApplicable
-                      ? "N/A"
-                      : "Not specified"}
+                        ? "Planned"
+                        : disclosureConfirmation?.writtenDisclosures
+                              ?.notApplicable
+                          ? "N/A"
+                          : "Not specified"}
                   </span>
                   <span className="block">
                     Oral Disclosures:{" "}
                     {disclosureConfirmation?.oralDisclosures?.past
                       ? "Past"
                       : disclosureConfirmation?.oralDisclosures?.planned
-                      ? "Planned"
-                      : disclosureConfirmation?.oralDisclosures?.notApplicable
-                      ? "N/A"
-                      : "Not specified"}
+                        ? "Planned"
+                        : disclosureConfirmation?.oralDisclosures?.notApplicable
+                          ? "N/A"
+                          : "Not specified"}
                   </span>
                   {disclosureConfirmation?.futureWork && (
                     <span className="block">
@@ -1618,27 +1621,28 @@ const [showCSUModal, setShowCSUModal] = useState(false);
         )}
       </form>
       {showCSUModal && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg max-w-md text-center">
-      <h2 className="text-lg font-semibold text-green-600 mb-2">
-        Submission Completed!
-      </h2>
-      <p className="text-sm text-gray-600 mb-4">
-        Your application has been submitted.
-        <br></br>
-However, since you are not affiliated with CSU, you cannot proceed to the next step.
-<br></br>
-Please contact the administrator for further assistance.
-      </p>
-      <button
-        onClick={() => setShowCSUModal(false)}
-        className="px-4 py-2 bg-[#1B5E20] text-white rounded"
-      >
-        OK
-      </button>
-    </div>
-  </div>
-)}
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md text-center">
+            <h2 className="text-lg font-semibold text-green-600 mb-2">
+              Submission Completed!
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Your application has been submitted.
+              <br></br>
+              However, since you are not affiliated with CSU, you cannot proceed
+              to the next step.
+              <br></br>
+              Please contact the administrator for further assistance.
+            </p>
+            <button
+              onClick={() => setShowCSUModal(false)}
+              className="px-4 py-2 bg-[#1B5E20] text-white rounded"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </Form>
   );
 }

@@ -52,7 +52,7 @@ const ApplicantsInfoFormSchema = z
           firstName: nameSchema,
           middleInitial: z.string().trim().optional(),
           lastName: nameSchema,
-        })
+        }),
       )
       .min(1, "At least one applicant is required"),
     inventors: z
@@ -61,7 +61,7 @@ const ApplicantsInfoFormSchema = z
           firstName: nameSchema,
           middleInitial: z.string().trim().optional(),
           lastName: nameSchema,
-        })
+        }),
       )
       .min(1, "At least one inventor is required"),
     ipTypes: z.object({
@@ -75,16 +75,14 @@ const ApplicantsInfoFormSchema = z
       notSure: z.boolean().default(false),
     }),
     otherIpType: z.string().trim().optional(),
-    isRightfulOwner: z
-      .boolean()
-      .refine((value) => value === true, {
-        message: "This confirmation is required.",
-      }),
+    isRightfulOwner: z.boolean().refine((value) => value === true, {
+      message: "This confirmation is required.",
+    }),
     authorizedRepresentative: z.string().trim().optional(),
   })
   .superRefine((data, ctx) => {
     const hasIpTypeSelected = Object.values(data.ipTypes).some(
-      (value) => value === true
+      (value) => value === true,
     );
 
     if (!hasIpTypeSelected) {
@@ -128,7 +126,7 @@ const createEmptyApplicantsInfoForm = (): ApplicantsInfoFormType => ({
 });
 
 const hasMeaningfulApplicantsData = (
-  data: Partial<ApplicantsInfoFormType> | ApplicantsInfo | null | undefined
+  data: Partial<ApplicantsInfoFormType> | ApplicantsInfo | null | undefined,
 ) => {
   if (!data) return false;
 
@@ -138,14 +136,14 @@ const hasMeaningfulApplicantsData = (
       firstName?: string;
       middleInitial?: string;
       lastName?: string;
-    }>
+    }>,
   ) =>
     Array.isArray(people) &&
     people.some(
       (person) =>
         hasText(person?.firstName) ||
         hasText(person?.middleInitial) ||
-        hasText(person?.lastName)
+        hasText(person?.lastName),
     );
 
   return (
@@ -155,8 +153,8 @@ const hasMeaningfulApplicantsData = (
     data.isRightfulOwner === true ||
     hasPeople(data.applicants) ||
     hasPeople(data.inventors) ||
-    Boolean(data.ipTypes) &&
-      Object.values(data.ipTypes).some((value) => value === true)
+    (Boolean(data.ipTypes) &&
+      Object.values(data.ipTypes).some((value) => value === true))
   );
 };
 
@@ -200,16 +198,18 @@ const stripBlankPersonRows = (people?: PersonRow[]) =>
     : [];
 
 export function ApplicantsInformation() {
-
-   const getCreatorLabel = () => {
-  if (derivedIpTypesResult.ipTypes.patent || derivedIpTypesResult.ipTypes.utilityModel) {
-    return "Inventor";
-  } else if (derivedIpTypesResult.ipTypes.copyright) {
-    return "Author";
-  } else {
-    return "Creator";
-  }
-};
+  const getCreatorLabel = () => {
+    if (
+      derivedIpTypesResult.ipTypes.patent ||
+      derivedIpTypesResult.ipTypes.utilityModel
+    ) {
+      return "Inventor";
+    } else if (derivedIpTypesResult.ipTypes.copyright) {
+      return "Author";
+    } else {
+      return "Creator";
+    }
+  };
   const { setSelectedIpTypes, isHydrated } = useFormContext();
   const { activeApplication } = useActiveApplication();
   const {
@@ -245,11 +245,11 @@ export function ApplicantsInformation() {
       tradeSecret: false,
       other: false,
       notSure: false,
-  },
-  otherIpType: "",
-  isRightfulOwner: false,
-  authorizedRepresentative: "",
-});
+    },
+    otherIpType: "",
+    isRightfulOwner: false,
+    authorizedRepresentative: "",
+  });
 
   // Initialize form with the local state
   const form = useForm<ApplicantsInfoFormType>({
@@ -258,44 +258,38 @@ export function ApplicantsInformation() {
     reValidateMode: "onChange",
     defaultValues: formData,
   });
-  const derivedIpTypesResult = React.useMemo(
-    () => {
-      const activeApplicationHasOther =
-        activeApplication?.selectedIpTypes?.other === true ||
-        activeApplication?.ipType === "other";
+  const derivedIpTypesResult = React.useMemo(() => {
+    const activeApplicationHasOther =
+      activeApplication?.selectedIpTypes?.other === true ||
+      activeApplication?.ipType === "other";
 
-      if (activeApplication?.selectedIpTypes) {
-        return {
-          ipTypes: normalizeIpTypes(activeApplication.selectedIpTypes),
-          otherIpType: activeApplicationHasOther
-            ? activeApplication.otherIpType?.trim() || ""
-            : "",
-        };
-      }
-
-      const derived = deriveIpTypesFromApplicationIpType(
-        activeApplication?.ipType ?? undefined
-      );
+    if (activeApplication?.selectedIpTypes) {
       return {
-        ...derived,
+        ipTypes: normalizeIpTypes(activeApplication.selectedIpTypes),
         otherIpType: activeApplicationHasOther
-          ? activeApplication.otherIpType?.trim() || derived.otherIpType
-          : derived.otherIpType,
+          ? activeApplication.otherIpType?.trim() || ""
+          : "",
       };
-    },
-    [
-      activeApplication?.ipType,
-      activeApplication?.otherIpType,
-      activeApplication?.selectedIpTypes,
-    ]
-  );
+    }
+
+    const derived = deriveIpTypesFromApplicationIpType(
+      activeApplication?.ipType ?? undefined,
+    );
+    return {
+      ...derived,
+      otherIpType: activeApplicationHasOther
+        ? activeApplication.otherIpType?.trim() || derived.otherIpType
+        : derived.otherIpType,
+    };
+  }, [
+    activeApplication?.ipType,
+    activeApplication?.otherIpType,
+    activeApplication?.selectedIpTypes,
+  ]);
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (
-      applicantsInfo?.ipTypes &&
-      hasSelectedIpTypes(applicantsInfo.ipTypes)
-    ) {
+    if (applicantsInfo?.ipTypes && hasSelectedIpTypes(applicantsInfo.ipTypes)) {
       return;
     }
     if (!hasSelectedIpTypes(derivedIpTypesResult.ipTypes)) return;
@@ -367,7 +361,7 @@ export function ApplicantsInformation() {
 
       if (!currentAppId) {
         console.log(
-          "Waiting for application ID before loading applicants information"
+          "Waiting for application ID before loading applicants information",
         );
         return;
       }
@@ -400,7 +394,7 @@ export function ApplicantsInformation() {
                 data.applicationId !== currentAppId
               ) {
                 console.warn(
-                  `Data from fetchInitialData belongs to application ${data.applicationId}, not current application ${currentAppId}. Ignoring.`
+                  `Data from fetchInitialData belongs to application ${data.applicationId}, not current application ${currentAppId}. Ignoring.`,
                 );
               } else if (data && data.applicantsInfo) {
                 loadedData = data;
@@ -418,7 +412,7 @@ export function ApplicantsInformation() {
               const existingData = await checkExistingDisclosureAndFetch();
               console.log(
                 "Raw data returned from checkExistingDisclosureAndFetch:",
-                existingData
+                existingData,
               );
 
               // Verify application ID match
@@ -429,20 +423,20 @@ export function ApplicantsInformation() {
                 existingData.applicationId !== currentAppId
               ) {
                 console.warn(
-                  `Data from checkExistingDisclosureAndFetch belongs to application ${existingData.applicationId}, not current application ${currentAppId}. Ignoring.`
+                  `Data from checkExistingDisclosureAndFetch belongs to application ${existingData.applicationId}, not current application ${currentAppId}. Ignoring.`,
                 );
               } else if (existingData && existingData.applicantsInfo) {
                 loadedData = existingData;
                 sourceOfData = "checkExistingDisclosureAndFetch";
                 console.log(
                   "Data loaded from checkExistingDisclosureAndFetch:",
-                  existingData
+                  existingData,
                 );
               }
             } catch (existingError) {
               console.error(
                 "Error checking for existing disclosures:",
-                existingError
+                existingError,
               );
             }
           }
@@ -459,12 +453,9 @@ export function ApplicantsInformation() {
 
             if (hasMeaningfulApplicantsData(storeData.applicantsInfo)) {
               // Before using store data, verify it belongs to the current application
-              if (
-                currentAppId &&
-                storeData.applicationId !== currentAppId
-              ) {
+              if (currentAppId && storeData.applicationId !== currentAppId) {
                 console.log(
-                  `Store data belongs to application ${storeData.applicationId}, not current application ${currentAppId}. Ignoring.`
+                  `Store data belongs to application ${storeData.applicationId}, not current application ${currentAppId}. Ignoring.`,
                 );
               } else {
                 loadedData = storeData;
@@ -484,7 +475,7 @@ export function ApplicantsInformation() {
               loadedData.applicationId !== currentAppId
             ) {
               console.warn(
-                `Final check: Data belongs to application ${loadedData.applicationId}, not current application ${currentAppId}. Using defaults instead.`
+                `Final check: Data belongs to application ${loadedData.applicationId}, not current application ${currentAppId}. Using defaults instead.`,
               );
               initializeWithDefaults();
               return;
@@ -495,14 +486,14 @@ export function ApplicantsInformation() {
               copyright: Boolean(loadedData.applicantsInfo.ipTypes?.copyright),
               patent: Boolean(loadedData.applicantsInfo.ipTypes?.patent),
               utilityModel: Boolean(
-                loadedData.applicantsInfo.ipTypes?.utilityModel
+                loadedData.applicantsInfo.ipTypes?.utilityModel,
               ),
               industrialDesign: Boolean(
-                loadedData.applicantsInfo.ipTypes?.industrialDesign
+                loadedData.applicantsInfo.ipTypes?.industrialDesign,
               ),
               trademark: Boolean(loadedData.applicantsInfo.ipTypes?.trademark),
               tradeSecret: Boolean(
-                loadedData.applicantsInfo.ipTypes?.tradeSecret
+                loadedData.applicantsInfo.ipTypes?.tradeSecret,
               ),
               other: Boolean(loadedData.applicantsInfo.ipTypes?.other),
               notSure: Boolean(loadedData.applicantsInfo.ipTypes?.notSure),
@@ -510,7 +501,7 @@ export function ApplicantsInformation() {
 
             // Check if we have IP types data but all values are false, while we have other form data
             const hasAllFalseIpTypes = Object.values(formattedIpTypes).every(
-              (value) => value === false
+              (value) => value === false,
             );
             const hasCopyrightApp =
               loadedData.copyrightApplication &&
@@ -519,7 +510,7 @@ export function ApplicantsInformation() {
             // If we have all false IP types but have a copyright application, set copyright to true
             if (hasAllFalseIpTypes && hasCopyrightApp) {
               console.log(
-                "Detected all-false IP types with copyright application - fixing IP types"
+                "Detected all-false IP types with copyright application - fixing IP types",
               );
               formattedIpTypes.copyright = true;
             }
@@ -540,7 +531,7 @@ export function ApplicantsInformation() {
               ipTypes: formattedIpTypes,
               otherIpType: loadedData.applicantsInfo.otherIpType || "",
               isRightfulOwner: Boolean(
-                loadedData.applicantsInfo.isRightfulOwner
+                loadedData.applicantsInfo.isRightfulOwner,
               ),
               authorizedRepresentative:
                 loadedData.applicantsInfo.authorizedRepresentative || "",
@@ -568,7 +559,7 @@ export function ApplicantsInformation() {
                 form.setValue("isRightfulOwner", formattedData.isRightfulOwner);
                 form.setValue(
                   "authorizedRepresentative",
-                  formattedData.authorizedRepresentative
+                  formattedData.authorizedRepresentative,
                 );
                 form.setValue("otherIpType", formattedData.otherIpType);
 
@@ -613,9 +604,9 @@ export function ApplicantsInformation() {
       // Helper function to initialize the form with default values
       const initializeWithDefaults = () => {
         console.log(
-          "Initializing with default empty values for new application"
+          "Initializing with default empty values for new application",
         );
-          const defaultValues = {
+        const defaultValues = {
           ...createEmptyApplicantsInfoForm(),
         };
         setFormData(defaultValues);
@@ -644,7 +635,7 @@ export function ApplicantsInformation() {
 
     // Only refresh when we navigate back to this tab (avoid resetting while typing)
     if (
-    wasOnDifferentTab &&
+      wasOnDifferentTab &&
       activeTab === "applicants-information" &&
       hasMeaningfulApplicantsData(applicantsInfo) &&
       isHydrated &&
@@ -652,7 +643,7 @@ export function ApplicantsInformation() {
     ) {
       console.log(
         "Back on applicants tab, refreshing display with store data:",
-        applicantsInfo
+        applicantsInfo,
       );
 
       // Format the ipTypes as booleans
@@ -702,7 +693,7 @@ export function ApplicantsInformation() {
         form.setValue("isRightfulOwner", formattedData.isRightfulOwner);
         form.setValue(
           "authorizedRepresentative",
-          formattedData.authorizedRepresentative
+          formattedData.authorizedRepresentative,
         );
 
         // Set IP type checkboxes
@@ -756,7 +747,7 @@ export function ApplicantsInformation() {
               patent: Boolean(applicantsInfo.ipTypes?.patent),
               utilityModel: Boolean(applicantsInfo.ipTypes?.utilityModel),
               industrialDesign: Boolean(
-                applicantsInfo.ipTypes?.industrialDesign
+                applicantsInfo.ipTypes?.industrialDesign,
               ),
               trademark: Boolean(applicantsInfo.ipTypes?.trademark),
               tradeSecret: Boolean(applicantsInfo.ipTypes?.tradeSecret),
@@ -774,11 +765,11 @@ export function ApplicantsInformation() {
           form.setValue("email", applicantsInfo.email || "");
           form.setValue(
             "isRightfulOwner",
-            Boolean(applicantsInfo.isRightfulOwner)
+            Boolean(applicantsInfo.isRightfulOwner),
           );
           form.setValue(
             "authorizedRepresentative",
-            applicantsInfo.authorizedRepresentative || ""
+            applicantsInfo.authorizedRepresentative || "",
           );
 
           // Manually set checkboxes
@@ -788,7 +779,7 @@ export function ApplicantsInformation() {
                 const typedKey = key as keyof IpTypes;
                 form.setValue(`ipTypes.${typedKey}`, true);
               }
-            }
+            },
           );
 
           // Update context
@@ -876,7 +867,7 @@ export function ApplicantsInformation() {
               patent: Boolean(data.applicantsInfo.ipTypes?.patent),
               utilityModel: Boolean(data.applicantsInfo.ipTypes?.utilityModel),
               industrialDesign: Boolean(
-                data.applicantsInfo.ipTypes?.industrialDesign
+                data.applicantsInfo.ipTypes?.industrialDesign,
               ),
               trademark: Boolean(data.applicantsInfo.ipTypes?.trademark),
               tradeSecret: Boolean(data.applicantsInfo.ipTypes?.tradeSecret),
@@ -899,7 +890,7 @@ export function ApplicantsInformation() {
           if (DEBUG) {
             console.log(
               "Updated form context IP types:",
-              formattedData.ipTypes
+              formattedData.ipTypes,
             );
           }
 
@@ -1134,17 +1125,29 @@ export function ApplicantsInformation() {
 
     setIsSubmitting(true); // 🔥 START loading
     const { ipTypes: resolvedIpTypes } = derivedIpTypesResult;
-    const cleanedApplicants = stripBlankPersonRows(form.getValues("applicants"));
+    const cleanedApplicants = stripBlankPersonRows(
+      form.getValues("applicants"),
+    );
     const cleanedInventors = stripBlankPersonRows(form.getValues("inventors"));
-    const enteredOtherIpType = (form.getValues("otherIpType") || "").trim();
+    const enteredOtherIpType = (
+      form.getValues("otherIpType") ||
+      activeApplication?.otherIpType ||
+      ""
+    ).trim();
     const otherIpType = resolvedIpTypes.other ? enteredOtherIpType : "";
 
     if (resolvedIpTypes.other && !otherIpType) {
-      form.setError("otherIpType", {
-        type: "manual",
-        message:
-          'Please specify the type of IP in the "Other" field.',
-      });
+      toast(
+        "Please specify the type of IP in the application title step first.",
+        {
+          icon: "⚠️",
+          style: {
+            backgroundColor: "#fef3c7",
+            borderColor: "#fde68a",
+            color: "#92400e",
+          },
+        },
+      );
       setIsSubmitting(false);
       return;
     }
@@ -1152,12 +1155,12 @@ export function ApplicantsInformation() {
     form.setValue(
       "applicants",
       cleanedApplicants as ApplicantsInfoFormType["applicants"],
-      { shouldDirty: true, shouldValidate: false }
+      { shouldDirty: true, shouldValidate: false },
     );
     form.setValue(
       "inventors",
       cleanedInventors as ApplicantsInfoFormType["inventors"],
-      { shouldDirty: true, shouldValidate: false }
+      { shouldDirty: true, shouldValidate: false },
     );
     form.setValue("ipTypes", resolvedIpTypes, { shouldValidate: true });
     form.setValue("otherIpType", otherIpType, { shouldValidate: true });
@@ -1196,8 +1199,10 @@ export function ApplicantsInformation() {
       const values = form.getValues();
       values.ipTypes = resolvedIpTypes;
       values.otherIpType = otherIpType;
-      values.applicants = cleanedApplicants as ApplicantsInfoFormType["applicants"];
-      values.inventors = cleanedInventors as ApplicantsInfoFormType["inventors"];
+      values.applicants =
+        cleanedApplicants as ApplicantsInfoFormType["applicants"];
+      values.inventors =
+        cleanedInventors as ApplicantsInfoFormType["inventors"];
 
       // Log the values for debugging
       console.log("Form values before saving:", {
@@ -1245,13 +1250,13 @@ export function ApplicantsInformation() {
       // Save to the database WITHOUT registering in form_submission_registry
       // This avoids automatic registry entries when just navigating
       console.log(
-        "Saving applicants information to database without registry creation..."
+        "Saving applicants information to database without registry creation...",
       );
       const success = await saveApplicantsInfo(dataToSave, false);
 
       if (success) {
         console.log(
-          "Applicants information saved successfully to database (without registry)"
+          "Applicants information saved successfully to database (without registry)",
         );
         toast("Applicants information saved successfully", {
           icon: "✅",
@@ -1277,7 +1282,7 @@ export function ApplicantsInformation() {
       // Determine the next tab using the same visible-tab order used by the form layout
       const nextTab = getNextVisibleIpDisclosureTab(
         resolvedIpTypes,
-        "applicants-information"
+        "applicants-information",
       );
 
       // Navigate to the next tab
@@ -1286,7 +1291,7 @@ export function ApplicantsInformation() {
     } catch (error) {
       console.error("Error saving applicants information:", error);
       toast(
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       return;
     } finally {
@@ -1356,14 +1361,14 @@ export function ApplicantsInformation() {
     (watchedApplicants?.length ?? 0) > 0 &&
     watchedApplicants.some(isCompletePersonRow);
   const hasIncompleteApplicantRows = Boolean(
-    watchedApplicants?.some(hasPartialPersonRow)
+    watchedApplicants?.some(hasPartialPersonRow),
   );
 
   const hasInventorNames =
     (watchedInventors?.length ?? 0) > 0 &&
     watchedInventors.some(isCompletePersonRow);
   const hasIncompleteInventorRows = Boolean(
-    watchedInventors?.some(hasPartialPersonRow)
+    watchedInventors?.some(hasPartialPersonRow),
   );
 
   const hasEmail = Boolean(watchedEmail?.trim());
@@ -1467,7 +1472,9 @@ export function ApplicantsInformation() {
       middleInitial: applicant.middleInitial,
       lastName: applicant.lastName,
     }));
-    const preservedInventors = currentInventors.slice(normalizedApplicants.length);
+    const preservedInventors = currentInventors.slice(
+      normalizedApplicants.length,
+    );
     const mergedInventors = [...nextInventors, ...preservedInventors];
     const isSame =
       currentInventors.length === mergedInventors.length &&
@@ -1525,7 +1532,7 @@ export function ApplicantsInformation() {
   // Fix the handleSaveToDatabase function to use these state variables
   const handleSaveToDatabase = async () => {
     console.log(
-      "Attempting to save applicants info to database with registry creation"
+      "Attempting to save applicants info to database with registry creation",
     );
 
     // Get form values
@@ -1549,7 +1556,7 @@ export function ApplicantsInformation() {
     } catch (error) {
       console.error("Error saving applicants info:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to save data"
+        error instanceof Error ? error.message : "Failed to save data",
       );
     } finally {
       setIsSaving(false);
@@ -1582,7 +1589,8 @@ export function ApplicantsInformation() {
                 <CardContent className="pt-6 space-y-4">
                   <div className="flex justify-between items-center">
                     <FormLabel className="text-base">
-                      Name of Applicant(s)<span className="text-red-500"> *</span>
+                      Name of Applicant(s)
+                      <span className="text-red-500"> *</span>
                     </FormLabel>
                     <Button
                       type="button"
@@ -1708,7 +1716,8 @@ export function ApplicantsInformation() {
                 <CardContent className="pt-6 space-y-4">
                   <div className="flex justify-between items-center">
                     <FormLabel className="text-base">
-                      Name of Author/Inventor/Creator<span className="text-red-500"> *</span>
+                      Name of Author/Inventor/Creator
+                      <span className="text-red-500"> *</span>
                     </FormLabel>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button
@@ -1840,41 +1849,8 @@ export function ApplicantsInformation() {
                   ))}
                 </CardContent>
               </Card>
-
-              {watchedIpTypes?.other && (
-                <Card className="border-green-200">
-                  <CardContent className="pt-6">
-                    <FormField
-                      control={form.control}
-                      name="otherIpType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base">
-                            Please specify the type of IP in the "Other" field
-                            <span className="text-red-500"> *</span>
-                          </FormLabel>
-                          <FormDescription>
-                            This field is required because "Other" was selected
-                            for the IP type.
-                          </FormDescription>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter the specific IP type"
-                              {...field}
-                              onChange={(e) =>
-                                field.onChange(e.target.value.toUpperCase())
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              )}
             </div>
-{/*}
+            {/*}
            <div className="space-y-6">
               <Card className="border-green-200">
                 <CardContent className="pt-6">
@@ -1900,7 +1876,6 @@ export function ApplicantsInformation() {
               </Card>
             </div>*/}
           </div>
-          
 
           <Card className="col-span-2 border-green-200">
             <CardContent className="pt-6">

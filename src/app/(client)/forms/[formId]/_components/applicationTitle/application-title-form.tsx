@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,6 +26,7 @@ import { useIpDisclosureStore } from "@/lib/store/ip-disclosure-store";
 import {
   buildIpTypesFromApplicationValues,
   getPrimaryApplicationIpType,
+  mapSelectionKeyToApplicationType,
   normalizeIpTypes,
   type ApplicationIpTypeValue,
 } from "@/lib/utils/ip-types";
@@ -56,74 +58,94 @@ const IP_TYPE_OPTIONS = [
 ] as const;
 
 type IpTypeValue = (typeof IP_TYPE_OPTIONS)[number]["value"];
-const formSchema = z.object({
-  title: z
-    .string()
-    .min(1, "Title is required")
-    .min(5, "Title must be at least 5 characters."),
-  description: z
-    .string()
-    .min(1, "Description is required")
-    .min(5, "Description must be at least 5 characters."),
-  ipTypes: z
-    .array(z.enum(IP_TYPE_VALUES))
-    .min(1, "Please select at least one IP type."),
-});
+const formSchema = z
+  .object({
+    title: z
+      .string()
+      .min(1, "Title is required")
+      .min(5, "Title must be at least 5 characters."),
+    description: z
+      .string()
+      .min(1, "Description is required")
+      .min(5, "Description must be at least 5 characters."),
+    ipTypes: z
+      .array(z.enum(IP_TYPE_VALUES))
+      .min(1, "Please select at least one IP type."),
+    otherIpType: z.string().trim().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.ipTypes.includes("other") && !data.otherIpType?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please specify the type of IP in the Other field.",
+        path: ["otherIpType"],
+      });
+    }
+  });
 
 export function ApplicationTitleForm() {
   const getIpTypeStorageKey = (applicationId: string) =>
     `application-selected-ip-types-${applicationId}`;
   const router = useRouter();
-  const { activeApplicationId, refetchApplications, setApplications } =
-    useActiveApplication();
+  const {
+    activeApplicationId,
+    activeApplication,
+    refetchApplications,
+    setApplications,
+  } = useActiveApplication();
   const applicantsInfo = useIpDisclosureStore((state) => state.applicantsInfo);
   const setApplicantsInfo = useIpDisclosureStore(
-    (state) => state.setApplicantsInfo
+    (state) => state.setApplicantsInfo,
   );
 
-  const updateApplicationMutation = trpc.formIntegration.updateApplication.useMutation({
-    onSuccess: (_data, variables) => {
-      toast.success("Application updated successfully!");
-      if (activeApplicationId) {
-        setApplications((prev) =>
-          prev.map((app) =>
-            app.id === activeApplicationId
-              ? {
-                  ...app,
-                  title: variables.title ?? app.title,
-                  description:
-                    variables.description !== undefined
-                      ? variables.description
-                      : app.description,
-                  ipType: variables.ipType ?? app.ipType,
-                  selectedIpTypes: variables.selectedIpTypes
-                    ? normalizeIpTypes(variables.selectedIpTypes)
-                    : app.selectedIpTypes,
-                }
-              : app
-          )
-        );
-      }
-      refetchApplications();
-      if (activeApplicationId) {
-        const event = new CustomEvent("applicationTitleFormCompleted", {
-          detail: { completed: true, applicationId: activeApplicationId },
-        });
-        window.dispatchEvent(event);
+  const updateApplicationMutation =
+    trpc.formIntegration.updateApplication.useMutation({
+      onSuccess: (_data, variables) => {
+        toast.success("Application updated successfully!");
+        if (activeApplicationId) {
+          setApplications((prev) =>
+            prev.map((app) =>
+              app.id === activeApplicationId
+                ? {
+                    ...app,
+                    title: variables.title ?? app.title,
+                    description:
+                      variables.description !== undefined
+                        ? variables.description
+                        : app.description,
+                    ipType: variables.ipType ?? app.ipType,
+                    otherIpType:
+                      variables.otherIpType !== undefined
+                        ? variables.otherIpType
+                        : app.otherIpType,
+                    selectedIpTypes: variables.selectedIpTypes
+                      ? normalizeIpTypes(variables.selectedIpTypes)
+                      : app.selectedIpTypes,
+                  }
+                : app,
+            ),
+          );
+        }
+        refetchApplications();
+        if (activeApplicationId) {
+          const event = new CustomEvent("applicationTitleFormCompleted", {
+            detail: { completed: true, applicationId: activeApplicationId },
+          });
+          window.dispatchEvent(event);
 
-        const refreshEvent = new CustomEvent("formProgressRefresh", {
-          detail: { applicationId: activeApplicationId },
+          const refreshEvent = new CustomEvent("formProgressRefresh", {
+            detail: { applicationId: activeApplicationId },
+          });
+          window.dispatchEvent(refreshEvent);
+        }
+        router.push("/forms?tab=ip-disclosure");
+      },
+      onError: (error) => {
+        toast.error("Failed to update application", {
+          description: error.message,
         });
-        window.dispatchEvent(refreshEvent);
-      }
-      router.push("/forms?tab=ip-disclosure");
-    },
-    onError: (error) => {
-      toast.error("Failed to update application", {
-        description: error.message,
-      });
-    },
-  });
+      },
+    });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -133,8 +155,34 @@ export function ApplicationTitleForm() {
       title: "",
       description: "",
       ipTypes: [],
+      otherIpType: "",
     },
   });
+
+  const watchedIpTypes = form.watch("ipTypes");
+  const showOtherIpTypeInput = watchedIpTypes?.includes("other");
+
+  useEffect(() => {
+    if (!activeApplication) return;
+
+    const normalizedIpTypes = normalizeIpTypes(
+      activeApplication.selectedIpTypes ?? undefined,
+    );
+    const selectedIpTypes = (
+      Object.entries(normalizedIpTypes) as Array<
+        [keyof typeof normalizedIpTypes, boolean]
+      >
+    )
+      .filter(([, isSelected]) => isSelected)
+      .map(([key]) => mapSelectionKeyToApplicationType(key));
+
+    form.reset({
+      title: activeApplication.title ?? "",
+      description: activeApplication.description ?? "",
+      ipTypes: selectedIpTypes,
+      otherIpType: activeApplication.otherIpType ?? "",
+    });
+  }, [activeApplication, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (!activeApplicationId) {
@@ -145,17 +193,30 @@ export function ApplicationTitleForm() {
     const selectedIpTypes = values.ipTypes as ApplicationIpTypeValue[];
     const nextIpTypes = buildIpTypesFromApplicationValues(selectedIpTypes);
     const primaryIpType = getPrimaryApplicationIpType(nextIpTypes);
+    const otherIpType = nextIpTypes.other
+      ? (values.otherIpType?.trim() ?? "")
+      : "";
+
+    if (nextIpTypes.other && !otherIpType) {
+      form.setError("otherIpType", {
+        type: "manual",
+        message: "Please specify the type of IP in the Other field.",
+      });
+      toast.error("Please specify the type of IP in the Other field.");
+      return;
+    }
 
     if (applicantsInfo) {
       setApplicantsInfo({
         ...applicantsInfo,
         ipTypes: nextIpTypes,
+        otherIpType,
       });
     }
     if (typeof window !== "undefined") {
       localStorage.setItem(
         getIpTypeStorageKey(activeApplicationId),
-        JSON.stringify(nextIpTypes)
+        JSON.stringify(nextIpTypes),
       );
     }
 
@@ -164,6 +225,7 @@ export function ApplicationTitleForm() {
       title: values.title,
       description: values.description,
       ipType: primaryIpType,
+      otherIpType,
       selectedIpTypes: nextIpTypes,
     });
   }
@@ -192,7 +254,8 @@ export function ApplicationTitleForm() {
                     />
                   </FormControl>
                   <FormDescription>
-                    This is the main identifier for your intellectual property application.
+                    This is the main identifier for your intellectual property
+                    application.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -215,7 +278,8 @@ export function ApplicationTitleForm() {
                     />
                   </FormControl>
                   <FormDescription>
-                    A short description helps in quickly identifying the application's purpose.
+                    A short description helps in quickly identifying the
+                    application's purpose.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -233,10 +297,9 @@ export function ApplicationTitleForm() {
                         const checked = field.value?.includes(option.value);
                         const isNotSureSelected =
                           field.value?.includes("not_sure") ?? false;
-                        const isAnyOtherSelected =
-                          (field.value ?? []).some(
-                            (value: string) => value !== "not_sure"
-                          );
+                        const isAnyOtherSelected = (field.value ?? []).some(
+                          (value: string) => value !== "not_sure",
+                        );
                         const isDisabled =
                           option.value === "not_sure"
                             ? isAnyOtherSelected
@@ -256,10 +319,10 @@ export function ApplicationTitleForm() {
                                 const current = field.value ?? [];
                                 const next = nextChecked
                                   ? Array.from(
-                                      new Set([...current, option.value])
+                                      new Set([...current, option.value]),
                                     )
                                   : current.filter(
-                                      (value: string) => value !== option.value
+                                      (value: string) => value !== option.value,
                                     );
                                 field.onChange(next);
                                 form.trigger();
@@ -284,13 +347,41 @@ export function ApplicationTitleForm() {
                 </FormItem>
               )}
             />
+            {showOtherIpTypeInput && (
+              <FormField
+                control={form.control}
+                name="otherIpType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Specify the other IP type{" "}
+                      <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter the specific IP type"
+                        value={field.value ?? ""}
+                        onChange={(event) => field.onChange(event.target.value)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      This is required because you selected Other as an IP type.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <Button
               type="submit"
               disabled={
                 updateApplicationMutation.isPending || !form.formState.isValid
               }
             >
-              {updateApplicationMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateApplicationMutation.isPending
+                ? "Saving..."
+                : "Save Changes"}
             </Button>
           </form>
         </Form>

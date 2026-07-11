@@ -72,7 +72,7 @@ export const formIntegrationRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string(),
-      })
+      }),
     )
     .query(async (opts) => {
       const { ctx, input } = opts;
@@ -95,11 +95,10 @@ export const formIntegrationRouter = createTRPCRouter({
             applicationIds: apps.map((app) => app.id),
           });
         }
-
         return apps.map((app) => {
           const selectedIpTypes = app.selectedIpTypes
             ? normalizeIpTypes(
-                app.selectedIpTypes as Partial<NormalizedIpTypes>
+                app.selectedIpTypes as Partial<NormalizedIpTypes>,
               )
             : null;
 
@@ -128,14 +127,14 @@ export const formIntegrationRouter = createTRPCRouter({
   // Create a new IP application
   createApplication: protectedProcedure
     .input(
-        z.object({
-          userId: z.string(),
-          title: z.string(),
-          description: z.string().optional(),
-          otherIpType: z.string().optional(),
-          ipType: z.enum([
-            "patent",
-            "copyright",
+      z.object({
+        userId: z.string(),
+        title: z.string(),
+        description: z.string().optional(),
+        otherIpType: z.string().optional(),
+        ipType: z.enum([
+          "patent",
+          "copyright",
           "trademark",
           "utility_model",
           "industrial_design",
@@ -155,7 +154,7 @@ export const formIntegrationRouter = createTRPCRouter({
             notSure: z.boolean().default(false),
           })
           .optional(),
-      })
+      }),
     )
     .mutation(async (opts) => {
       const { ctx, input } = opts;
@@ -228,7 +227,7 @@ export const formIntegrationRouter = createTRPCRouter({
     .input(
       z.object({
         applicationId: z.string(),
-      })
+      }),
     )
     .mutation(async (opts) => {
       const { ctx, input } = opts;
@@ -242,7 +241,7 @@ export const formIntegrationRouter = createTRPCRouter({
         const app = await db.query.ipApplication.findFirst({
           where: and(
             eq(ipApplication.id, input.applicationId),
-            eq(ipApplication.userId, userId)
+            eq(ipApplication.userId, userId),
           ),
         });
 
@@ -269,7 +268,7 @@ export const formIntegrationRouter = createTRPCRouter({
     .input(
       z.object({
         applicationId: z.string(),
-      })
+      }),
     )
     .query(async (opts) => {
       const { ctx, input } = opts;
@@ -278,7 +277,7 @@ export const formIntegrationRouter = createTRPCRouter({
         const registry = await db.query.formSubmissionRegistry.findFirst({
           where: eq(
             formSubmissionRegistry.ipApplicationId,
-            input.applicationId
+            input.applicationId,
           ),
           // Since formSubmission doesn't exist in the schema, we need to handle this differently
           // We'll remove the with clause for now
@@ -327,11 +326,12 @@ export const formIntegrationRouter = createTRPCRouter({
             notSure: z.boolean().default(false),
           })
           .optional(),
+        otherIpType: z.string().optional(),
         status: z
           .enum(["draft", "pending", "in_progress", "approved", "rejected"])
           .optional(),
         progress: z.number().min(0).max(100).optional(),
-      })
+      }),
     )
     .mutation(async (opts) => {
       const { ctx, input } = opts;
@@ -345,7 +345,7 @@ export const formIntegrationRouter = createTRPCRouter({
         const app = await db.query.ipApplication.findFirst({
           where: and(
             eq(ipApplication.id, input.applicationId),
-            eq(ipApplication.userId, userId)
+            eq(ipApplication.userId, userId),
           ),
         });
 
@@ -361,14 +361,18 @@ export const formIntegrationRouter = createTRPCRouter({
         if (input.title) updateData.title = input.title;
         if (input.description !== undefined)
           updateData.description = input.description;
+        if (input.otherIpType !== undefined) {
+          updateData.otherIpType = input.otherIpType.trim() || null;
+        }
         if (input.selectedIpTypes) {
           const normalizedIpTypes = normalizeIpTypes(input.selectedIpTypes);
           updateData.selectedIpTypes = normalizedIpTypes;
           updateData.ipType = getPrimaryApplicationIpType(normalizedIpTypes);
         } else if (input.ipType) {
           updateData.ipType = input.ipType;
-          updateData.selectedIpTypes =
-            deriveIpTypesFromApplicationIpType(input.ipType).ipTypes;
+          updateData.selectedIpTypes = deriveIpTypesFromApplicationIpType(
+            input.ipType,
+          ).ipTypes;
         }
         if (input.status) updateData.status = input.status;
         if (input.progress !== undefined) updateData.progress = input.progress;
@@ -393,7 +397,7 @@ export const formIntegrationRouter = createTRPCRouter({
     .input(
       z.object({
         applicationId: z.string(),
-      })
+      }),
     )
     .mutation(async (opts) => {
       const { ctx, input } = opts;
@@ -406,7 +410,7 @@ export const formIntegrationRouter = createTRPCRouter({
         const app = await db.query.ipApplication.findFirst({
           where: and(
             eq(ipApplication.id, input.applicationId),
-            eq(ipApplication.userId, userId)
+            eq(ipApplication.userId, userId),
           ),
           columns: { id: true },
         });
@@ -419,7 +423,7 @@ export const formIntegrationRouter = createTRPCRouter({
           await tx
             .delete(formSubmissionRegistry)
             .where(
-              eq(formSubmissionRegistry.ipApplicationId, input.applicationId)
+              eq(formSubmissionRegistry.ipApplicationId, input.applicationId),
             );
 
           const deleted = await tx
@@ -427,8 +431,8 @@ export const formIntegrationRouter = createTRPCRouter({
             .where(
               and(
                 eq(ipApplication.id, input.applicationId),
-                eq(ipApplication.userId, userId)
-              )
+                eq(ipApplication.userId, userId),
+              ),
             )
             .returning({ id: ipApplication.id });
 
@@ -443,7 +447,9 @@ export const formIntegrationRouter = createTRPCRouter({
       } catch (error) {
         console.error("Error deleting application:", error);
         const message =
-          error instanceof Error ? error.message : "Failed to delete application";
+          error instanceof Error
+            ? error.message
+            : "Failed to delete application";
         throw new Error(message);
       }
     }),

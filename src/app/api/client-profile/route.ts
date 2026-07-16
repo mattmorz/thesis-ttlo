@@ -255,26 +255,22 @@ export async function POST(req: Request) {
 
       occupation: personalInfo?.occupation?.trim() || null,
 
-      // Affiliation fields
-      isAffiliated:
-        typeof personalInfo?.isAffiliated === "boolean"
-          ? personalInfo.isAffiliated
-          : Boolean(
-              personalInfo?.affiliationType === "academic" ||
-              personalInfo?.isCSUAffiliated === true ||
-              personalInfo?.isCSUAffiliated === false ||
-              personalInfo?.institutionName?.trim() ||
-              personalInfo?.departmentName?.trim() ||
-              personalInfo?.department?.trim(),
-            ),
-      institutionName:
-        personalInfo?.institutionName?.trim() ||
-        personalInfo?.institution?.trim() ||
-        null,
-      department:
-        personalInfo?.department?.trim() ||
-        personalInfo?.departmentName?.trim() ||
-        null,
+     // Affiliation fields
+isAffiliated:
+  typeof personalInfo?.isCSUAffiliated === "boolean"
+    ? personalInfo.isCSUAffiliated
+    : false,
+
+institutionName:
+  personalInfo?.institutionName?.trim() ||
+  personalInfo?.collegeName?.trim() ||
+  personalInfo?.institution?.trim() ||
+  null,
+
+department:
+  personalInfo?.department?.trim() ||
+  personalInfo?.departmentName?.trim() ||
+  null,
 
       // Educational Background
       highestDegree: educationalBackground?.highestDegree || {

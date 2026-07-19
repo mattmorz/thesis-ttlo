@@ -163,237 +163,11 @@ interface ActivityLog {
   };
 }
 
-// Mock data interfaces for future database integration
-interface ProjectData {
-  id: string;
-  title: string;
-  status: "draft" | "active" | "completed" | "rejected";
-  type: string;
-  department: string;
-  createdAt: string;
-  updatedAt: string;
-  progress: {
-    total: number;
-    completed: number;
-    inProgress: number;
-    percentage: number;
-  };
+// Define the FAQItem interface
+interface FAQItem {
+  question: string;
+  answer: string;
 }
-
-// Mock project data - This will be replaced with API call
-const projectData: ProjectData = {
-  id: "IP-2024-001",
-  title: "Digital Learning System",
-  status: "active",
-  type: "Copyright",
-  department: "College of Computing and Information Sciences",
-  createdAt: "2024-03-15T10:00:00Z",
-  updatedAt: "2024-03-20T15:30:00Z",
-  progress: {
-    total: 8,
-    completed: 2,
-    inProgress: 1,
-    percentage: 25,
-  },
-};
-
-// Rest of your existing interfaces
-interface Phase {
-  id: number;
-  name: string;
-  progress: number;
-  description: string;
-  status: "pending" | "active" | "completed" | "blocked";
-  dueDate?: string;
-  submissionDate?: string;
-  requiredDocuments?: string[]; // Added required documents tracking
-}
-
-interface Activity {
-  id: string;
-  phaseId: number;
-  type: "submission" | "update" | "status_change";
-  title: string;
-  description: string;
-  timestamp: string;
-  status?: string;
-}
-
-interface StaffRemark {
-  id: string;
-  phaseId: number;
-  staffId: string;
-  staffName: string;
-  content: string;
-  timestamp: string;
-  type: "feedback" | "revision" | "approval" | "rejection";
-  status: "pending" | "addressed" | "resolved";
-}
-
-// Your existing mock data arrays
-const phasesData: Phase[] = [
-  {
-    id: 1,
-    name: "IP Application",
-    progress: 10,
-    description: "Initial IP application submission",
-
-    status: "active",
-    submissionDate: "2024-03-20",
-    requiredDocuments: ["Proof of Ownership", "Technical Documentation"],
-  },
-  {
-    id: 2,
-    name: "Document Collection",
-    progress: 0,
-    description: "Required documents gathering",
-    status: "blocked",
-    dueDate: "2024-04-15",
-    requiredDocuments: ["Patent Drawings", "Claims Documentation"],
-  },
-  {
-    id: 3,
-    name: "IP Search",
-    progress: 0,
-    description: "Prior art and IP search",
-    status: "pending",
-  },
-  {
-    id: 4,
-    name: "IP Deliberation",
-    progress: 0,
-    description: "Application review",
-    status: "pending",
-  },
-  {
-    id: 5,
-    name: "UM Application",
-    progress: 0,
-    description: "Utility Model process",
-    status: "pending",
-    requiredDocuments: ["Technical Specifications", "Utility Claims"],
-  },
-  {
-    id: 6,
-    name: "IP Drafting",
-    progress: 0,
-    description: "Final documentation",
-    status: "pending",
-    requiredDocuments: ["Final Patent Application", "Revised Claims"],
-  },
-  {
-    id: 7,
-    name: "IP Registration",
-    progress: 0,
-    description: "Official IP registration process",
-    status: "pending",
-  },
-  {
-    id: 8,
-    name: "IP Maintenance",
-    progress: 0,
-    description: "Post-registration maintenance",
-    status: "pending",
-  },
-];
-
-const recentActivities: Activity[] = [
-  {
-    id: "1",
-    phaseId: 1,
-    type: "submission",
-    title: "IP Application Submitted",
-    description: 'Copyright application for "Digital Learning System"',
-    timestamp: "2024-03-15T10:30:00",
-    status: "Pending Review",
-  },
-  {
-    id: "2",
-    phaseId: 2,
-    type: "update",
-    title: "Documents Updated",
-    description:
-      "Added additional documentation for Patent Application #2024-001",
-    timestamp: "2024-03-14T15:45:00",
-  },
-  {
-    id: "3",
-    phaseId: 1,
-    type: "status_change",
-    title: "Application Status Changed",
-    description: "Trademark application moved to Document Collection phase",
-    timestamp: "2024-03-13T09:15:00",
-    status: "In Progress",
-  },
-];
-
-// Define the Project type
-interface Project {
-  id: string;
-  title: string;
-  department: string;
-  type: string;
-  status: "active" | "completed" | "draft" | "rejected";
-}
-
-// Mock projects data
-const mockProjects: Project[] = [
-  {
-    id: "IP-2024-001",
-    title: "Digital Learning System",
-    department: "College of Computing and Information Sciences",
-    type: "Copyright",
-    status: "active",
-  },
-  {
-    id: "IP-2024-002",
-    title: "Smart Agriculture Monitor",
-    department: "College of Agriculture",
-    type: "Patent",
-    status: "active",
-  },
-  {
-    id: "IP-2024-003",
-    title: "Renewable Energy Solution",
-    department: "College of Engineering",
-    type: "Utility Model",
-    status: "active",
-  },
-];
-
-const staffRemarks: StaffRemark[] = [
-  {
-    id: "r1",
-    phaseId: 1,
-    staffId: "staff-001",
-    staffName: "Dr. Santos",
-    content:
-      "Please revise the technical documentation to include more detailed specifications.",
-    timestamp: "2024-03-16T11:00:00",
-    type: "revision",
-    status: "pending",
-  },
-  {
-    id: "r2",
-    phaseId: 1,
-    staffId: "staff-002",
-    staffName: "Atty. Cruz",
-    content: "Initial review completed. Ownership documents are in order.",
-    timestamp: "2024-03-17T14:30:00",
-    type: "feedback",
-    status: "resolved",
-  },
-  {
-    id: "r3",
-    phaseId: 2,
-    staffId: "staff-003",
-    staffName: "Engr. Reyes",
-    content: "Patent drawings need to be resubmitted with proper annotations.",
-    timestamp: "2024-03-18T09:15:00",
-    type: "revision",
-    status: "pending",
-  },
-];
 
 // Dashboard FAQs
 const dashboardFAQs: FAQItem[] = [
@@ -423,12 +197,6 @@ const dashboardFAQs: FAQItem[] = [
       "If a phase is marked as 'Blocked', check the staff remarks and phase details for specific instructions. Usually, this means additional information or documents are required from you. Address these requests promptly to continue the application process.",
   },
 ];
-
-// Define the FAQItem interface
-interface FAQItem {
-  question: string;
-  answer: string;
-}
 
 // Format IP Type helper function
 const formatIpType = (ipType: string | null | undefined): string => {
@@ -1908,10 +1676,7 @@ export default function DashboardPage() {
 
                       {!selectedPhase.description &&
                         (!selectedPhase.phaseTasks ||
-                          selectedPhase.phaseTasks.length === 0) &&
-                        !staffRemarks.filter(
-                          (r) => r.phaseId.toString() === selectedPhase.phaseId
-                        ).length && (
+                          selectedPhase.phaseTasks.length === 0) && (
                           <div className="flex flex-col items-center justify-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-200 mb-4">
                             <div className="text-center">
                               <MessageCircle className="h-10 w-10 text-gray-300 mx-auto mb-2" />
@@ -2003,65 +1768,7 @@ export default function DashboardPage() {
                         </Collapsible>
                       )}
 
-                    {/* Only render the remarks section when there are remarks or we explicitly want to show it */}
-                    {staffRemarks.filter(
-                      (remark) =>
-                        remark.phaseId.toString() === selectedPhase.phaseId
-                    ).length > 0 && (
-                      <Collapsible defaultOpen={true} className="p-4">
-                        <CollapsibleTrigger className="flex w-full justify-between items-center text-sm font-medium mb-3 group">
-                          <span className="flex items-center gap-1">
-                            <AlertCircle className="h-4 w-4 text-[#43a047]" />
-                            Remarks from Administrator:
-                          </span>
-                          <ChevronUp className="h-4 w-4 text-gray-400 group-data-[state=closed]:rotate-180 transition-transform" />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="bg-gray-50 rounded-md p-3 border border-gray-200">
-                            <div className="space-y-3">
-                              {staffRemarks
-                                .filter(
-                                  (remark) =>
-                                    remark.phaseId.toString() ===
-                                    selectedPhase.phaseId
-                                )
-                                .map((remark) => (
-                                  <div
-                                    key={remark.id}
-                                    className="border-l-2 border-[#43a047] pl-3 py-1"
-                                  >
-                                    <div className="flex items-center justify-between mb-1">
-                                      <div className="font-medium text-sm text-[#2e7d32]">
-                                        {remark.staffName}
-                                      </div>
-                                      <Badge
-                                        variant="outline"
-                                        className={`text-xs ${
-                                          remark.type === "revision"
-                                            ? "bg-amber-50 text-amber-700 border-amber-100"
-                                            : remark.type === "approval"
-                                            ? "bg-[#e8f5e9] text-[#2e7d32] border-[#c8e6c9]"
-                                            : remark.type === "rejection"
-                                            ? "bg-red-50 text-red-700 border-red-100"
-                                            : "bg-blue-50 text-blue-700 border-blue-100"
-                                        }`}
-                                      >
-                                        {remark.type}
-                                      </Badge>
-                                    </div>
-                                    <p className="text-sm text-gray-600">
-                                      {remark.content}
-                                    </p>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      {formatDate(remark.timestamp)}
-                                    </div>
-                                  </div>
-                                ))}
-                            </div>
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    )}
+
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 px-4 text-center">

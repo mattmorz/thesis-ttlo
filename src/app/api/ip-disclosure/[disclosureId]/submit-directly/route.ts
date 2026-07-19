@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/drizzle/db";
 import { sql } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 

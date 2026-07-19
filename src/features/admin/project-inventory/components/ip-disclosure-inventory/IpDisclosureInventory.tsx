@@ -65,34 +65,8 @@ export function IpDisclosureInventory() {
       //   sortDirection: sortConfig.direction,
       // });
 
-      // Temporary mock data for demonstration
-      const mockData = Array(10)
-        .fill(null)
-        .map((_, i) => ({
-          disclosureId: `disc-${i + 1}`,
-          clientId: `client-${i + 1}`,
-          status: ["draft", "submitted", "under_review", "approved"][
-            Math.floor(Math.random() * 4)
-          ],
-          createdAt: new Date(
-            Date.now() - Math.random() * 10000000000
-          ).toISOString(),
-          updatedAt: new Date(
-            Date.now() - Math.random() * 1000000000
-          ).toISOString(),
-          email: `inventor${i + 1}@example.com`,
-          authorizedRepresentative: i % 3 === 0 ? `Representative ${i}` : null,
-          selectedIpTypes: {
-            patent: i % 2 === 0,
-            copyright: i % 3 === 0,
-            trademark: i % 4 === 0,
-            tradeSecret: i % 5 === 0,
-          },
-          applicationId: `app-${i + 1}`,
-        }));
-
-      setDisclosureData(mockData);
-      setTotalItems(50); // Example total count
+      setDisclosureData([]);
+      setTotalItems(0);
     } catch (error) {
       console.error("Error fetching IP disclosure data:", error);
       toast.error("Failed to load IP disclosure data");

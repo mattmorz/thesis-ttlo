@@ -32,6 +32,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Logo from "@/assets/logo.avif";
 import { motion, AnimatePresence } from "framer-motion";
+import { signOut, useSession } from "next-auth/react";
+import {
+  clearAppOwnedLocalStorage,
+  clearAppOwnedSessionStorage,
+} from "@/lib/utils/localStorage-utils";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean;
@@ -115,6 +120,18 @@ export function BarSideNav() {
   const pathname = usePathname();
   const isMobile = useIsMobile();
   const [currentFocus, setCurrentFocus] = React.useState<number>(-1);
+
+  const { data: session } = useSession();
+  const user = session?.user || {};
+  const userInitials = React.useMemo(() => {
+    if (!user.name) return "U";
+    return user.name
+      .split(" ")
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  }, [user.name]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
@@ -259,8 +276,12 @@ export function BarSideNav() {
                 animate={{ width: isCollapsed ? "auto" : "100%" }}
               >
                 <Avatar className="h-6 w-6">
-                  <AvatarImage src="/avatars/01.png" alt="User" />
-                  <AvatarFallback>U</AvatarFallback>
+                  {user.image ? (
+                    <AvatarImage src={user.image} alt={user.name || "User"} />
+                  ) : null}
+                  <AvatarFallback className="text-[10px]">
+                    {userInitials}
+                  </AvatarFallback>
                 </Avatar>
                 <AnimatePresence>
                   {!isCollapsed && (
@@ -272,9 +293,11 @@ export function BarSideNav() {
                       transition={{ duration: 0.2 }}
                     >
                       <div className="flex flex-col items-start text-left">
-                        <span className="text-sm font-medium">John Doe</span>
+                        <span className="text-sm font-medium">
+                          {user.name || "User"}
+                        </span>
                         <span className="text-xs text-muted-foreground">
-                          admin@ttlo.com
+                          {user.email || "No email"}
                         </span>
                       </div>
                       <ChevronLeft className="h-4 w-4 rotate-90 transition-transform group-hover:translate-y-0.5" />
@@ -302,7 +325,14 @@ export function BarSideNav() {
               Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">
+            <DropdownMenuItem
+              className="text-red-600 cursor-pointer"
+              onClick={async () => {
+                clearAppOwnedLocalStorage();
+                clearAppOwnedSessionStorage();
+                await signOut({ callbackUrl: "/", redirect: true });
+              }}
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </DropdownMenuItem>

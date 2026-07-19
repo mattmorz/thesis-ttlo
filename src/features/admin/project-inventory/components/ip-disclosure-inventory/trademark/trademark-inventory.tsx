@@ -75,7 +75,6 @@ import {
   TrademarkFilterType,
 } from "@/features/admin/project-inventory/schemas/trademark";
 import { TrademarkView } from "./trademark-view";
-import { trademarkSampleData } from "./sample-data";
 
 export function TrademarkInventory() {
   // State management
@@ -194,10 +193,10 @@ export function TrademarkInventory() {
         // If API returns an error, use sample data
         console.error("API Error:", result.error);
         toast.error(
-          `Error loading data: ${result.error}. Using sample data instead.`
+          `Error loading data: ${result.error}.`
         );
-        setRecordData(trademarkSampleData);
-        setTotalItems(trademarkSampleData.length);
+        setRecordData([]);
+        setTotalItems(0);
       } else if (
         result &&
         Array.isArray(result.data) &&
@@ -206,22 +205,17 @@ export function TrademarkInventory() {
         setRecordData(result.data);
         setTotalItems(result.total || result.data.length);
       } else {
-        // If API returns empty data, use sample data
-        console.warn("No data returned from API, using sample data instead");
-        toast.info(
-          "No trademark records found in database. Using sample data for display."
-        );
-        setRecordData(trademarkSampleData);
-        setTotalItems(trademarkSampleData.length);
+        setRecordData([]);
+        setTotalItems(0);
       }
     } catch (error) {
       // If API request fails, use sample data
       console.error("Error fetching trademark records:", error);
       toast.error(
-        "Failed to load trademark records. Using sample data instead."
+        "Failed to load trademark records."
       );
-      setRecordData(trademarkSampleData);
-      setTotalItems(trademarkSampleData.length);
+      setRecordData([]);
+      setTotalItems(0);
     } finally {
       setIsLoading(false);
     }

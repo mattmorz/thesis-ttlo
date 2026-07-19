@@ -130,7 +130,6 @@ function ViewDocuments() {
     return matchesSearch && matchesCategory;
   });
 
-  // For demo, use mock data if no documents are found
   const hasDocuments = filteredDocuments.length > 0;
 
   const formatFileSize = (bytes: number) => {

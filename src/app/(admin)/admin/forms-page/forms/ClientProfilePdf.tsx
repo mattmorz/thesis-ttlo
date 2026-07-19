@@ -131,46 +131,6 @@ export default async function generateClientProfilePdf(applicationId?: string): 
         throw new Error("Client profile data is missing essential fields");
       }
     } else {
-      console.log("API request failed, using fallback template data");
-      profileData = {
-        clientId: "N/A",
-        firstName: "John",
-        middleName: "",
-        lastName: "Doe",
-        email: "john.doe@example.com",
-        contactNumber: "+63 912 345 6789",
-        gender: { value: "male" },
-        age: 30,
-        citizenship: { value: "filipino" },
-        mailingAddress: "123 Main St, City",
-        companyName: "Sample Company",
-        companyStreet: "456 Corporate Ave",
-        companyBarangay: "Business District",
-        companyCityMunicipality: "Metro City",
-        companyProvince: "Sample Province",
-        companyEmail: "info@samplecompany.com",
-        occupation: "Software Developer",
-        highestDegree: { value: "bachelor" },
-        degree: "Bachelor of Science in Computer Science",
-        profession: "Software Engineer",
-        publishedResearch: { value: "yes" },
-        developedMaterials: { value: "yes" },
-        familiarWithIpRights: { value: "yes" },
-        ipExperience: { 
-          hasExperience: "yes", 
-          types: { 
-            patent: true, 
-            copyright: true 
-          }
-        },
-        status: "approved",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      if (clientProfileResponse.status !== 404) {
-        toast.warning("Using default data - couldn't load profile information");
-      } else {
         toast.error("Profile not found", {
           description: applicationId 
             ? "No profile information available for this application" 
@@ -178,7 +138,6 @@ export default async function generateClientProfilePdf(applicationId?: string): 
         });
         toast.dismiss(loadingToast);
         return Promise.reject(new Error("Profile not found"));
-      }
     }
     
     // Format the data for PDF

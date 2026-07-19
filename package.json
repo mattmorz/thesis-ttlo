@@ -11,7 +11,6 @@
     "drizzle:pull": "drizzle-kit pull",
     "drizzle:push": "drizzle-kit push",
     "drizzle:generate": "drizzle-kit generate",
-    "db:seed": "tsx src/drizzle/seed.ts",
     "drizzle:migrate": "tsx src/drizzle/bootstrap-migrations.ts && drizzle-kit migrate"
   },
   "dependencies": {

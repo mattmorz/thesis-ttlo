@@ -1,4 +1,4 @@
-import { publicProcedure, router } from "@/trpc/init";
+import { protectedProcedure, router } from "@/trpc/init";
 import { z } from "zod";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
@@ -13,7 +13,7 @@ import {
 
 export const applicationRouter = router({
   // Get application details
-  getApplicationDetails: publicProcedure
+  getApplicationDetails: protectedProcedure
     .input(
       z.object({
         applicationId: z.string().uuid(),
@@ -30,7 +30,7 @@ export const applicationRouter = router({
     }),
 
   // Get application phases
-  getApplicationPhases: publicProcedure
+  getApplicationPhases: protectedProcedure
     .input(
       z.object({
         applicationId: z.string().uuid(),
@@ -51,7 +51,7 @@ export const applicationRouter = router({
     }),
 
   // Get activity logs
-  getActivityLogs: publicProcedure
+  getActivityLogs: protectedProcedure
     .input(
       z.object({
         applicationId: z.string().uuid(),
@@ -77,7 +77,7 @@ export const applicationRouter = router({
     }),
 
   // Get phase tasks
-  getPhaseTasks: publicProcedure
+  getPhaseTasks: protectedProcedure
     .input(
       z.object({
         phaseId: z.string().uuid(),
@@ -100,14 +100,14 @@ export const applicationRouter = router({
     }),
 
   // Get all applications for dashboard stats
-  getAllApplications: publicProcedure.query(async () => {
+  getAllApplications: protectedProcedure.query(async () => {
     return db.query.ipApplication.findMany({
       orderBy: desc(ipApplication.createdAt),
     });
   }),
 
   // Get unassigned applications
-  getUnassignedApplications: publicProcedure.query(async () => {
+  getUnassignedApplications: protectedProcedure.query(async () => {
     // Get all application IDs that have enrollments
     const enrolledApplications = await db
       .select({ id: ipApplicationEnrollment.applicationId })
@@ -133,7 +133,7 @@ export const applicationRouter = router({
   }),
 
   // Get application status statistics
-  getApplicationStatusStats: publicProcedure.query(async () => {
+  getApplicationStatusStats: protectedProcedure.query(async () => {
     // Use proper count queries for each status
     const [pending, inProgress, approved, completed] = await Promise.all([
       db.query.ipApplication.findMany({
@@ -159,7 +159,7 @@ export const applicationRouter = router({
   }),
 
   // Get application type statistics
-  getApplicationTypeStats: publicProcedure.query(async () => {
+  getApplicationTypeStats: protectedProcedure.query(async () => {
     // Use proper count queries for each type
     const [patent, copyright, trademark, utilityModel] = await Promise.all([
       db.query.ipApplication.findMany({

@@ -40,7 +40,7 @@ export type ExternalCollaborationSchema = z.infer<
 >;
 
 export const clientProjectDashboardRouter = router({
-  get: publicProcedure
+  get: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ input }) => {
       const res = await db.query.ipApplication.findFirst({
@@ -62,7 +62,7 @@ export const clientProjectDashboardRouter = router({
       console.log(res);
       return res;
     }),
-  updatePhase: publicProcedure
+  updatePhase: protectedProcedure
     .input(
       z.object({
         phaseId: z.string().uuid(),
@@ -128,7 +128,7 @@ export const clientProjectDashboardRouter = router({
       return res;
     }),
 
-  addUpdatePhase: publicProcedure
+  addUpdatePhase: protectedProcedure
     .input(
       z.object({
         phaseId: z.string().uuid(),

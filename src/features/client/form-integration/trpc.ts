@@ -1,4 +1,4 @@
-import { publicProcedure, router } from "@/trpc/init";
+import { protectedProcedure, router } from "@/trpc/init";
 import { z } from "zod";
 import * as formSubmissionService from "@/lib/services/form-submission-service";
 // Import the server router to access methods like getUserApplications
@@ -51,7 +51,7 @@ export const formIntegrationRouter = router({
    * Get all IP applications for a user
    * Now with improved error handling and input validation
    */
-  getUserApplications: publicProcedure
+  getUserApplications: protectedProcedure
     .input(
       z.object({
         userId: z.string().optional().default(""),
@@ -115,7 +115,7 @@ export const formIntegrationRouter = router({
    * Create a new IP application
    * Now with improved error handling and state management to prevent looping
    */
-  createApplication: publicProcedure
+  createApplication: protectedProcedure
     .input(
         z.object({
           userId: z.string(),
@@ -283,7 +283,7 @@ export const formIntegrationRouter = router({
   /**
    * Register a form submission for tracking
    */
-  registerSubmission: publicProcedure
+  registerSubmission: protectedProcedure
     .input(
       z.object({
         userId: z.string().uuid(),
@@ -322,7 +322,7 @@ export const formIntegrationRouter = router({
   /**
    * Submit a form for processing to create an IP application
    */
-  submitForProcessing: publicProcedure
+  submitForProcessing: protectedProcedure
     .input(z.object({ registryId: z.string().uuid() }))
     .mutation(async ({ input }) => {
       return await formSubmissionService.submitFormForProcessing(
@@ -333,7 +333,7 @@ export const formIntegrationRouter = router({
   /**
    * Add data mappings to a form submission
    */
-  addFormDataFields: publicProcedure
+  addFormDataFields: protectedProcedure
     .input(
       z.object({
         registryId: z.string().uuid(),
@@ -356,7 +356,7 @@ export const formIntegrationRouter = router({
   /**
    * Get form submission by source
    */
-  getBySource: publicProcedure
+  getBySource: protectedProcedure
     .input(
       z.object({
         sourceType: z.enum([
@@ -379,7 +379,7 @@ export const formIntegrationRouter = router({
   /**
    * Get form submission by ID
    */
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ registryId: z.string().uuid() }))
     .query(async ({ input }) => {
       return await formSubmissionService.getFormSubmissionById(
@@ -390,7 +390,7 @@ export const formIntegrationRouter = router({
   /**
    * Get all form submissions for a user
    */
-  getUserSubmissions: publicProcedure
+  getUserSubmissions: protectedProcedure
     .input(z.object({ userId: z.string().uuid() }))
     .query(async ({ input }) => {
       return await formSubmissionService.getUserFormSubmissions(input.userId);
@@ -399,7 +399,7 @@ export const formIntegrationRouter = router({
   /**
    * Retry a failed form submission
    */
-  retryFailedSubmission: publicProcedure
+  retryFailedSubmission: protectedProcedure
     .input(z.object({ registryId: z.string().uuid() }))
     .mutation(async ({ input }) => {
       return await formSubmissionService.retryFailedSubmission(

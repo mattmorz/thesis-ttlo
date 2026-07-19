@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/drizzle/db";
 import { archives, ipApplication } from "@/drizzle/migrations/schema";
-import { publicProcedure, router } from "@/trpc/init";
+import { protectedProcedure, router } from "@/trpc/init";
 import { and, arrayContains, eq, gte, ilike, lte, sql, SQL } from "drizzle-orm";
 import { createSelectSchema } from "drizzle-zod";
 import { archiveFiltersSchema } from "../schemas/archive-filter";
@@ -9,7 +9,7 @@ import { archiveFiltersSchema } from "../schemas/archive-filter";
 const dtzArchiveSchema = createSelectSchema(archives);
 
 export const archivesRouter = router({
-  get: publicProcedure.input(archiveFiltersSchema).query(async ({ input }) => {
+  get: protectedProcedure.input(archiveFiltersSchema).query(async ({ input }) => {
     const filters: SQL[] = [];
     if (input.search) {
       filters.push(ilike(ipApplication.title, `%${input.search}%`));
@@ -47,7 +47,7 @@ export const archivesRouter = router({
       .where(and(...filters));
     return res;
   }),
-  create: publicProcedure
+  create: protectedProcedure
     .input(dtzArchiveSchema.partial())
     .mutation(async ({ input }) => {
       const session = await auth();
@@ -62,7 +62,7 @@ export const archivesRouter = router({
         .returning({ id: archives.id });
       return newArchive;
     }),
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(dtzArchiveSchema.partial())
     .mutation(async ({ input }) => {
       const [newArchive] = await db

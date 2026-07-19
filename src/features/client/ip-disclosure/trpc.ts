@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure, router } from "@/trpc/init";
+import { protectedProcedure, router } from "@/trpc/init";
 import { db } from "@/drizzle/db";
 import { v4 as uuidv4 } from "uuid";
 import { sql } from "drizzle-orm";
@@ -113,7 +113,7 @@ interface Context {
 
 export const ipDisclosureRouter = router({
   // Create a new IP disclosure
-  createIpDisclosure: publicProcedure
+  createIpDisclosure: protectedProcedure
     .input(ipDisclosureSchema)
     .mutation(async ({ input }) => {
       console.log("Creating IP disclosure with client ID:", input.clientId);
@@ -337,7 +337,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Update an existing IP disclosure
-  updateIpDisclosure: publicProcedure
+  updateIpDisclosure: protectedProcedure
     .input(
       z.object({
         disclosureId: z.string().uuid(),
@@ -717,7 +717,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Get an IP disclosure by ID
-  getIpDisclosure: publicProcedure
+  getIpDisclosure: protectedProcedure
     .input(z.object({ disclosureId: z.string().uuid() }))
     .query(async ({ input }) => {
       console.log("Getting IP disclosure:", input);
@@ -842,7 +842,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Create or update trademark application
-  saveTrademarkApplication: publicProcedure
+  saveTrademarkApplication: protectedProcedure
     .input(trademarkSchema)
     .mutation(async ({ input }) => {
       console.log(
@@ -1092,7 +1092,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Create or update trade secret application
-  saveTradeSecretApplication: publicProcedure
+  saveTradeSecretApplication: protectedProcedure
     .input(tradeSecretSchema)
     .mutation(async ({ input, ctx }) => {
       console.log(
@@ -1250,7 +1250,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Create or update disclosure confirmation
-  saveDisclosureConfirmation: publicProcedure
+  saveDisclosureConfirmation: protectedProcedure
     .input(disclosureConfirmationSchema)
     .mutation(async ({ input }) => {
       console.log("Saving disclosure confirmation for ID:", input.disclosureId);
@@ -1425,7 +1425,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Check if a trademark application exists for a disclosure ID
-  checkTrademarkExists: publicProcedure
+  checkTrademarkExists: protectedProcedure
     .input(z.object({ disclosureId: z.string().uuid() }))
     .query(async ({ input }) => {
       console.log("Checking if trademark application exists:", input);
@@ -1448,7 +1448,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Check if a patent search report exists for a patent ID
-  checkPatentSearchReportExists: publicProcedure
+  checkPatentSearchReportExists: protectedProcedure
     .input(
       z.object({
         patentId: z.string(),
@@ -1540,7 +1540,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Submit the entire IP disclosure form
-  submitIpDisclosure: publicProcedure
+  submitIpDisclosure: protectedProcedure
     .input(z.object({ disclosureId: z.string().uuid() }))
     .mutation(async ({ input }) => {
       console.log("Submitting IP disclosure:", input);
@@ -1567,7 +1567,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Save copyright application and related data
-  saveCopyrightApplication: publicProcedure
+  saveCopyrightApplication: protectedProcedure
     .input(
       z.object({
         disclosureId: z.string().uuid(),
@@ -1770,7 +1770,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Save patent/utility model application
-  savePatentUtilityModelApplication: publicProcedure
+  savePatentUtilityModelApplication: protectedProcedure
     .input(
       z.object({
         disclosureId: z.string(),
@@ -2228,7 +2228,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Check if a disclosure ID exists in the database
-  checkDisclosureExists: publicProcedure
+  checkDisclosureExists: protectedProcedure
     .input(z.object({ disclosureId: z.string().uuid() }))
     .query(async ({ input }) => {
       console.log("Checking if disclosure ID exists:", input.disclosureId);
@@ -2250,7 +2250,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Add the getUserDisclosures endpoint to fetch all disclosures for a user
-  getUserDisclosures: publicProcedure
+  getUserDisclosures: protectedProcedure
     .input(
       z.object({
         userId: z.string().uuid(),
@@ -2291,7 +2291,7 @@ export const ipDisclosureRouter = router({
     }),
 
   // Get trademark application for a disclosure ID
-  getTrademarkApplication: publicProcedure
+  getTrademarkApplication: protectedProcedure
     .input(z.object({ disclosureId: z.string().uuid() }))
     .query(async ({ input }) => {
       console.log(

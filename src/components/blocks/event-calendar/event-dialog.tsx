@@ -223,6 +223,7 @@ export function EventDialog({
           <div className="p-6">
             <Form {...form}>
               <form
+                id="event-dialog-form"
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
@@ -537,8 +538,9 @@ export function EventDialog({
               </Button>
             </DialogClose>
             <Button
+              type="submit"
+              form="event-dialog-form"
               disabled={isSubmitting}
-              onClick={() => form.handleSubmit(onSubmit)()}
             >
               {isSubmitting ? "Saving..." : "Save"}
             </Button>

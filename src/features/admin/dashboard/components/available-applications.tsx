@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { trpc } from "@/trpc/client";
 import { useSession } from "next-auth/react";
 import {
@@ -111,6 +112,7 @@ interface AvailableApplicationsProps {
 export function AvailableApplications({
   compact = false,
 }: AvailableApplicationsProps) {
+  const router = useRouter();
   const { data: session } = useSession();
   const [filter, setFilter] = useState<string[]>([
     "draft",
@@ -250,7 +252,7 @@ export function AvailableApplications({
                 variant="link"
                 size="sm"
                 className="text-green-700 text-xs flex items-center gap-1 p-0"
-                onClick={() => (window.location.href = "/admin/projects")}
+                onClick={() => router.push("/admin/projects")}
               >
                 <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">
                   {availableApplications.length}

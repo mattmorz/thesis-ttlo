@@ -547,8 +547,8 @@ export function SubstantialUse() {
       // Navigate to forms page after a short delay and force a hard reload
       // Include a cache-busting query parameter
       setTimeout(() => {
-        // Use window.location.href to force a hard reload with a cache busting parameter
-        window.location.href = `/forms?tab=substantial-use&t=${Date.now()}`;
+        router.refresh();
+        router.push(`/forms?tab=substantial-use&t=${Date.now()}`);
       }, 1000);
     } catch (error) {
       console.error("Error in form submission:", error);

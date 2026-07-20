@@ -371,7 +371,7 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
       localStorage.removeItem("educationalBackgroundData");
       localStorage.removeItem("clientBackgroundIPData");
       // Reset all state and trigger a page reload to ensure clean state
-      window.location.reload();
+      router.refresh();
     };
 
     const handleApplicationSwitched = (event: CustomEvent) => {
@@ -401,7 +401,7 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
       });
 
       // Instead of complex state management, simply reload the page
-      window.location.reload();
+      router.refresh();
     };
 
     window.addEventListener(
@@ -905,7 +905,7 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
         localStorage.removeItem("clientBackgroundIPData");
 
         // Increment refresh trigger or reload page if needed
-        window.location.reload();
+        router.refresh();
       }
     };
 

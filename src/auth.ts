@@ -112,11 +112,12 @@ export const {
               name: user.name,
               image: user.image,
               emailVerified: new Date().toISOString(),
+              role: userRole, // Re-evaluate role on every login based on current env vars
             })
             .where(eq(userAccount.email, user.email));
 
           user.id = existingUser.id;
-          user.role = existingUser.role || userRole;
+          user.role = userRole;
         }
 
         return true;

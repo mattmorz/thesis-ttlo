@@ -116,37 +116,13 @@ export default async function generateDeedOfAssignmentPdf(applicationId: string)
         applicationType: applicationType
       };
       
-      console.log("Document data prepared:", {
-        title: data.research_title,
-        applicationType: data.applicationType,
-        assigneeId: data.assignee_id,
-        creatorIds: data.creators.map(c => ({ name: `${c.firstName} ${c.lastName}`, assignorId: c.assignorId }))
-      });
-      
     } else {
-      console.log("API request failed, using fallback data");
-      
-      data = {
-        research_title: "Untitled Research",
-        creators: [
-          { firstName: "Default", middleInitial: "", lastName: "Creator", id: "N/A", assignorId: "N/A" }
-        ],
-        creator_address: "Caraga State University, Ampayon, Butuan City",
-        assignee_name: "CARAGA STATE UNIVERSITY",
-        assignee_representative: "ROLYN C. DAGUIL, Ph.D.",
-        assignee_id: "CSU-2023-001",
-        assignee_place: "Butuan City",
-        day: new Date().getDate().toString(),
-        month: new Date().toLocaleString('default', { month: 'long' }),
-        year: new Date().getFullYear().toString(),
-        applicationType: "patent"
-      };
-      
       if (response.status === 404) {
         toast.error("Application not found");
         return Promise.reject(new Error("Application not found"));
       } else {
-        toast.warning("Using default data - couldn't load application information");
+        toast.error("Failed to load application information");
+        return Promise.reject(new Error(`API Error: ${response.status} ${response.statusText}`));
       }
     }
     

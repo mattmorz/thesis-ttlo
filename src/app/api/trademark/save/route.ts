@@ -24,21 +24,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if we should register this form in the registry
-    const registerForm = trademarkData.registerForm === true;
-    console.log(
-      `Saving trademark data for disclosure ID: ${disclosureId} (registerForm=${registerForm})`
-    );
-
-    // Get authentication session if we might need to create a registry entry
-    let userId = null;
-    if (registerForm) {
-      const session = await auth();
-      if (!session?.user?.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-      userId = session.user.id;
+    // Always require authentication before any DB operation
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.user.id;
 
     // Check if trademark application already exists for this disclosure
     const existingResult = await db.execute(

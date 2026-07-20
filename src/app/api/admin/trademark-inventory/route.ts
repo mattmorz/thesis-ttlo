@@ -7,11 +7,17 @@ import {
   ipDisclosureApplicant,
   userAccount,
 } from "@/drizzle/schema";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (session.user.role !== "admin" && session.user.role !== "ttlo_staff")
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const { searchParams } = new URL(req.url);
 
     // Parse query parameters

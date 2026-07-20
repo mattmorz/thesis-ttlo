@@ -3,9 +3,9 @@
 import { db } from "@/drizzle/db";
 import {
   ipApplication,
-  ipApplicationEnrollment,
   userAccount,
 } from "@/drizzle/migrations/schema";
+import { ipApplicationEnrollment } from "@/drizzle/schema";
 import { eq, count, and, ne, gt, lt, sql, isNull, gte } from "drizzle-orm";
 
 export type InventoryStatsData = {

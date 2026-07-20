@@ -5,8 +5,8 @@ import {
   phaseTask,
   applicationPhase,
   ipApplication,
-  ipApplicationEnrollment,
 } from "@/drizzle/migrations/schema";
+import { ipApplicationEnrollment } from "@/drizzle/schema";
 import { and, eq, inArray } from "drizzle-orm";
 
 export const tasksRouter = createTRPCRouter({

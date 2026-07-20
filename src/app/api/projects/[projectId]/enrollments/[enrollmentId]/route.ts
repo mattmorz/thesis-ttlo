@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/drizzle/db";
-import { ipApplicationEnrollment } from "@/drizzle/migrations/schema";
+import { ipApplicationEnrollment } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "@/auth";
 

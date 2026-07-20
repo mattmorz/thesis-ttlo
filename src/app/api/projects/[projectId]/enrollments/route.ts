@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/drizzle/db";
 import {
   ipApplication,
-  ipApplicationEnrollment,
   userAccount,
 } from "@/drizzle/migrations/schema";
+import { ipApplicationEnrollment } from "@/drizzle/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { auth } from "@/auth";
 

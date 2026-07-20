@@ -8,7 +8,6 @@ const publicPaths = [
   "/auth/error",
   "/auth/unauthorized",
   "/api/auth",
-  "/test-signin", // Our test page
   "/guidelines",
   "/track"
 ];
@@ -65,14 +64,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(cleanUrl);
   }
 
-  const isApiPath = pathname.startsWith("/api");
-  if (isApiPath && !pathname.startsWith("/api/trpc")) {
+  // Only bypass auth for intentionally public API endpoints (OTP-gated tracking)
+  const isPublicApiPath =
+    pathname === "/api/track/otp" || pathname === "/api/track/verify";
+  if (isPublicApiPath) {
     return NextResponse.next();
   }
 
-  console.log("🍪 Middleware cookies:", request.cookies.getAll());
 
-  // ✅ Try multiple cookie names (v4 + v5)
   const possibleCookieNames = [
     "authjs.session-token",           // v5
     "__Secure-authjs.session-token",  // v5 secure
@@ -85,19 +84,12 @@ export async function middleware(request: NextRequest) {
   for (const cookieName of possibleCookieNames) {
     token = await getToken({
       req: request,
-      // secret: process.env.NEXTAUTH_SECRET,
       secret: process.env.AUTH_SECRET,
-
       cookieName,
     });
-    if (token) {
-      console.log(`✅ Found token in cookie: ${cookieName}`);
-      console.log("Token details:", token);
-      break;
-    }
+    if (token) break;
   }
 
-  console.log("🔑 Middleware token:", token ? "FOUND" : "NOT FOUND", pathname);
 
   const isAuthenticated = !!token;
   const isPublic = isPublicPath(pathname);
@@ -110,7 +102,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
-  if (!isAuthenticated && !isPublic && !isApiPath) {
+  if (!isAuthenticated && !isPublic) {
     const encodedCallbackUrl = encodeURIComponent(pathname);
     return NextResponse.redirect(
       new URL(`/auth/signin?callbackUrl=${encodedCallbackUrl}`, request.url)

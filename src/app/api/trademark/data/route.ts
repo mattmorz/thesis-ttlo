@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { db } from "@/drizzle/db";
 import { sql } from "drizzle-orm";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     // Get the disclosure ID from the query string
     const url = new URL(request.url);
     const disclosureId = url.searchParams.get("disclosureId");

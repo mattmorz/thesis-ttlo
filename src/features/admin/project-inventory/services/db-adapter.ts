@@ -2,12 +2,12 @@ import { db } from "@/drizzle/db";
 import {
   ipApplication,
   userAccount,
-  ipApplicationEnrollment,
   ipDisclosure,
   ipDisclosureInventor,
   ipContributors,
   clientProfile,
 } from "@/drizzle/migrations/schema";
+import { ipApplicationEnrollment } from "@/drizzle/schema";
 import {
   eq,
   and,

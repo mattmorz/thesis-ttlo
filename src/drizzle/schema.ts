@@ -2033,3 +2033,27 @@ export const eventParticipant = pgTable(
     ),
   ]
 );
+
+// Enrollment of users (staff) to IP applications for project management
+export const ipApplicationEnrollment = pgTable(
+  "ip_application_enrollment",
+  {
+    enrollmentId: uuid("enrollment_id").primaryKey().defaultRandom().notNull(),
+    applicationId: uuid("application_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    role: varchar("role", { length: 50 }).default("manager").notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.applicationId],
+      foreignColumns: [ipApplication.id],
+      name: "ip_application_enrollment_application_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [userAccount.id],
+      name: "ip_application_enrollment_user_id_fkey",
+    }).onDelete("cascade"),
+  ]
+);

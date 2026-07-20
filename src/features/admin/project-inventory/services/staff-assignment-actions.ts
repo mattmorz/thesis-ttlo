@@ -3,11 +3,11 @@
 import { db } from "@/drizzle/db";
 import {
   userAccount,
-  ipApplicationEnrollment,
   ipApplication,
   applicationPhase,
   phaseTask,
 } from "@/drizzle/migrations/schema";
+import { ipApplicationEnrollment } from "@/drizzle/schema";
 import {
   and,
   count,

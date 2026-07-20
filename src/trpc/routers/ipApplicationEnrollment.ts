@@ -3,10 +3,10 @@ import { z } from "zod";
 import { db } from "@/drizzle/db";
 import {
   ipApplication,
-  ipApplicationEnrollment,
   userAccount,
 } from "@/drizzle/migrations/schema";
-import { eq, and, inArray, desc, sql } from "drizzle-orm";
+import { ipApplicationEnrollment } from "@/drizzle/schema";
+import { eq, and, inArray, notInArray, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 // Input schema for enrolling in an IP application
@@ -190,21 +190,31 @@ export const ipApplicationEnrollmentRouter = router({
       })
     )
     .query(async ({ input }) => {
-      // First find all applications this user is already enrolled in
+      // Fetch only the IDs this user is already enrolled in
       const enrolledApplications = await db
         .select({ applicationId: ipApplicationEnrollment.applicationId })
         .from(ipApplicationEnrollment)
         .where(eq(ipApplicationEnrollment.userId, input.userId));
 
-      // Convert to array of IDs
       const enrolledIds = enrolledApplications.map(
-        (enroll: { applicationId: string }) => enroll.applicationId
+        (enroll) => enroll.applicationId
       );
 
-      console.log("User enrolled in these applications:", enrolledIds);
+      // Build SQL-level WHERE conditions
+      const conditions = [];
 
-      // Get all applications first
-      let applications = await db
+      // Exclude already-enrolled applications at the database level
+      if (enrolledIds.length > 0) {
+        conditions.push(notInArray(ipApplication.id, enrolledIds));
+      }
+
+      // Apply status filter at the database level
+      if (input.status && input.status.length > 0) {
+        conditions.push(inArray(ipApplication.status, input.status));
+      }
+
+      // Single query: filter and paginate entirely in SQL
+      const availableApplications = await db
         .select({
           id: ipApplication.id,
           title: ipApplication.title,
@@ -216,33 +226,9 @@ export const ipApplicationEnrollmentRouter = router({
           updatedAt: ipApplication.updatedAt,
         })
         .from(ipApplication)
-        .orderBy(desc(ipApplication.createdAt));
-
-      console.log("Total applications found:", applications.length);
-
-      // Filter out applications the user is already enrolled in
-      let availableApplications = applications.filter(
-        (app) => !enrolledIds.includes(app.id)
-      );
-
-      console.log(
-        "Available applications after filtering:",
-        availableApplications.length
-      );
-
-      // Apply status filter if provided
-      if (input.status && input.status.length > 0) {
-        availableApplications = availableApplications.filter((app) =>
-          input.status!.includes(app.status as any)
-        );
-        console.log(
-          "Applications after status filter:",
-          availableApplications.length
-        );
-      }
-
-      // Apply limit
-      availableApplications = availableApplications.slice(0, input.limit);
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(ipApplication.createdAt))
+        .limit(input.limit);
 
       return availableApplications;
     }),

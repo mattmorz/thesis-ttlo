@@ -329,6 +329,12 @@ export async function PUT(
   const debugData: any = {};
 
   try {
+    // Require authentication before any processing
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     debugData.endpoint = "PUT /api/ip-disclosure/[disclosureId]";
     debugData.disclosureId = disclosureId;
     const body = await request.json();

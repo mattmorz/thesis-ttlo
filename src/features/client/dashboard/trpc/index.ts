@@ -8,8 +8,8 @@ import {
   ipApplication,
   phaseTask,
   userAccount,
-  ipApplicationEnrollment,
 } from "@/drizzle/migrations/schema";
+import { ipApplicationEnrollment } from "@/drizzle/schema";
 
 export const applicationRouter = router({
   // Get application details

@@ -6,6 +6,11 @@ import {
   ipDisclosure,
   ipDisclosureApplicant,
 } from "@/drizzle/schema";
+import { auth } from "@/auth";
+
+function isAdminOrStaff(role?: string | null) {
+  return role === "admin" || role === "ttlo_staff";
+}
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +20,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!isAdminOrStaff(session.user.role))
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
     const trademarkId = params.id;
 
     // Get the trademark record
@@ -71,6 +82,12 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!isAdminOrStaff(session.user.role))
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
     const trademarkId = params.id;
     const updateData = await request.json();
 
@@ -131,6 +148,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!isAdminOrStaff(session.user.role))
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
     const trademarkId = params.id;
 
     // Check if the record exists

@@ -4,10 +4,9 @@ import {
   applicationPhase,
   documents,
   documentsValidation,
-  ipApplicationEnrollment,
   userAccount,
 } from "@/drizzle/migrations/schema";
-import { archives } from "@/drizzle/schema";
+import { archives, ipApplicationEnrollment } from "@/drizzle/schema";
 import { protectedProcedure, router } from "@/trpc/init";
 import { eq, and } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";

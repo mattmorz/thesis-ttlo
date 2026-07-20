@@ -112,22 +112,16 @@ export const ipApplicationEnrollmentRouter = router({
         .orderBy(desc(ipApplicationEnrollment.createdAt));
 
       // Apply filters if provided
+      const filters = [];
       if (input.applicationId) {
-        return query.where(
-          eq(ipApplicationEnrollment.applicationId, input.applicationId)
-        );
+        filters.push(eq(ipApplicationEnrollment.applicationId, input.applicationId));
+      }
+      if (input.userId) {
+        filters.push(eq(ipApplicationEnrollment.userId, input.userId));
       }
 
-      if (input.userId) {
-        if (input.applicationId) {
-          return query.where(
-            and(
-              eq(ipApplicationEnrollment.applicationId, input.applicationId),
-              eq(ipApplicationEnrollment.userId, input.userId)
-            )
-          );
-        }
-        return query.where(eq(ipApplicationEnrollment.userId, input.userId));
+      if (filters.length > 0) {
+        query.where(and(...filters));
       }
 
       return query;

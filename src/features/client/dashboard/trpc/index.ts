@@ -131,26 +131,22 @@ export const applicationRouter = router({
   // Get application status statistics
   getApplicationStatusStats: protectedProcedure.query(async () => {
     // Use proper count queries for each status
-    const [pending, inProgress, approved, completed] = await Promise.all([
-      db.query.ipApplication.findMany({
-        where: eq(ipApplication.status, "pending"),
-      }),
-      db.query.ipApplication.findMany({
-        where: eq(ipApplication.status, "in_progress"),
-      }),
-      db.query.ipApplication.findMany({
-        where: eq(ipApplication.status, "approved"),
-      }),
-      db.query.ipApplication.findMany({
-        where: eq(ipApplication.status, "completed"),
-      }),
+    const [draft, pending, inProgress, approved, rejected, completed] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.status, "draft")),
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.status, "pending")),
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.status, "in_progress")),
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.status, "approved")),
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.status, "rejected")),
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.status, "completed")),
     ]);
 
     return {
-      pending: pending.length,
-      inProgress: inProgress.length,
-      approved: approved.length,
-      completed: completed.length,
+      draft: Number(draft[0]?.count || 0),
+      pending: Number(pending[0]?.count || 0),
+      inProgress: Number(inProgress[0]?.count || 0),
+      approved: Number(approved[0]?.count || 0),
+      rejected: Number(rejected[0]?.count || 0),
+      completed: Number(completed[0]?.count || 0),
     };
   }),
 
@@ -158,25 +154,17 @@ export const applicationRouter = router({
   getApplicationTypeStats: protectedProcedure.query(async () => {
     // Use proper count queries for each type
     const [patent, copyright, trademark, utilityModel] = await Promise.all([
-      db.query.ipApplication.findMany({
-        where: eq(ipApplication.ipType, "patent"),
-      }),
-      db.query.ipApplication.findMany({
-        where: eq(ipApplication.ipType, "copyright"),
-      }),
-      db.query.ipApplication.findMany({
-        where: eq(ipApplication.ipType, "trademark"),
-      }),
-      db.query.ipApplication.findMany({
-        where: eq(ipApplication.ipType, "utility_model"),
-      }),
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.ipType, "patent")),
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.ipType, "copyright")),
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.ipType, "trademark")),
+      db.select({ count: sql<number>`count(*)` }).from(ipApplication).where(eq(ipApplication.ipType, "utility_model")),
     ]);
 
     return {
-      patent: patent.length,
-      copyright: copyright.length,
-      trademark: trademark.length,
-      utilityModel: utilityModel.length,
+      patent: Number(patent[0]?.count || 0),
+      copyright: Number(copyright[0]?.count || 0),
+      trademark: Number(trademark[0]?.count || 0),
+      utilityModel: Number(utilityModel[0]?.count || 0),
     };
   }),
 });

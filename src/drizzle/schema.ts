@@ -577,6 +577,7 @@ export const account = pgTable(
       foreignColumns: [userAccount.id],
       name: "account_userId_user_id_fk",
     }).onDelete("cascade"),
+    primaryKey({ columns: [table.provider, table.providerAccountId] }),
   ]
 );
 

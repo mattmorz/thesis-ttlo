@@ -65,6 +65,15 @@ export function PhaseList({
           <div
             key={phase.phaseId}
             onClick={() => setSelectedPhaseId(phase.phaseId)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setSelectedPhaseId(phase.phaseId);
+              }
+            }}
+            className="cursor-pointer"
           >
             <PhaseCard phase={phase} index={index} />
           </div>

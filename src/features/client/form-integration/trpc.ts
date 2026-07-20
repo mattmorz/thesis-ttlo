@@ -179,47 +179,51 @@ export const formIntegrationRouter = router({
             : null;
 
         // Create the application directly with the database
+
+        // Create the application directly with the database
         const newAppId = uuid();
         console.log(
           `[${operationId}] Generated new application ID: ${newAppId}`
         );
 
         try {
-          // Insert the new application
-          await db.insert(ipApplication).values({
-            id: newAppId,
-            userId: input.userId,
-            title: input.title,
-            description: input.description || null,
-            status: "draft" as const,
-            progress: 0,
-            ipType: getPrimaryApplicationIpType(selectedIpTypes),
-            otherIpType,
-            selectedIpTypes,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+          await db.transaction(async (tx) => {
+            // Insert the new application
+            await tx.insert(ipApplication).values({
+              id: newAppId,
+              userId: input.userId,
+              title: input.title,
+              description: input.description || null,
+              status: "draft" as const,
+              progress: 0,
+              ipType: getPrimaryApplicationIpType(selectedIpTypes),
+              otherIpType,
+              selectedIpTypes,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+
+            console.log(
+              `[${operationId}] Successfully inserted application record`
+            );
+
+            // Create initial application phase
+            await tx.insert(applicationPhase).values({
+              phaseId: uuid(),
+              applicationId: newAppId,
+              title: "Initial Phase",
+              description: "Initial phase for new application",
+              status: "pending",
+              startDate: new Date().toISOString().split("T")[0],
+              endDate: new Date(new Date().setMonth(new Date().getMonth() + 3))
+                .toISOString()
+                .split("T")[0],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+
+            console.log(`[${operationId}] Successfully created initial phase`);
           });
-
-          console.log(
-            `[${operationId}] Successfully inserted application record`
-          );
-
-          // Create initial application phase
-          await db.insert(applicationPhase).values({
-            phaseId: uuid(),
-            applicationId: newAppId,
-            title: "Initial Phase",
-            description: "Initial phase for new application",
-            status: "pending",
-            startDate: new Date().toISOString().split("T")[0],
-            endDate: new Date(new Date().setMonth(new Date().getMonth() + 3))
-              .toISOString()
-              .split("T")[0],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-
-          console.log(`[${operationId}] Successfully created initial phase`);
 
           // Return the created application
           const result = {

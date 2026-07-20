@@ -27,6 +27,18 @@ export const ipApplicationEnrollmentRouter = router({
     .input(enrollmentInputSchema)
     .mutation(async ({ input, ctx }) => {
       try {
+        // Ensure user is authorized to perform this action
+        if (
+          input.userId !== ctx.session?.user?.id &&
+          ctx.session?.user?.role !== "admin" &&
+          ctx.session?.user?.role !== "ttlo_staff"
+        ) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Not authorized to enroll this user",
+          });
+        }
+
         // Check if the enrollment already exists
         const existingEnrollment = await db
           .select()
@@ -134,8 +146,20 @@ export const ipApplicationEnrollmentRouter = router({
   // Unenroll from an application
   unenroll: protectedProcedure
     .input(enrollmentInputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
+        // Ensure user is authorized to perform this action
+        if (
+          input.userId !== ctx.session?.user?.id &&
+          ctx.session?.user?.role !== "admin" &&
+          ctx.session?.user?.role !== "ttlo_staff"
+        ) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Not authorized to unenroll this user",
+          });
+        }
+
         const deleted = await db
           .delete(ipApplicationEnrollment)
           .where(

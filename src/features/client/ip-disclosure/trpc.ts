@@ -220,93 +220,97 @@ export const ipDisclosureRouter = router({
           `
           );
 
-          // Execute the query with all available fields
-          const result = await db.execute(
-            sql`
-              INSERT INTO ip_disclosure (
-                client_id, 
-                selected_ip_types,
-                status,
-                email,
-                is_rightful_owner,
-                authorized_representative,
-                other_ip_type,
-                created_at, 
-                updated_at
-              ) 
-              VALUES (
-                ${input.clientId}, 
-                ${JSON.stringify(selectedIpTypesJSON)},
-                'draft',
-                ${input.email || null},
-                ${input.isRightfulOwner || false},
-                ${input.authorizedRepresentative || null},
-                ${input.otherIpType || null},
-                NOW(), 
-                NOW()
-              )
-              RETURNING disclosure_id as "disclosureId"
-            `
-          );
+          // Execute the query within a transaction with all available fields
+          const result = await db.transaction(async (tx) => {
+            const insertResult = await tx.execute(
+              sql`
+                INSERT INTO ip_disclosure (
+                  client_id, 
+                  selected_ip_types,
+                  status,
+                  email,
+                  is_rightful_owner,
+                  authorized_representative,
+                  other_ip_type,
+                  created_at, 
+                  updated_at
+                ) 
+                VALUES (
+                  ${input.clientId}, 
+                  ${JSON.stringify(selectedIpTypesJSON)},
+                  'draft',
+                  ${input.email || null},
+                  ${input.isRightfulOwner || false},
+                  ${input.authorizedRepresentative || null},
+                  ${input.otherIpType || null},
+                  NOW(), 
+                  NOW()
+                )
+                RETURNING disclosure_id as "disclosureId"
+              `
+            );
 
-          console.log("Insert query result:", result);
+            console.log("Insert query result:", insertResult);
 
-          if (!result || !result.length || !result[0].disclosureId) {
-            console.error("Failed to create IP disclosure - no ID returned");
-            throw new Error("Failed to create IP disclosure");
-          }
-
-          const disclosureId = result[0].disclosureId;
-          console.log("Created IP disclosure with ID:", disclosureId);
-
-          // Insert applicants using raw SQL
-          if (input.applicants.length > 0) {
-            console.log(`Inserting ${input.applicants.length} applicants...`);
-            for (const applicant of input.applicants) {
-              await db.execute(
-                sql`
-                  INSERT INTO ip_disclosure_applicant (
-                    disclosure_id, 
-                    first_name, 
-                    middle_initial, 
-                    last_name
-                  ) 
-                  VALUES (
-                    ${disclosureId}, 
-                    ${applicant.firstName}, 
-                    ${applicant.middleInitial || null}, 
-                    ${applicant.lastName}
-                  )
-                `
-              );
+            if (!insertResult || !insertResult.length || !insertResult[0].disclosureId) {
+              console.error("Failed to create IP disclosure - no ID returned");
+              throw new Error("Failed to create IP disclosure");
             }
-            console.log(`Added ${input.applicants.length} applicants`);
-          }
 
-          // Insert inventors using raw SQL
-          if (input.inventors.length > 0) {
-            for (const inventor of input.inventors) {
-              await db.execute(
-                sql`
-                  INSERT INTO ip_disclosure_inventor (
-                    disclosure_id, 
-                    first_name, 
-                    middle_initial, 
-                    last_name
-                  ) 
-                  VALUES (
-                    ${disclosureId}, 
-                    ${inventor.firstName}, 
-                    ${inventor.middleInitial || null}, 
-                    ${inventor.lastName}
-                  )
-                `
-              );
+            const disclosureId = insertResult[0].disclosureId;
+            console.log("Created IP disclosure with ID:", disclosureId);
+
+            // Insert applicants using raw SQL
+            if (input.applicants.length > 0) {
+              console.log(`Inserting ${input.applicants.length} applicants...`);
+              for (const applicant of input.applicants) {
+                await tx.execute(
+                  sql`
+                    INSERT INTO ip_disclosure_applicant (
+                      disclosure_id, 
+                      first_name, 
+                      middle_initial, 
+                      last_name
+                    ) 
+                    VALUES (
+                      ${disclosureId}, 
+                      ${applicant.firstName}, 
+                      ${applicant.middleInitial || null}, 
+                      ${applicant.lastName}
+                    )
+                  `
+                );
+              }
+              console.log(`Added ${input.applicants.length} applicants`);
             }
-            console.log(`Added ${input.inventors.length} inventors`);
-          }
 
-          return { success: true, disclosureId };
+            // Insert inventors using raw SQL
+            if (input.inventors.length > 0) {
+              for (const inventor of input.inventors) {
+                await tx.execute(
+                  sql`
+                    INSERT INTO ip_disclosure_inventor (
+                      disclosure_id, 
+                      first_name, 
+                      middle_initial, 
+                      last_name
+                    ) 
+                    VALUES (
+                      ${disclosureId}, 
+                      ${inventor.firstName}, 
+                      ${inventor.middleInitial || null}, 
+                      ${inventor.lastName}
+                    )
+                  `
+                );
+              }
+              console.log(`Added ${input.inventors.length} inventors`);
+            }
+
+            return { success: true, disclosureId };
+          });
+
+          return result;
         } catch (insertError: unknown) {
           // Log the detailed error
           console.error("SQL Insert Error:", insertError);

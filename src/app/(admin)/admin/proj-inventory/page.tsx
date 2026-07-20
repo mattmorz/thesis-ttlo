@@ -86,11 +86,7 @@ function OtherIpTypesWrapper() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 p-2 bg-amber-50 border border-amber-200 rounded-md">
-          <p className="text-amber-800 text-sm">
-            Debugging: OtherIpTypesInventory is being rendered
-          </p>
-        </div>
+
         <OtherIpTypesInventory />
       </CardContent>
     </Card>
@@ -125,11 +121,7 @@ function NoneIpTypesWrapper() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 p-2 bg-amber-50 border border-amber-200 rounded-md">
-          <p className="text-amber-800 text-sm">
-            Debugging: NoneIpTypesInventory is being rendered
-          </p>
-        </div>
+
         <NoneIpTypesInventory />
       </CardContent>
     </Card>

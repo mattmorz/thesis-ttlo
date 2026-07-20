@@ -128,7 +128,16 @@ export const ipApplicationEnrollmentRouter = router({
     }),
 
   // Get all enrollments (for admin dashboard)
-  getAllEnrollments: protectedProcedure.query(async () => {
+  getAllEnrollments: protectedProcedure.query(async ({ ctx }) => {
+    if (
+      ctx.session?.user?.role !== "admin" &&
+      ctx.session?.user?.role !== "ttlo_staff"
+    ) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Not authorized to view all enrollments",
+      });
+    }
     const allEnrollments = await db.select({ count: sql<number>`count(*)` }).from(ipApplicationEnrollment);
     return allEnrollments;
   }),

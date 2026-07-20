@@ -1,5 +1,5 @@
 import { db } from "@/drizzle/db";
-import { edge } from "@/drizzle/edge";
+
 import {
   applicationPhase,
   archives,
@@ -81,7 +81,7 @@ export const clientProjectDashboardRouter = router({
 
       const { phaseId, tasks } = input;
 
-      const res = await edge.transaction(async (tx) => {
+      const res = await db.transaction(async (tx) => {
         const existingTasks = await tx.query.phaseTask.findMany({
           where: eq(phaseTask.phaseId, phaseId),
         });

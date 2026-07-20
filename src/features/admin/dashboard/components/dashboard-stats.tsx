@@ -93,9 +93,9 @@ export function DashboardStats() {
       typeStats
     ) {
       setStatsData({
-        totalApplications: allApplications.length,
-        unassignedApplications: unassignedApplications.length,
-        enrolledApplicationsCount: allEnrollments.length,
+        totalApplications: allApplications[0]?.count || 0,
+        unassignedApplications: unassignedApplications[0]?.count || 0,
+        enrolledApplicationsCount: allEnrollments[0]?.count || 0,
         myEnrolledApplications: myEnrollments.length,
         inProgressCount: statusStats.inProgress || 0,
         approvedCount: statusStats.approved || 0,

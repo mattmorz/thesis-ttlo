@@ -23,12 +23,24 @@ const staffProcedure = protectedProcedure.use(async ({ ctx, next }) => {
 
 export const usersRouter = router({
   // Get all users - admin and staff can see this
-  getAll: staffProcedure.query(async ({ ctx }) => {
+  getAll: staffProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50).optional(),
+        offset: z.number().min(0).default(0).optional(),
+      }).optional()
+    )
+    .query(async ({ ctx, input }) => {
     try {
+      const limit = input?.limit ?? 50;
+      const offset = input?.offset ?? 0;
+      
       const users = await db
         .select()
         .from(userAccount)
-        .orderBy(desc(userAccount.createdAt));
+        .orderBy(desc(userAccount.createdAt))
+        .limit(limit)
+        .offset(offset);
       return users;
     } catch (error) {
       console.error("Error fetching all users:", error);

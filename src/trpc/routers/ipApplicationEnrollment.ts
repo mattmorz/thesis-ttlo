@@ -6,7 +6,7 @@ import {
   userAccount,
 } from "@/drizzle/migrations/schema";
 import { ipApplicationEnrollment } from "@/drizzle/schema";
-import { eq, and, inArray, notInArray, desc } from "drizzle-orm";
+import { eq, and, inArray, notInArray, desc, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 // Input schema for enrolling in an IP application
@@ -135,8 +135,7 @@ export const ipApplicationEnrollmentRouter = router({
 
   // Get all enrollments (for admin dashboard)
   getAllEnrollments: protectedProcedure.query(async () => {
-    const allEnrollments = await db.select().from(ipApplicationEnrollment);
-
+    const allEnrollments = await db.select({ count: sql<number>`count(*)` }).from(ipApplicationEnrollment);
     return allEnrollments;
   }),
 

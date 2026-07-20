@@ -1,6 +1,6 @@
 import { protectedProcedure, router } from "@/trpc/init";
 import { z } from "zod";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql, notInArray } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import {
   activityLog,
@@ -101,9 +101,8 @@ export const applicationRouter = router({
 
   // Get all applications for dashboard stats
   getAllApplications: protectedProcedure.query(async () => {
-    return db.query.ipApplication.findMany({
-      orderBy: desc(ipApplication.createdAt),
-    });
+    const res = await db.select({ count: sql<number>`count(*)` }).from(ipApplication);
+    return res;
   }),
 
   // Get unassigned applications
@@ -119,16 +118,13 @@ export const applicationRouter = router({
     // Find applications that don't have enrollments
     if (enrolledIds.length === 0) {
       // If no enrollments exist, return all applications
-      return db.query.ipApplication.findMany({
-        orderBy: desc(ipApplication.createdAt),
-      });
+      return db.select({ count: sql<number>`count(*)` }).from(ipApplication);
     } else {
       // Otherwise, use the SQL not-in query to filter
-      // Use a raw SQL query for the not-in operation
-      const unassignedApps = await db.query.ipApplication.findMany({
-        where: (app, { notInArray }) => notInArray(app.id, enrolledIds),
-      });
-      return unassignedApps;
+      return db
+        .select({ count: sql<number>`count(*)` })
+        .from(ipApplication)
+        .where(notInArray(ipApplication.id, enrolledIds));
     }
   }),
 

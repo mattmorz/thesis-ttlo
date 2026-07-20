@@ -2057,3 +2057,47 @@ export const ipApplicationEnrollment = pgTable(
     }).onDelete("cascade"),
   ]
 );
+
+export const internalValidationAssignee = pgTable(
+  "internal_validation_assignee",
+  {
+    id: uuid("id").primaryKey().defaultRandom().notNull(),
+    internalValidationId: uuid("internal_validation_id"),
+    userId: uuid("user_id"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.internalValidationId],
+      foreignColumns: [internalValidation.validationId],
+      name: "internal_validation_assignee_internal_validation_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [userAccount.id],
+      name: "internal_validation_assignee_user_id_fkey",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const phaseTaskAssignee = pgTable(
+  "phase_task_assignee",
+  {
+    id: uuid("id").primaryKey().defaultRandom().notNull(),
+    taskId: uuid("task_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.taskId],
+      foreignColumns: [phaseTask.taskId],
+      name: "phase_task_assignee_task_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [userAccount.id],
+      name: "phase_task_assignee_user_id_fkey",
+    }).onDelete("cascade"),
+  ]
+);

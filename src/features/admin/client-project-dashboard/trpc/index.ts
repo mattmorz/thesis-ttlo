@@ -5,11 +5,14 @@ import {
   archives,
   externalCollaboration,
   internalValidation,
-  internalValidationAssignee,
   phaseTask,
   phaseReminder,
-  phaseTaskAssignee,
 } from "@/drizzle/migrations/schema";
+import {
+  ipApplicationEnrollment,
+  internalValidationAssignee,
+  phaseTaskAssignee,
+} from "@/drizzle/schema";
 import { protectedProcedure, publicProcedure, router } from "@/trpc/init";
 import { and, eq, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";

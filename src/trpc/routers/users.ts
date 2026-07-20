@@ -90,4 +90,28 @@ export const usersRouter = router({
       });
     }
   }),
+
+  // Update own profile name — only the logged-in user can update their own name
+  updateProfile: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(2, "Name must be at least 2 characters").max(100),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        await db
+          .update(userAccount)
+          .set({ name: input.name })
+          .where(eq(userAccount.id, ctx.session.user.id));
+
+        return { success: true, name: input.name };
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update profile",
+        });
+      }
+    }),
 });

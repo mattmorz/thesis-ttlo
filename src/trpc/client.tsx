@@ -31,15 +31,8 @@ export const trpc = createTRPCReact<AppRouter>({
          **/
         // Calls the `onSuccess` defined in the `useQuery()`-options:
         await opts.originalFn();
-        // Wait for 2 seconds before refetching to ensure data is updated
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Invalidate all queries to ensure data freshness without artificial delays
         await opts.queryClient.invalidateQueries();
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        await opts.queryClient.refetchQueries();
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        await opts.queryClient.invalidateQueries();
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        await opts.queryClient.refetchQueries();
       },
     },
   },

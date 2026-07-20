@@ -13,26 +13,17 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
-  Settings,
   User,
   Bell,
   Shield,
   LogOut,
-  Eye,
-  EyeOff,
   Save,
   RefreshCw,
   AlertCircle,
+  CheckCircle2,
+  ExternalLink,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +34,7 @@ import {
   clearAppOwnedLocalStorage,
   clearAppOwnedSessionStorage,
 } from "@/lib/utils/localStorage-utils";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   Form,
   FormControl,
@@ -55,168 +46,65 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { accountSchema } from "@/features/admin/settings/schemas/account-schema";
-import { securitySchema } from "@/features/admin/settings/schemas/security-schema";
+import { trpc } from "@/trpc/client";
 
-// Simple profile schema
+// Profile schema — only name is editable; email is read-only (Google OAuth)
 const profileFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address").optional(),
-  bio: z.string().optional(),
-});
-
-// Simple notification schema
-const notificationsFormSchema = z.object({
-  emailNotifications: z.boolean().default(true),
-  projectUpdates: z.boolean().default(true),
-  taskAssignments: z.boolean().default(true),
+  name: z.string().min(2, "Name must be at least 2 characters").max(100),
 });
 
 export default function SettingsPage() {
   const { data: session, update: updateSession } = useSession();
   const { toast } = useToast();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") || "account";
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  // TRPC mutation — updates userAccount.name in the database
+  const updateProfile = trpc.users.updateProfile.useMutation({
+    onSuccess: async (data) => {
+      // Refresh the NextAuth session so the new name appears in the UI immediately
+      await updateSession({ name: data.name });
+      toast({
+        title: "Profile updated",
+        description: "Your display name has been saved successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to update profile",
+        description: error.message || "Please try again.",
+      });
+    },
+  });
 
-  // Initialize profile form
+  // Profile form
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: session?.user?.name || "",
-      email: session?.user?.email || "",
-      bio: "",
     },
   });
 
-  // Initialize notifications form
-  const notificationsForm = useForm<z.infer<typeof notificationsFormSchema>>({
-    resolver: zodResolver(notificationsFormSchema),
-    defaultValues: {
-      emailNotifications: true,
-      projectUpdates: true,
-      taskAssignments: true,
-    },
-  });
-
-  // Initialize security form
-  const securityForm = useForm<z.infer<typeof securitySchema>>({
-    resolver: zodResolver(securitySchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
-
-  // Update form values when session changes
+  // Sync form value when session loads
   useEffect(() => {
-    if (session?.user) {
-      profileForm.reset({
-        name: session.user.name || "",
-        email: session.user.email || "",
-        bio: "",
-      });
+    if (session?.user?.name) {
+      profileForm.reset({ name: session.user.name });
     }
-  }, [session, profileForm]);
+  }, [session?.user?.name]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Get user initials for avatar
   const getUserInitials = (name: string | null | undefined): string => {
     if (!name) return "?";
-
-    const nameParts = name.split(" ");
-    if (nameParts.length === 1) {
-      return nameParts[0].charAt(0).toUpperCase();
-    }
-
+    const parts = name.trim().split(" ");
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
     return (
-      nameParts[0].charAt(0).toUpperCase() +
-      nameParts[nameParts.length - 1].charAt(0).toUpperCase()
+      parts[0].charAt(0).toUpperCase() +
+      parts[parts.length - 1].charAt(0).toUpperCase()
     );
   };
 
-  const handleProfileSubmit = async (
-    values: z.infer<typeof profileFormSchema>
-  ) => {
-    setIsLoading(true);
-    try {
-      // In a real app, you would make an API call to update the user profile
-      // For now, we'll just simulate a successful update
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Update session with new name (this would typically happen via a server action)
-      // This is just a client-side update for demonstration
-      toast({
-        title: "Profile updated",
-        description: "Your profile information has been updated successfully.",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update profile. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleNotificationsSubmit = async (
-    values: z.infer<typeof notificationsFormSchema>
-  ) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast({
-        title: "Notification preferences saved",
-        description:
-          "Your notification settings have been updated successfully.",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          "Failed to update notification preferences. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSecuritySubmit = async (
-    values: z.infer<typeof securitySchema>
-  ) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast({
-        title: "Password updated",
-        description: "Your password has been changed successfully.",
-      });
-
-      // Reset form
-      securityForm.reset({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update password. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleProfileSubmit = (values: z.infer<typeof profileFormSchema>) => {
+    updateProfile.mutate({ name: values.name });
   };
 
   const handleSignOut = async () => {
@@ -272,17 +160,16 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
+        {/* ── ACCOUNT TAB ── */}
         <TabsContent value="account">
           <div className="grid gap-6">
-            {/* Profile Card */}
+            {/* Current profile summary */}
             <Card>
               <CardHeader>
                 <CardTitle>Profile</CardTitle>
-                <CardDescription>
-                  Manage your personal information
-                </CardDescription>
+                <CardDescription>Your current account information</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent>
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={session.user.image || ""} />
@@ -303,7 +190,7 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Profile Form */}
+            {/* Editable profile form */}
             <Form {...profileForm}>
               <form
                 onSubmit={profileForm.handleSubmit(handleProfileSubmit)}
@@ -312,9 +199,7 @@ export default function SettingsPage() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Personal Information</CardTitle>
-                    <CardDescription>
-                      Update your personal details
-                    </CardDescription>
+                    <CardDescription>Update your display name</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <FormField
@@ -322,7 +207,7 @@ export default function SettingsPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel>Display Name</FormLabel>
                           <FormControl>
                             <Input {...field} placeholder="Your name" />
                           </FormControl>
@@ -330,56 +215,34 @@ export default function SettingsPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={profileForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="email"
-                              disabled
-                              placeholder="Your email"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Email cannot be changed. Contact administrator for
-                            assistance.
-                          </p>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={profileForm.control}
-                      name="bio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bio</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              placeholder="Tell us a little about yourself"
-                              className="min-h-[120px]"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input
+                        disabled
+                        value={session.user.email || ""}
+                        type="email"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Email is managed by your Google account and cannot be
+                        changed here.
+                      </p>
+                    </div>
+
                     <div className="space-y-2">
                       <Label>Role</Label>
                       <Input disabled value={session.user.role || "User"} />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Only administrators can change user roles
+                      <p className="text-xs text-muted-foreground">
+                        Only administrators can change user roles.
                       </p>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-end">
-                    <Button type="submit" disabled={isLoading}>
-                      {isLoading ? (
+                    <Button
+                      type="submit"
+                      disabled={updateProfile.isPending}
+                    >
+                      {updateProfile.isPending ? (
                         <>
                           <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                           Saving...
@@ -398,228 +261,99 @@ export default function SettingsPage() {
           </div>
         </TabsContent>
 
+        {/* ── NOTIFICATIONS TAB ── */}
         <TabsContent value="notifications">
-          <Form {...notificationsForm}>
-            <form
-              onSubmit={notificationsForm.handleSubmit(
-                handleNotificationsSubmit
-              )}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Notification Preferences</CardTitle>
-                  <CardDescription>
-                    Choose what notifications you want to receive
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <FormField
-                    control={notificationsForm.control}
-                    name="emailNotifications"
-                    render={({ field }) => (
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>Email Notifications</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Receive email notifications for important updates
-                          </p>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </div>
-                    )}
-                  />
-
-                  <Separator />
-
-                  <FormField
-                    control={notificationsForm.control}
-                    name="projectUpdates"
-                    render={({ field }) => (
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>Project Updates</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Get notified about project status changes
-                          </p>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </div>
-                    )}
-                  />
-
-                  <Separator />
-
-                  <FormField
-                    control={notificationsForm.control}
-                    name="taskAssignments"
-                    render={({ field }) => (
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label>Task Assignments</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Notifications when you're assigned to tasks
-                          </p>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </div>
-                    )}
-                  />
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save Preferences
-                      </>
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </form>
-          </Form>
+          <Card>
+            <CardHeader>
+              <CardTitle>Notification Preferences</CardTitle>
+              <CardDescription>
+                Control how you receive notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 p-4 text-blue-800">
+                <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0 text-blue-600" />
+                <div className="text-sm">
+                  <p className="font-medium">
+                    Notification preferences coming soon
+                  </p>
+                  <p className="mt-1 text-blue-700">
+                    In-app and email notification settings will be configurable
+                    here in a future update. You currently receive notifications
+                    through the system's built-in notification panel.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
+        {/* ── SECURITY TAB ── */}
         <TabsContent value="security">
-          <Form {...securityForm}>
-            <form onSubmit={securityForm.handleSubmit(handleSecuritySubmit)}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Security Settings</CardTitle>
-                  <CardDescription>
-                    Manage your password and account security
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <FormField
-                    control={securityForm.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Current Password</FormLabel>
-                        <div className="relative">
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type={showPassword ? "text" : "password"}
-                              placeholder="Enter current password"
-                            />
-                          </FormControl>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-0 top-0 h-full px-3"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                            <span className="sr-only">
-                              {showPassword ? "Hide password" : "Show password"}
-                            </span>
-                          </Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+          <Card>
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+              <CardDescription>
+                Your account security and authentication method
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-start gap-3 rounded-md border border-green-200 bg-green-50 p-4 text-green-800">
+                <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0 text-green-600" />
+                <div className="text-sm">
+                  <p className="font-medium">Secured with Google OAuth</p>
+                  <p className="mt-1 text-green-700">
+                    Your account uses Google Sign-In for authentication. There
+                    is no separate password — your security is managed directly
+                    by Google.
+                  </p>
+                </div>
+              </div>
 
-                  <FormField
-                    control={securityForm.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>New Password</FormLabel>
-                        <div className="relative">
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type={showPassword ? "text" : "password"}
-                              placeholder="Enter new password"
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <Separator />
 
-                  <FormField
-                    control={securityForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm New Password</FormLabel>
-                        <div className="relative">
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type={showPassword ? "text" : "password"}
-                              placeholder="Confirm new password"
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-sm text-amber-800">
-                    <div className="flex gap-2">
-                      <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">Password requirements:</p>
-                        <ul className="list-disc list-inside mt-1 space-y-1">
-                          <li>At least 8 characters</li>
-                          <li>At least one uppercase letter</li>
-                          <li>At least one lowercase letter</li>
-                          <li>At least one number</li>
-                        </ul>
-                      </div>
-                    </div>
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Connected account</p>
+                <div className="flex items-center gap-3 rounded-md border p-3">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={session.user.image || ""} />
+                    <AvatarFallback>
+                      {getUserInitials(session.user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {session.user.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {session.user.email}
+                    </p>
                   </div>
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Update Password
-                      </>
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </form>
-          </Form>
+                  <span className="text-xs text-green-600 font-medium bg-green-50 border border-green-200 rounded px-2 py-0.5">
+                    Active
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  To manage your Google account security (two-factor
+                  authentication, recovery options, etc.), visit your Google
+                  Account settings.
+                </p>
+                <Button variant="outline" size="sm" asChild>
+                  <a
+                    href="https://myaccount.google.com/security"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Manage Google Account Security
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

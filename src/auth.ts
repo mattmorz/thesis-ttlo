@@ -13,8 +13,11 @@ function parseCommaSeparatedEnv(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
+if (!process.env.ALLOWED_EMAIL_DOMAINS) {
+  console.warn("WARNING: ALLOWED_EMAIL_DOMAINS is not set. No users will be able to log in.");
+}
 const ALLOWED_DOMAINS = parseCommaSeparatedEnv(
-  process.env.ALLOWED_EMAIL_DOMAINS ?? "dlsu.edu.ph,carsu.edu.ph"
+  process.env.ALLOWED_EMAIL_DOMAINS || ""
 );
 
 const ADMIN_EMAILS = parseCommaSeparatedEnv(process.env.ADMIN_EMAILS);

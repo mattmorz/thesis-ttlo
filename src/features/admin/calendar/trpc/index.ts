@@ -3,6 +3,7 @@ import { protectedProcedure, router } from "@/trpc/init";
 import { sql, eq } from "drizzle-orm";
 import { calendarEvent } from "@/drizzle/migrations/schema";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 
 export const calendarRouter = router({
   getEvents: protectedProcedure.query(async () => {
@@ -33,8 +34,25 @@ export const calendarRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      console.log(input);
       const userId = ctx.session.user.id;
+      
+      // Ensure the user has permission to update an existing event
+      const existingEvent = await db
+        .select({ createdBy: calendarEvent.createdBy })
+        .from(calendarEvent)
+        .where(eq(calendarEvent.id, input.id))
+        .limit(1);
+
+      if (existingEvent.length > 0) {
+        const isStaff = ctx.session.user.role === "admin" || ctx.session.user.role === "ttlo_staff";
+        if (existingEvent[0].createdBy !== userId && !isStaff) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You can only update events you created.",
+          });
+        }
+      }
+
       const formatInsert = {
         id: input.id,
         title: input.title,
@@ -47,7 +65,7 @@ export const calendarRouter = router({
         projectId: input.projectId === "undefined" ? null : input.projectId,
         otherEventType:
           input.otherEventType === undefined ? null : input.otherEventType,
-        createdBy: userId,
+        createdBy: userId, // On conflict update, we update the original creator or leave it?
       };
       const res = await db
         .insert(calendarEvent)
@@ -62,11 +80,10 @@ export const calendarRouter = router({
             isAllDay: sql`EXCLUDED.is_all_day`,
             eventType: sql`EXCLUDED.event_type`,
             status: sql`EXCLUDED.status`,
-            createdBy: sql`EXCLUDED.created_by`,
-            createdAt: sql`EXCLUDED.created_at`,
-            updatedAt: sql`EXCLUDED.updated_at`,
+            updatedAt: sql`NOW()`,
             projectId: sql`EXCLUDED.project_id`,
             otherEventType: sql`EXCLUDED.other_event_type`,
+            // Omitted createdBy and createdAt from update so they don't get overwritten
           },
         })
         .returning({ id: calendarEvent.id });
@@ -74,8 +91,27 @@ export const calendarRouter = router({
     }),
   deleteEvent: protectedProcedure
     .input(z.string().uuid())
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       if (!input) throw new Error("Event ID is required for deletion.");
+      
+      const userId = ctx.session.user.id;
+      const isStaff = ctx.session.user.role === "admin" || ctx.session.user.role === "ttlo_staff";
+      
+      if (!isStaff) {
+        const event = await db
+          .select({ createdBy: calendarEvent.createdBy })
+          .from(calendarEvent)
+          .where(eq(calendarEvent.id, input))
+          .limit(1);
+          
+        if (event.length > 0 && event[0].createdBy !== userId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You can only delete events you created.",
+          });
+        }
+      }
+
       const res = await db
         .delete(calendarEvent)
         .where(eq(calendarEvent.id, input))

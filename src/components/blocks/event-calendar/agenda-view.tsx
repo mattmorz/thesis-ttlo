@@ -141,6 +141,14 @@ export function AgendaView({
                 <div
                   key={event.id + date.toString()}
                   onClick={() => onEventClick(event)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onEventClick(event);
+                    }
+                  }}
                   className={cn(
                     "p-2 space-y-2 rounded cursor-pointer",
                     eventColor,

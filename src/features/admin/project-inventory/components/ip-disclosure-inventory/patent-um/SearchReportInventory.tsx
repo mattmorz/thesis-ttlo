@@ -1092,7 +1092,7 @@ export function SearchReportInventory() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    href="#"
+                    
                     onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                       e.preventDefault();
                       if (currentPage > 1) handlePageChange(currentPage - 1);
@@ -1116,7 +1116,7 @@ export function SearchReportInventory() {
                   return (
                     <PaginationItem key={pageNumber}>
                       <PaginationLink
-                        href="#"
+                        
                         isActive={pageNumber === currentPage}
                         onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                           e.preventDefault();
@@ -1136,7 +1136,7 @@ export function SearchReportInventory() {
                     </PaginationItem>
                     <PaginationItem>
                       <PaginationLink
-                        href="#"
+                        
                         onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                           e.preventDefault();
                           handlePageChange(totalPages);
@@ -1150,7 +1150,7 @@ export function SearchReportInventory() {
 
                 <PaginationItem>
                   <PaginationNext
-                    href="#"
+                    
                     onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                       e.preventDefault();
                       if (currentPage < totalPages)

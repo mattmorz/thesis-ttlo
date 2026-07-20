@@ -224,16 +224,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <Input
-              type="search"
-              placeholder="Search applications..."
-              className="w-[200px] lg:w-[300px] border-green-200 focus:border-green-400"
-            />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
       </div>
 
       {/* Dashboard Stats */}

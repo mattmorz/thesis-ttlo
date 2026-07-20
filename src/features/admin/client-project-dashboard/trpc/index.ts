@@ -72,12 +72,7 @@ export const clientProjectDashboardRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // const {
-      //   applicationPhaseInput,
-      //   phaseTasksInput = [],
-      //   internalValidationInput,
-      //   externalCollaborationInput,
-      // } = input;
+
 
       const { phaseId, tasks } = input;
 
@@ -90,7 +85,7 @@ export const clientProjectDashboardRouter = router({
           .filter((task) => !taskIdsToKeep.includes(task.taskId))
           .map((task) => task.taskId);
 
-        // console.log(existingTasks, "\n", taskIdsToKeep, "\n", taskIdsToDelete);
+
 
         if (taskIdsToDelete.length > 0) {
           await tx

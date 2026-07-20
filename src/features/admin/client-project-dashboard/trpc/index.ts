@@ -62,7 +62,6 @@ export const clientProjectDashboardRouter = router({
           },
         },
       });
-      console.log(res);
       return res;
     }),
   updatePhase: protectedProcedure
@@ -81,8 +80,6 @@ export const clientProjectDashboardRouter = router({
       // } = input;
 
       const { phaseId, tasks } = input;
-
-      console.log(input);
 
       const res = await edge.transaction(async (tx) => {
         const existingTasks = await tx.query.phaseTask.findMany({

@@ -67,9 +67,6 @@ export const ipApplicationEnrollmentRouter = router({
           })
           .returning();
 
-        console.log(
-          `User ${input.userId} enrolled in application ${input.applicationId}`
-        );
         return newEnrollment[0];
       } catch (error) {
         console.error("Error enrolling user:", error);
@@ -177,9 +174,6 @@ export const ipApplicationEnrollmentRouter = router({
           });
         }
 
-        console.log(
-          `User ${input.userId} unenrolled from application ${input.applicationId}`
-        );
         return deleted[0];
       } catch (error) {
         console.error("Error unenrolling user:", error);

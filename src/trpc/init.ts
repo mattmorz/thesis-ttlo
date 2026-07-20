@@ -17,12 +17,7 @@ export const createTRPCContext = async (opts: CreateContextOptions) => {
   // Get the session from next-auth
   const session = await auth();
 
-  // Add more detailed logging for debugging
-  console.log("Creating TRPC context with session:", {
-    hasSession: !!session,
-    userId: session?.user?.id,
-    isAuthenticated: !!session?.user,
-  });
+
 
   return {
     session,
@@ -37,11 +32,7 @@ export const createTRPCContext = async (opts: CreateContextOptions) => {
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
-    console.log("TRPC formatting error:", {
-      message: error.message,
-      code: error.code,
-      hasZodError: error.cause instanceof ZodError,
-    });
+
 
     return {
       ...shape,

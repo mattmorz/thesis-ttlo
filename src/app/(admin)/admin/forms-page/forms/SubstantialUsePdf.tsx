@@ -132,7 +132,6 @@ function getSpecification(value: any): string {
 function createCheckbox(checked: boolean | string | number, text: string) {
   const isChecked = toBool(checked);
   
-  console.log(`Creating checkbox: "${text}" - Checked: ${isChecked}`);
   
   return {
     columns: [
@@ -276,7 +275,6 @@ function parseJsonField(field: any) {
 function normalizeData(data: SubstantialUseData): SubstantialUseData {
   const clonedData = JSON.parse(JSON.stringify(data));
   
-  console.log("Raw data before normalization:", clonedData);
   
   // Get laboratory facilities data from either snake_case or camelCase property
   let rawLabFacilities = clonedData.laboratory_facilities || clonedData.laboratoryFacilities;
@@ -285,7 +283,6 @@ function normalizeData(data: SubstantialUseData): SubstantialUseData {
   if (typeof rawLabFacilities === 'string') {
     try {
       rawLabFacilities = JSON.parse(rawLabFacilities);
-      console.log("Parsed laboratoryFacilities from string:", rawLabFacilities);
     } catch (error) {
       console.error("Error parsing laboratory_facilities string:", error);
       rawLabFacilities = {};
@@ -299,15 +296,12 @@ function normalizeData(data: SubstantialUseData): SubstantialUseData {
   if (typeof rawFundingResources === 'string') {
     try {
       rawFundingResources = JSON.parse(rawFundingResources);
-      console.log("Parsed fundingResources from string:", rawFundingResources);
     } catch (error) {
       console.error("Error parsing funding_resources string:", error);
       rawFundingResources = {};
     }
   }
   
-  console.log("Raw laboratory facilities:", rawLabFacilities);
-  console.log("Raw funding resources:", rawFundingResources);
   
   // Create default structures
   const labFacilities = {
@@ -437,16 +431,7 @@ function normalizeData(data: SubstantialUseData): SubstantialUseData {
     updatedAt: clonedData.updated_at || clonedData.updatedAt
   };
   
-  console.log("Normalized data:");
-  console.log("- Laboratory Facilities:");
-  console.log("  - specializedSoftware:", normalized.laboratoryFacilities.specializedSoftware);
-  console.log("  - specializedSoftwareDetails:", normalized.laboratoryFacilities.specializedSoftwareDetails);
-  console.log("  - other:", normalized.laboratoryFacilities.other);
-  console.log("  - otherDetails:", normalized.laboratoryFacilities.otherDetails);
   
-  console.log("- Funding Resources:");
-  console.log("  - other:", normalized.fundingResources.other);
-  console.log("  - otherDetails:", normalized.fundingResources.otherDetails);
   
   return normalized;
 }
@@ -462,7 +447,6 @@ async function fetchSubstantialUseData(applicationId?: string): Promise<Substant
       throw new Error("Application ID is required to fetch substantial use data");
     }
 
-    console.log(`📥 Making API request to /api/admin/substantial-use?applicationId=${applicationId}`);
     
     const response = await fetch(`/api/admin/substantial-use?applicationId=${applicationId}`, {
       method: 'GET',
@@ -473,39 +457,30 @@ async function fetchSubstantialUseData(applicationId?: string): Promise<Substant
       credentials: 'include',
     });
 
-    console.log("📊 API response status:", response.status);
     
     // Get raw text for better debugging
     const rawText = await response.text();
-    console.log("📄 Raw API response first 100 chars:", rawText.substring(0, 100));
     
     if (response.ok) {
       try {
         if (!rawText || rawText.trim() === '') {
-          console.log("❌ API returned empty response body");
           return null;
         }
         
         const parsedData = JSON.parse(rawText);
-        console.log("✅ Successfully parsed response as JSON:", parsedData);
         
         // The new API returns data in a nested structure
         if (parsedData.data) {
-          console.log("📋 Found data property in response");
           return parsedData.data;
         } else if (parsedData.success === false) {
-          console.log("❌ API reported failure:", parsedData.message || "Unknown error");
           throw new Error(parsedData.message || "API returned unsuccessful result");
         } else if (typeof parsedData === 'object') {
-          console.log("📋 Using root object as data");
           return parsedData;
         } else {
-          console.log("❓ Unexpected JSON structure:", parsedData);
           throw new Error("API returned unexpected data structure");
         }
       } catch (parseError) {
         console.error("❌ Failed to parse API response as JSON:", parseError);
-        console.log("📄 Raw response (first 100 chars):", rawText.substring(0, 100));
         
         if (rawText.includes('<!DOCTYPE html>') || rawText.includes('<html')) {
           console.error("❌ API returned HTML instead of JSON");
@@ -515,7 +490,6 @@ async function fetchSubstantialUseData(applicationId?: string): Promise<Substant
         throw new Error("API response is not valid JSON");
       }
     } else if (response.status === 404) {
-      console.log("❌ No substantial use data found (404 status)");
       return null;
     } else {
       console.error(`❌ API error: ${response.status} ${response.statusText}`);
@@ -586,7 +560,6 @@ export default async function generateSubstantialUsePdf(applicationId: string): 
       
       // Normalize the data for consistent use
       formData = normalizeData(formData);
-      console.log("✅ Using API data for PDF generation");
       
     } catch (error) {
       console.error("❌ Error fetching data:", error);
@@ -662,11 +635,6 @@ export default async function generateSubstantialUsePdf(applicationId: string): 
     const otherLabChecked = toBool(parsedLabFacilities.other);
     const otherLabDetails = parsedLabFacilities.otherDetails || "";
     
-    console.log("Laboratory Facilities Processing:");
-    console.log("- Specialized Software Checked:", specializedSoftwareChecked);
-    console.log("- Specialized Software Details:", specializedSoftwareDetails);
-    console.log("- Other Lab Checked:", otherLabChecked);
-    console.log("- Other Lab Details:", otherLabDetails);
     
     // Add laboratory facilities checkboxes
     content.push({
@@ -720,9 +688,6 @@ export default async function generateSubstantialUsePdf(applicationId: string): 
     const otherFundingChecked = toBool(parsedFundingResources.other);
     const otherFundingDetails = parsedFundingResources.otherDetails || "";
     
-    console.log("Funding Resources Processing:");
-    console.log("- Other Funding Checked:", otherFundingChecked);
-    console.log("- Other Funding Details:", otherFundingDetails);
     
     // Add funding resources checkboxes
     content.push({
@@ -855,13 +820,11 @@ export default async function generateSubstantialUsePdf(applicationId: string): 
     toast.dismiss(loadingToast);
     
     try {
-      console.log("📄 Creating PDF document...");
       
       // Create PDF document
       const pdfDoc = pdfMake.createPdf(docDefinition);
       
       // Download the PDF with a specific filename that includes the application ID
-      console.log("📥 Downloading PDF...");
       pdfDoc.download(`substantial-use-certificate-${applicationId}-${new Date().toISOString().split('T')[0]}.pdf`);
       
       toast.success("Substantial Use Certificate PDF generated successfully");

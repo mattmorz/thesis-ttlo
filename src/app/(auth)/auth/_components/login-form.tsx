@@ -67,16 +67,7 @@ function LoginFormComponent({
         </svg>
         Continue with Google
       </Button>
-      <div className="text-center text-sm text-muted-foreground">
-        By continuing, you agree to our
-        <Link href="#" className="mx-1 text-black/80">
-          Terms of Service
-        </Link>
-        and
-        <Link href="#" className="mx-1 text-black/80">
-          Privacy Policy
-        </Link>
-      </div>
+
     </form>
   );
 }

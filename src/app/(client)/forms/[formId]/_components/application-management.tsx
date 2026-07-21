@@ -238,11 +238,14 @@ export function ApplicationManagement({
   // Add the delete application mutation
   const deleteApplicationMutation =
     trpc.formIntegration.deleteApplication.useMutation({
-      onSuccess: () => {
-        const deletedId = deleteTargetRef.current;
+      onMutate: async ({ applicationId }) => {
+        // Optimistically remove the application
         toast.dismiss("deleting-app");
-        toast.success("Application deleted successfully");
-        deleteTargetRef.current = null;
+        const deletedId = applicationId;
+        
+        // Save previous state in case we need to rollback
+        const previousApps = [...applications];
+        
         let remainingApps: Application[] = [];
         setApplications((prev) => {
           remainingApps = deletedId
@@ -251,14 +254,12 @@ export function ApplicationManagement({
           return remainingApps;
         });
 
-        trpcUtils.formIntegration.getUserApplications.invalidate();
-        refetchApplications();
-
-        // If we deleted the active application, switch to the next or clear to show the welcome screen
+        // If we are deleting the active application, clear it immediately
+        // to prevent forms from submitting with a deleted ID and causing foreign key errors
         if (deleteWasActiveRef.current && deletedId) {
           clearApplicationScopedLocalStorage(deletedId);
           if (remainingApps.length > 0) {
-            setTimeout(() => handleSwitchApplication(remainingApps[0].id), 0);
+            handleSwitchApplication(remainingApps[0].id);
           } else {
             clearFormData();
             setActiveApplicationId(null, {
@@ -270,13 +271,35 @@ export function ApplicationManagement({
               detail: { applicationId: null },
             });
             window.dispatchEvent(event);
-            router.replace("/forms");
+            
+            // Force browser redirect to ensure it works even inside onMutate
+            window.location.href = "/forms";
           }
         }
 
+        // Cancel any outgoing refetches so they don't overwrite our optimistic update
+        await trpcUtils.formIntegration.getUserApplications.cancel();
+        
+        return { previousApps, deletedId, remainingApps };
+      },
+      onSuccess: (data, variables, context) => {
+        const deletedId = context?.deletedId;
+        const remainingApps = context?.remainingApps || [];
+        
+        toast.success("Application deleted successfully");
+        deleteTargetRef.current = null;
+
+        trpcUtils.formIntegration.getUserApplications.invalidate();
+        refetchApplications();
+
         deleteWasActiveRef.current = false;
       },
-      onError: (error) => {
+      onError: (error, variables, context) => {
+        // Rollback optimistic update
+        if (context?.previousApps) {
+          setApplications(context.previousApps);
+        }
+        
         toast.dismiss("deleting-app");
         toast.error(`Failed to delete application: ${error.message}`);
         console.error("Error deleting application:", error);

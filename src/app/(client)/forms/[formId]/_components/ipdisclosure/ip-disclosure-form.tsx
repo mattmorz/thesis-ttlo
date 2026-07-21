@@ -173,6 +173,8 @@ export function IPDisclosureForm() {
     ]
   );
 
+  const prevDerivedRef = React.useRef<IpTypes | null>(null);
+
   useEffect(() => {
     if (!formContextHydrated) return;
     if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
@@ -182,10 +184,18 @@ export function IPDisclosureForm() {
       }
       return;
     }
-    if (hasSelectedIpTypes(selectedIpTypes)) return;
-    if (hasSelectedIpTypes(derivedIpTypes)) {
-      if (!areIpTypesEqual(selectedIpTypes, derivedIpTypes)) {
-        setSelectedIpTypes(derivedIpTypes);
+    
+    // Only apply derivedIpTypes if it's the first time, or if derivedIpTypes actually changed
+    // This allows the user to click checkboxes without them being overwritten,
+    // while still correctly preparing the form when the application's IP type changes.
+    const derivedChanged = !prevDerivedRef.current || !areIpTypesEqual(prevDerivedRef.current, derivedIpTypes);
+    
+    if (derivedChanged) {
+      prevDerivedRef.current = derivedIpTypes;
+      if (hasSelectedIpTypes(derivedIpTypes)) {
+        if (!areIpTypesEqual(selectedIpTypes, derivedIpTypes)) {
+          setSelectedIpTypes(derivedIpTypes);
+        }
       }
     }
   }, [

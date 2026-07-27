@@ -1101,7 +1101,10 @@ export function ClientProfileForm({ handleSectionCompletion }: ClientProfileForm
               </p>
               <div className="mt-4 flex flex-col sm:flex-row gap-3">
                 <Button
-                  onClick={() => router.push("/applications/new")}
+                  onClick={() => {
+                    const event = new CustomEvent("openCreateApplicationDialog");
+                    window.dispatchEvent(event);
+                  }}
                   className="bg-amber-600 hover:bg-amber-700 text-white"
                 >
                   Create New Application

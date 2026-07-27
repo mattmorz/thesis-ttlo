@@ -306,7 +306,7 @@ export default function DashboardPage() {
           "You don't have any IP applications yet. Create your first application to get started!",
         action: {
           label: "Create Now",
-          onClick: () => router.push("/applications/new"),
+          onClick: () => router.push("/forms"),
         },
         duration: 8000,
         position: "top-center",

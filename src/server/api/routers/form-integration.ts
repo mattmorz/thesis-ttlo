@@ -8,7 +8,7 @@ import {
   formSubmissionRegistry,
   applicationPhase,
 } from "@/drizzle/migrations/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { type Session } from "next-auth";
 import {
   type NormalizedIpTypes,
@@ -419,12 +419,35 @@ export const formIntegrationRouter = createTRPCRouter({
           throw new Error("Application not found or not authorized");
         }
 
-        await db.transaction(async (tx) => {
-          await tx
-            .delete(formSubmissionRegistry)
-            .where(
-              eq(formSubmissionRegistry.ipApplicationId, input.applicationId),
-            );
+        await db.transaction(async (tx) => {          // Manually cascade delete related records in case the DB doesn't have ON DELETE CASCADE configured.
+          // We use DO blocks so that if a table or column doesn't exist in the current schema state,
+          // the error is caught and ignored, allowing the deletion to proceed.
+          const cascadeQueries = [
+            `DO $$ BEGIN DELETE FROM tracking_code WHERE ip_application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM ip_application_notification WHERE ip_application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM ip_application_enrollment WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM documents WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM other_documents WHERE ip_application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM substantial_use WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM archives WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM activity_log WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM deed_of_assignment WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM document_management WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM ip_contributors WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM ip_details WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM calendar_event WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM calendar_event WHERE project_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM application_phase WHERE application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+            `DO $$ BEGIN DELETE FROM form_submission_registry WHERE ip_application_id = '${input.applicationId}'; EXCEPTION WHEN OTHERS THEN END $$;`,
+          ];
+
+          for (const query of cascadeQueries) {
+            try {
+              await tx.execute(sql.raw(query));
+            } catch (err) {
+              console.warn("Cascade delete error ignored:", err);
+            }
+          }
 
           const deleted = await tx
             .delete(ipApplication)

@@ -2230,7 +2230,7 @@ useEffect(() => {
           )}
 
           {/* Collapsible Application Management */}
-          {(isApplicationsExpanded || applications.length === 1) && (
+          {(isApplicationsExpanded || applications.length <= 1) && (
             <div className="p-4 border-b bg-white">
               <ApplicationManagement
                 hideCreateButton={false}

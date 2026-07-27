@@ -445,7 +445,7 @@ export function useActiveApplication(): UseActiveApplicationReturn {
               );
             }
 
-            if (!isRecent && nextApplications.length > 0) {
+            if (!isRecent) {
               if (DEBUG_APPLICATIONS) {
                 console.log(
                   "[useActiveApplication] Clearing stale active application after reload"

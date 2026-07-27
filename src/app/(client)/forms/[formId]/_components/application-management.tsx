@@ -177,6 +177,10 @@ export function ApplicationManagement({
       trpcUtils.formIntegration.getUserApplications.invalidate();
     };
 
+    const handleOpenCreateDialog = () => {
+      setIsNewAppDialogOpen(true);
+    };
+
     window.addEventListener(
       "applicationTitleFormCompleted",
       handleApplicationTitleUpdate as EventListener
@@ -184,6 +188,10 @@ export function ApplicationManagement({
     window.addEventListener(
       "formProgressRefresh",
       handleApplicationTitleUpdate as EventListener
+    );
+    window.addEventListener(
+      "openCreateApplicationDialog",
+      handleOpenCreateDialog as EventListener
     );
 
     return () => {
@@ -194,6 +202,10 @@ export function ApplicationManagement({
       window.removeEventListener(
         "formProgressRefresh",
         handleApplicationTitleUpdate as EventListener
+      );
+      window.removeEventListener(
+        "openCreateApplicationDialog",
+        handleOpenCreateDialog as EventListener
       );
     };
   }, [refetchApplications, trpcUtils.formIntegration.getUserApplications]);
@@ -254,10 +266,14 @@ export function ApplicationManagement({
           return remainingApps;
         });
 
+        // Always clear local storage for the deleted application to prevent zombie data
+        if (deletedId) {
+          clearApplicationScopedLocalStorage(deletedId);
+        }
+
         // If we are deleting the active application, clear it immediately
         // to prevent forms from submitting with a deleted ID and causing foreign key errors
         if (deleteWasActiveRef.current && deletedId) {
-          clearApplicationScopedLocalStorage(deletedId);
           if (remainingApps.length > 0) {
             handleSwitchApplication(remainingApps[0].id);
           } else {
@@ -271,14 +287,22 @@ export function ApplicationManagement({
               detail: { applicationId: null },
             });
             window.dispatchEvent(event);
-            
-            // Force browser redirect to ensure it works even inside onMutate
-            window.location.href = "/forms";
           }
         }
 
         // Cancel any outgoing refetches so they don't overwrite our optimistic update
         await trpcUtils.formIntegration.getUserApplications.cancel();
+        
+        // Update TRPC cache directly to prevent flicker during invalidation delay
+        if (userId) {
+          trpcUtils.formIntegration.getUserApplications.setData(
+            { userId },
+            (oldQueryData) => {
+              if (!oldQueryData) return [];
+              return oldQueryData.filter((app: any) => app.id !== deletedId);
+            }
+          );
+        }
         
         return { previousApps, deletedId, remainingApps };
       },
@@ -292,6 +316,10 @@ export function ApplicationManagement({
         trpcUtils.formIntegration.getUserApplications.invalidate();
         refetchApplications();
 
+        if (deleteWasActiveRef.current && remainingApps.length === 0) {
+          window.location.href = "/forms";
+        }
+        
         deleteWasActiveRef.current = false;
       },
       onError: (error, variables, context) => {
@@ -615,7 +643,7 @@ export function ApplicationManagement({
 
   // Toggle sort order
   const toggleSortOrder = () => {
-    setSortOrder(sortOrder === "newest" ? "alphabetical" : "newest");
+    setSortOrder(sortOrder === "newest" ? "alp1habetical" : "newest");
   };
 
   // Get status badge with icon

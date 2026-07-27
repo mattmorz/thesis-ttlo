@@ -177,13 +177,9 @@ export function IPDisclosureForm() {
 
   useEffect(() => {
     if (!formContextHydrated) return;
-    if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
-      const nextTypes = normalizeIpTypes(applicantsInfo?.ipTypes);
-      if (!areIpTypesEqual(selectedIpTypes, nextTypes)) {
-        setSelectedIpTypes(nextTypes);
-      }
-      return;
-    }
+    // Always prioritize the application's derived IP types (source of truth)
+    // over whatever is in applicantsInfo, because the user might have just
+    // updated the IP types in the Application Title form.
     
     // Only apply derivedIpTypes if it's the first time, or if derivedIpTypes actually changed
     // This allows the user to click checkboxes without them being overwritten,
@@ -245,27 +241,20 @@ export function IPDisclosureForm() {
   // Get active IP types, using live checkbox state on the applicants tab,
   // and saved store data once navigating away.
   const activeIpTypes: IpTypes = useMemo(() => {
-    if (activeTab === "applicants-information") {
-      if (hasSelectedIpTypes(selectedIpTypes)) {
-        return normalizeIpTypes(selectedIpTypes);
-      }
-      if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
-        return normalizeIpTypes(applicantsInfo?.ipTypes);
-      }
+    // ALWAYS prioritize derivedIpTypes from the activeApplication.
+    // This ensures that when the user changes IP types in the Application Title form,
+    // the IP Disclosure form immediately reflects those changes.
+    if (hasSelectedIpTypes(derivedIpTypes)) {
       return derivedIpTypes;
-    }
-    if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
-      return normalizeIpTypes(applicantsInfo?.ipTypes);
     }
     if (hasSelectedIpTypes(selectedIpTypes)) {
       return normalizeIpTypes(selectedIpTypes);
     }
-    if (hasSelectedIpTypes(derivedIpTypes)) {
-      return derivedIpTypes;
+    if (hasSelectedIpTypes(applicantsInfo?.ipTypes)) {
+      return normalizeIpTypes(applicantsInfo?.ipTypes);
     }
     return normalizeIpTypes(selectedIpTypes);
   }, [
-    activeTab,
     applicantsInfo?.ipTypes,
     derivedIpTypes,
     selectedIpTypes,
@@ -407,7 +396,10 @@ export function IPDisclosureForm() {
               </p>
               <div className="mt-4 flex flex-col sm:flex-row gap-3">
                 <Button
-                  onClick={() => router.push("/applications/new")}
+                  onClick={() => {
+                    const event = new CustomEvent("openCreateApplicationDialog");
+                    window.dispatchEvent(event);
+                  }}
                   className="bg-amber-600 hover:bg-amber-700 text-white"
                 >
                   Create New Application

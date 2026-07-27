@@ -63,7 +63,10 @@ export function FormStatusSection({
               </p>
               <div className="mt-3 flex flex-col sm:flex-row gap-2">
                 <Button
-                  onClick={() => router.push("/applications/new")}
+                  onClick={() => {
+                    const event = new CustomEvent("openCreateApplicationDialog");
+                    window.dispatchEvent(event);
+                  }}
                   className="bg-amber-600 hover:bg-amber-700 text-white text-xs"
                   size="sm"
                 >

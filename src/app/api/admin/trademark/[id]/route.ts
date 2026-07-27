@@ -5,7 +5,7 @@ import {
   trademarkApplication,
   ipDisclosure,
   ipDisclosureApplicant,
-} from "@/drizzle/schema";
+} from "@/drizzle/migrations/schema";
 
 export const dynamic = "force-dynamic";
 

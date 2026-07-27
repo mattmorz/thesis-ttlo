@@ -19,19 +19,38 @@ declare module "next-auth" {
   }
 }
 
-// List of allowed domains for email authentication
+// Environment-aware list of allowed domains for email authentication
+const envAllowedDomains = process.env.ALLOWED_DOMAINS
+  ? process.env.ALLOWED_DOMAINS.split(",").map((d) => d.trim())
+  : [];
+
 const ALLOWED_DOMAINS = [
-  "dlsu.edu.ph", // DLSU domain
-  "carsu.edu.ph", // CARSU domain
-  "example.com", // For testing only, remove in production
-  "gmail.com", // Temporarily allowing gmail for testing
+  "dlsu.edu.ph",
+  "carsu.edu.ph",
+  ...envAllowedDomains,
+  ...(process.env.NODE_ENV !== "production" ? ["example.com", "gmail.com"] : []),
 ];
 
-// Admin email patterns - users with these email patterns will be assigned admin role
-const ADMIN_EMAILS = ["admin@example.com", "super@example.com","eomorales@carsu.edu.ph"];
+// Admin email patterns
+const envAdminEmails = process.env.ADMIN_EMAILS
+  ? process.env.ADMIN_EMAILS.split(",").map((e) => e.trim())
+  : [];
 
-// TTLO staff email patterns - users with these email patterns will be assigned ttlo_staff role
-const TTLO_STAFF_EMAILS = ["staff@example.com", "ttlo@example.com"];
+const ADMIN_EMAILS = [
+  "eomorales@carsu.edu.ph",
+  ...envAdminEmails,
+  ...(process.env.NODE_ENV !== "production" ? ["admin@example.com", "super@example.com"] : []),
+];
+
+// TTLO staff email patterns
+const envStaffEmails = process.env.TTLO_STAFF_EMAILS
+  ? process.env.TTLO_STAFF_EMAILS.split(",").map((e) => e.trim())
+  : [];
+
+const TTLO_STAFF_EMAILS = [
+  ...envStaffEmails,
+  ...(process.env.NODE_ENV !== "production" ? ["staff@example.com", "ttlo@example.com"] : []),
+];
 
 export const {
   handlers,

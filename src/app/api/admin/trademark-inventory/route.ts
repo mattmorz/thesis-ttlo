@@ -6,7 +6,7 @@ import {
   ipDisclosure,
   ipDisclosureApplicant,
   userAccount,
-} from "@/drizzle/schema";
+} from "@/drizzle/migrations/schema";
 
 export const dynamic = "force-dynamic";
 

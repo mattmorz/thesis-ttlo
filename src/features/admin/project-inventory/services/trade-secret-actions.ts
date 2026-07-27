@@ -7,7 +7,7 @@ import {
   disclosureConfirmation,
   ipDisclosureApplicant,
   userAccount,
-} from "@/drizzle/schema";
+} from "@/drizzle/migrations/schema";
 import { and, eq, like, desc, asc, or, sql } from "drizzle-orm";
 import {
   TradeSecretInventoryType,

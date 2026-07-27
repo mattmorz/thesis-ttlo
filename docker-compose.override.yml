@@ -1,0 +1,13 @@
+version: '3.8'
+
+# Development override for local docker compose testing
+services:
+  db:
+    ports:
+      - "5432:5432"
+
+  web:
+    environment:
+      NODE_ENV: development
+    ports:
+      - "3000:3000"

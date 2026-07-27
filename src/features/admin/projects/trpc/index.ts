@@ -7,7 +7,7 @@ import {
   ipApplicationEnrollment,
   userAccount,
 } from "@/drizzle/migrations/schema";
-import { archives } from "@/drizzle/schema";
+import { archives } from "@/drizzle/migrations/schema";
 import { protectedProcedure, router } from "@/trpc/init";
 import { eq, and } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";

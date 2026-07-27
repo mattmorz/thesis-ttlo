@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/drizzle/db";
 import { eq, ilike, and, sql } from "drizzle-orm";
-import { ipDisclosure, userAccount } from "@/drizzle/schema";
+import { ipDisclosure, userAccount } from "@/drizzle/migrations/schema";
 import {
   NoneIpTypesInventoryType,
   NoneIpTypesFilterType,

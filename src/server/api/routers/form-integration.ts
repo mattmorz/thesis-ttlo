@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import { v4 as uuid } from "uuid";
 import { db } from "@/drizzle/db"; // Updated path to use the drizzle DB
 // Import from the real schema in migrations

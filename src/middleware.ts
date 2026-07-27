@@ -8,8 +8,8 @@ const publicPaths = [
   "/auth/error",
   "/auth/unauthorized",
   "/api/auth",
-  "/test-signin", // Our test page
   "/guidelines",
+  ...(process.env.NODE_ENV !== "production" ? ["/test-signin"] : []),
 ];
 
 // Routes that authenticated users should be redirected from

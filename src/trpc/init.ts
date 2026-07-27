@@ -57,6 +57,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
  * Router creator
  */
 export const router = t.router;
+export const createTRPCRouter = t.router;
 
 /**
  * Public procedure - Can be used without authentication

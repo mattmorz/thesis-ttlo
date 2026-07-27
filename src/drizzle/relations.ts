@@ -41,7 +41,6 @@ import {
   phaseTask,
   session,
   substantialUse,
-  taskAssignment,
   tradeSecretApplication,
   trademarkApplication,
   phaseReminder,
@@ -586,16 +585,6 @@ export const substantialUseRelations = relations(substantialUse, ({ one }) => ({
   }),
 }));
 
-export const taskAssignmentRelations = relations(taskAssignment, ({ one }) => ({
-  phaseTask: one(phaseTask, {
-    fields: [taskAssignment.taskId],
-    references: [phaseTask.taskId],
-  }),
-  userAccount: one(userAccount, {
-    fields: [taskAssignment.userId],
-    references: [userAccount.id],
-  }),
-}));
 
 export const tradeSecretApplicationRelations = relations(
   tradeSecretApplication,

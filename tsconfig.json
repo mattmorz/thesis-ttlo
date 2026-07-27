@@ -19,8 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@/types": ["./src/app/(admin)/admin/client-proj-dash/types"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [

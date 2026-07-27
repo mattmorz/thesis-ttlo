@@ -3,7 +3,7 @@
 import { db } from "@/drizzle";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { asc, desc } from "drizzle-orm";
-import { ipDisclosure, disclosureConfirmation } from "@/drizzle/schema";
+import { ipDisclosure, disclosureConfirmation } from "@/drizzle/migrations/schema";
 import {
   IndustrialDesignFilterType,
   IndustrialDesignInventoryType,

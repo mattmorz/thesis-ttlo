@@ -644,96 +644,161 @@ CREATE TABLE IF NOT EXISTS "verificationToken" (
 	"expires" timestamp NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "account" DROP CONSTRAINT IF EXISTS "account_userId_user_id_fk";--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_log" DROP CONSTRAINT IF EXISTS "fk_activity_log_application";--> statement-breakpoint
 ALTER TABLE "activity_log" ADD CONSTRAINT "fk_activity_log_application" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_log" DROP CONSTRAINT IF EXISTS "fk_activity_log_phase";--> statement-breakpoint
 ALTER TABLE "activity_log" ADD CONSTRAINT "fk_activity_log_phase" FOREIGN KEY ("phase_id") REFERENCES "public"."application_phase"("phase_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_log" DROP CONSTRAINT IF EXISTS "fk_activity_log_user";--> statement-breakpoint
 ALTER TABLE "activity_log" ADD CONSTRAINT "fk_activity_log_user" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "application_phase" DROP CONSTRAINT IF EXISTS "fk_phase_application";--> statement-breakpoint
 ALTER TABLE "application_phase" ADD CONSTRAINT "fk_phase_application" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "archives" DROP CONSTRAINT IF EXISTS "fk_archive_application";--> statement-breakpoint
 ALTER TABLE "archives" ADD CONSTRAINT "fk_archive_application" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "archives" DROP CONSTRAINT IF EXISTS "fk_archive_user";--> statement-breakpoint
 ALTER TABLE "archives" ADD CONSTRAINT "fk_archive_user" FOREIGN KEY ("archived_by") REFERENCES "public"."user_account"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "authenticator" DROP CONSTRAINT IF EXISTS "authenticator_userId_user_id_fk";--> statement-breakpoint
 ALTER TABLE "authenticator" ADD CONSTRAINT "authenticator_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_application_id_fkey";--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD CONSTRAINT "calendar_event_application_id_fkey" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_created_by_fkey";--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD CONSTRAINT "calendar_event_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_phase_id_fkey";--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD CONSTRAINT "calendar_event_phase_id_fkey" FOREIGN KEY ("phase_id") REFERENCES "public"."application_phase"("phase_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_user_id_fkey";--> statement-breakpoint
 ALTER TABLE "client_profile" ADD CONSTRAINT "client_profile_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "comment" DROP CONSTRAINT IF EXISTS "comment_parent_id_fkey";--> statement-breakpoint
 ALTER TABLE "comment" ADD CONSTRAINT "comment_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."comment"("comment_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "comment" DROP CONSTRAINT IF EXISTS "comment_user_id_fkey";--> statement-breakpoint
 ALTER TABLE "comment" ADD CONSTRAINT "comment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "contact_message" DROP CONSTRAINT IF EXISTS "contact_message_assigned_to_fkey";--> statement-breakpoint
 ALTER TABLE "contact_message" ADD CONSTRAINT "contact_message_assigned_to_fkey" FOREIGN KEY ("assigned_to") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "copyright_basic_application" DROP CONSTRAINT IF EXISTS "copyright_basic_application_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_basic_application" ADD CONSTRAINT "copyright_basic_application_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part1" DROP CONSTRAINT IF EXISTS "copyright_transaction_part1_copyright_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part1" ADD CONSTRAINT "copyright_transaction_part1_copyright_id_fkey" FOREIGN KEY ("copyright_id") REFERENCES "public"."copyright_basic_application"("copyright_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part1" DROP CONSTRAINT IF EXISTS "copyright_transaction_part1_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part1" ADD CONSTRAINT "copyright_transaction_part1_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part2" DROP CONSTRAINT IF EXISTS "copyright_transaction_part2_copyright_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD CONSTRAINT "copyright_transaction_part2_copyright_id_fkey" FOREIGN KEY ("copyright_id") REFERENCES "public"."copyright_basic_application"("copyright_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part2" DROP CONSTRAINT IF EXISTS "copyright_transaction_part2_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD CONSTRAINT "copyright_transaction_part2_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "deed_of_assignment" DROP CONSTRAINT IF EXISTS "deed_of_assignment_user_id_fkey";--> statement-breakpoint
 ALTER TABLE "deed_of_assignment" ADD CONSTRAINT "deed_of_assignment_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "digital_signature" DROP CONSTRAINT IF EXISTS "digital_signature_signer_id_fkey";--> statement-breakpoint
 ALTER TABLE "digital_signature" ADD CONSTRAINT "digital_signature_signer_id_fkey" FOREIGN KEY ("signer_id") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "disclosure_confirmation" DROP CONSTRAINT IF EXISTS "disclosure_confirmation_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "disclosure_confirmation" ADD CONSTRAINT "disclosure_confirmation_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "document_management" DROP CONSTRAINT IF EXISTS "document_management_application_id_fkey";--> statement-breakpoint
 ALTER TABLE "document_management" ADD CONSTRAINT "document_management_application_id_fkey" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "document_management" DROP CONSTRAINT IF EXISTS "document_management_phase_id_fkey";--> statement-breakpoint
 ALTER TABLE "document_management" ADD CONSTRAINT "document_management_phase_id_fkey" FOREIGN KEY ("phase_id") REFERENCES "public"."application_phase"("phase_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "document_management" DROP CONSTRAINT IF EXISTS "document_management_uploaded_by_fkey";--> statement-breakpoint
 ALTER TABLE "document_management" ADD CONSTRAINT "document_management_uploaded_by_fkey" FOREIGN KEY ("uploaded_by") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "document_management" DROP CONSTRAINT IF EXISTS "document_management_verified_by_fkey";--> statement-breakpoint
 ALTER TABLE "document_management" ADD CONSTRAINT "document_management_verified_by_fkey" FOREIGN KEY ("verified_by") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_application_id_fkey";--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_application_id_fkey" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_phase_id_fkey";--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_phase_id_fkey" FOREIGN KEY ("phase_id") REFERENCES "public"."application_phase"("phase_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_uploaded_by_fkey";--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_uploaded_by_fkey" FOREIGN KEY ("uploaded_by") REFERENCES "public"."user_account"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_validated_by_fkey";--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_validated_by_fkey" FOREIGN KEY ("validated_by") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "documents_verified_by_fkey";--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_verified_by_fkey" FOREIGN KEY ("verified_by") REFERENCES "public"."user_account"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_participant" DROP CONSTRAINT IF EXISTS "event_participant_event_id_fkey";--> statement-breakpoint
 ALTER TABLE "event_participant" ADD CONSTRAINT "event_participant_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "public"."calendar_event"("event_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_participant" DROP CONSTRAINT IF EXISTS "event_participant_user_id_fkey";--> statement-breakpoint
 ALTER TABLE "event_participant" ADD CONSTRAINT "event_participant_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "external_collaboration" DROP CONSTRAINT IF EXISTS "external_collaboration_phase_id_fkey";--> statement-breakpoint
 ALTER TABLE "external_collaboration" ADD CONSTRAINT "external_collaboration_phase_id_fkey" FOREIGN KEY ("phase_id") REFERENCES "public"."application_phase"("phase_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_assigned_to_fkey";--> statement-breakpoint
 ALTER TABLE "internal_validation" ADD CONSTRAINT "internal_validation_assigned_to_fkey" FOREIGN KEY ("assigned_to") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_document_id_fkey";--> statement-breakpoint
 ALTER TABLE "internal_validation" ADD CONSTRAINT "internal_validation_document_id_fkey" FOREIGN KEY ("document_id") REFERENCES "public"."documents"("document_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_phase_id_fkey";--> statement-breakpoint
 ALTER TABLE "internal_validation" ADD CONSTRAINT "internal_validation_phase_id_fkey" FOREIGN KEY ("phase_id") REFERENCES "public"."application_phase"("phase_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "fk_application_user";--> statement-breakpoint
 ALTER TABLE "ip_application" ADD CONSTRAINT "fk_application_user" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_contributors" DROP CONSTRAINT IF EXISTS "ip_contributors_application_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_contributors" ADD CONSTRAINT "ip_contributors_application_id_fkey" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_details" DROP CONSTRAINT IF EXISTS "ip_details_application_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_details" ADD CONSTRAINT "ip_details_application_id_fkey" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_disclosure" DROP CONSTRAINT IF EXISTS "ip_disclosure_client_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ADD CONSTRAINT "ip_disclosure_client_id_fkey" FOREIGN KEY ("client_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_disclosure_applicant" DROP CONSTRAINT IF EXISTS "ip_disclosure_applicant_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_disclosure_applicant" ADD CONSTRAINT "ip_disclosure_applicant_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_disclosure_attachment" DROP CONSTRAINT IF EXISTS "ip_disclosure_attachment_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_disclosure_attachment" ADD CONSTRAINT "ip_disclosure_attachment_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_disclosure_inventor" DROP CONSTRAINT IF EXISTS "ip_disclosure_inventor_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_disclosure_inventor" ADD CONSTRAINT "ip_disclosure_inventor_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_disclosure_review" DROP CONSTRAINT IF EXISTS "ip_disclosure_review_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_disclosure_review" ADD CONSTRAINT "ip_disclosure_review_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_disclosure_review" DROP CONSTRAINT IF EXISTS "ip_disclosure_review_reviewer_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_disclosure_review" ADD CONSTRAINT "ip_disclosure_review_reviewer_id_fkey" FOREIGN KEY ("reviewer_id") REFERENCES "public"."user_account"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "notification_user_id_fkey";--> statement-breakpoint
 ALTER TABLE "notification" ADD CONSTRAINT "notification_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "patent_matrix_sample" DROP CONSTRAINT IF EXISTS "patent_matrix_sample_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "patent_matrix_sample" ADD CONSTRAINT "patent_matrix_sample_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "patent_matrix_sample" DROP CONSTRAINT IF EXISTS "patent_matrix_sample_patent_id_fkey";--> statement-breakpoint
 ALTER TABLE "patent_matrix_sample" ADD CONSTRAINT "patent_matrix_sample_patent_id_fkey" FOREIGN KEY ("patent_id") REFERENCES "public"."patent_utility_model_application"("patent_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "patent_search_report" DROP CONSTRAINT IF EXISTS "patent_search_report_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "patent_search_report" ADD CONSTRAINT "patent_search_report_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "patent_search_report" DROP CONSTRAINT IF EXISTS "patent_search_report_patent_id_fkey";--> statement-breakpoint
 ALTER TABLE "patent_search_report" ADD CONSTRAINT "patent_search_report_patent_id_fkey" FOREIGN KEY ("patent_id") REFERENCES "public"."patent_utility_model_application"("patent_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "patent_utility_model_application" DROP CONSTRAINT IF EXISTS "patent_utility_model_application_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "patent_utility_model_application" ADD CONSTRAINT "patent_utility_model_application_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "phase_reminder_phase_id_fkey";--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD CONSTRAINT "phase_reminder_phase_id_fkey" FOREIGN KEY ("phase_id") REFERENCES "public"."application_phase"("phase_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "phase_review" DROP CONSTRAINT IF EXISTS "phase_review_phase_id_fkey";--> statement-breakpoint
 ALTER TABLE "phase_review" ADD CONSTRAINT "phase_review_phase_id_fkey" FOREIGN KEY ("phase_id") REFERENCES "public"."application_phase"("phase_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "phase_review" DROP CONSTRAINT IF EXISTS "phase_review_reviewer_id_fkey";--> statement-breakpoint
 ALTER TABLE "phase_review" ADD CONSTRAINT "phase_review_reviewer_id_fkey" FOREIGN KEY ("reviewer_id") REFERENCES "public"."user_account"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "phase_review_attachment" DROP CONSTRAINT IF EXISTS "phase_review_attachment_review_id_fkey";--> statement-breakpoint
 ALTER TABLE "phase_review_attachment" ADD CONSTRAINT "phase_review_attachment_review_id_fkey" FOREIGN KEY ("review_id") REFERENCES "public"."phase_review"("review_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "phase_task" DROP CONSTRAINT IF EXISTS "phase_task_assignee_id_fkey";--> statement-breakpoint
 ALTER TABLE "phase_task" ADD CONSTRAINT "phase_task_assignee_id_fkey" FOREIGN KEY ("assignee_id") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "phase_task" DROP CONSTRAINT IF EXISTS "phase_task_phase_id_fkey";--> statement-breakpoint
 ALTER TABLE "phase_task" ADD CONSTRAINT "phase_task_phase_id_fkey" FOREIGN KEY ("phase_id") REFERENCES "public"."application_phase"("phase_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "session" DROP CONSTRAINT IF EXISTS "session_userId_user_id_fk";--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "substantial_use" DROP CONSTRAINT IF EXISTS "substantial_use_user_id_fkey";--> statement-breakpoint
 ALTER TABLE "substantial_use" ADD CONSTRAINT "substantial_use_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "task_assignment" DROP CONSTRAINT IF EXISTS "task_assignment_staff_id_fkey";--> statement-breakpoint
 ALTER TABLE "task_assignment" ADD CONSTRAINT "task_assignment_staff_id_fkey" FOREIGN KEY ("staff_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "task_assignment" DROP CONSTRAINT IF EXISTS "task_assignment_task_id_fkey";--> statement-breakpoint
 ALTER TABLE "task_assignment" ADD CONSTRAINT "task_assignment_task_id_fkey" FOREIGN KEY ("task_id") REFERENCES "public"."phase_task"("task_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trade_secret_application" DROP CONSTRAINT IF EXISTS "trade_secret_application_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "trade_secret_application" ADD CONSTRAINT "trade_secret_application_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trademark_application" DROP CONSTRAINT IF EXISTS "trademark_application_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "trademark_application" ADD CONSTRAINT "trademark_application_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "idx_activity_log_application" ON "activity_log" USING btree ("application_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_activity_log_phase" ON "activity_log" USING btree ("phase_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_activity_log_user" ON "activity_log" USING btree ("user_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "ix_activity_log_application" ON "activity_log" USING btree ("application_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "ix_activity_log_phase" ON "activity_log" USING btree ("phase_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "ix_activity_log_user" ON "activity_log" USING btree ("user_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_phase_application_id" ON "application_phase" USING btree ("application_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_phase_status" ON "application_phase" USING btree ("status" text_ops);--> statement-breakpoint
-CREATE INDEX "idx_client_profile_email" ON "client_profile" USING btree ("email" text_ops);--> statement-breakpoint
-CREATE INDEX "idx_client_profile_user" ON "client_profile" USING btree ("user_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_deed_of_assignment_status" ON "deed_of_assignment" USING btree ("status" text_ops);--> statement-breakpoint
-CREATE INDEX "idx_deed_of_assignment_user" ON "deed_of_assignment" USING btree ("user_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_documents_validation" ON "documents" USING btree ("validation_status" text_ops);--> statement-breakpoint
-CREATE INDEX "idx_ip_application_type" ON "ip_application" USING btree ("ip_type" enum_ops);--> statement-breakpoint
-CREATE INDEX "ix_ip_application_status" ON "ip_application" USING btree ("status" enum_ops);--> statement-breakpoint
-CREATE INDEX "ix_ip_application_type" ON "ip_application" USING btree ("ip_type" enum_ops);--> statement-breakpoint
-CREATE INDEX "ix_ip_application_user" ON "ip_application" USING btree ("user_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_ip_disclosure_client" ON "ip_disclosure" USING btree ("client_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_ip_disclosure_status" ON "ip_disclosure" USING btree ("status" text_ops);--> statement-breakpoint
-CREATE INDEX "idx_patent_matrix_sample_disclosure_id" ON "patent_matrix_sample" USING btree ("disclosure_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_patent_matrix_sample_patent_id" ON "patent_matrix_sample" USING btree ("patent_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_phase_review_date" ON "phase_review" USING btree ("review_date" timestamp_ops);--> statement-breakpoint
-CREATE INDEX "idx_phase_review_phase_id" ON "phase_review" USING btree ("phase_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_phase_review_reviewer" ON "phase_review" USING btree ("reviewer_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_phase_review_status" ON "phase_review" USING btree ("status" text_ops);--> statement-breakpoint
-CREATE INDEX "idx_task_phase_id" ON "phase_task" USING btree ("phase_id" uuid_ops);--> statement-breakpoint
-CREATE INDEX "idx_substantial_use_status" ON "substantial_use" USING btree ("status" text_ops);--> statement-breakpoint
-CREATE INDEX "idx_substantial_use_user" ON "substantial_use" USING btree ("user_id" uuid_ops);
+CREATE INDEX IF NOT EXISTS "idx_activity_log_application" ON "activity_log" USING btree ("application_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_activity_log_phase" ON "activity_log" USING btree ("phase_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_activity_log_user" ON "activity_log" USING btree ("user_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ix_activity_log_application" ON "activity_log" USING btree ("application_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ix_activity_log_phase" ON "activity_log" USING btree ("phase_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ix_activity_log_user" ON "activity_log" USING btree ("user_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_phase_application_id" ON "application_phase" USING btree ("application_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_phase_status" ON "application_phase" USING btree ("status" text_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_client_profile_email" ON "client_profile" USING btree ("email" text_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_client_profile_user" ON "client_profile" USING btree ("user_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_deed_of_assignment_status" ON "deed_of_assignment" USING btree ("status" text_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_deed_of_assignment_user" ON "deed_of_assignment" USING btree ("user_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_documents_validation" ON "documents" USING btree ("validation_status" text_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_ip_application_type" ON "ip_application" USING btree ("ip_type" enum_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ix_ip_application_status" ON "ip_application" USING btree ("status" enum_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ix_ip_application_type" ON "ip_application" USING btree ("ip_type" enum_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ix_ip_application_user" ON "ip_application" USING btree ("user_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_ip_disclosure_client" ON "ip_disclosure" USING btree ("client_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_ip_disclosure_status" ON "ip_disclosure" USING btree ("status" text_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_patent_matrix_sample_disclosure_id" ON "patent_matrix_sample" USING btree ("disclosure_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_patent_matrix_sample_patent_id" ON "patent_matrix_sample" USING btree ("patent_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_phase_review_date" ON "phase_review" USING btree ("review_date" timestamp_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_phase_review_phase_id" ON "phase_review" USING btree ("phase_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_phase_review_reviewer" ON "phase_review" USING btree ("reviewer_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_phase_review_status" ON "phase_review" USING btree ("status" text_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_task_phase_id" ON "phase_task" USING btree ("phase_id" uuid_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_substantial_use_status" ON "substantial_use" USING btree ("status" text_ops);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_substantial_use_user" ON "substantial_use" USING btree ("user_id" uuid_ops);

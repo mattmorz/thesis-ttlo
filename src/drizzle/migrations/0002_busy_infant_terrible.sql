@@ -118,25 +118,34 @@ ALTER TABLE "ip_disclosure" ADD COLUMN "authorized_representative" varchar(255);
 ALTER TABLE "ip_disclosure" ADD COLUMN "email" varchar(255) NOT NULL;--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ADD COLUMN "selected_ip_types" jsonb DEFAULT '{"copyright": false, "patent": false, "utilityModel": false, "industrialDesign": false, "trademark": false, "tradeSecret": false, "other": false, "notSure": false}' NOT NULL;--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ADD COLUMN "other_ip_type" varchar(255);--> statement-breakpoint
+ALTER TABLE "copyright_application" DROP CONSTRAINT IF EXISTS "copyright_application_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_application" ADD CONSTRAINT "copyright_application_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part1" DROP CONSTRAINT IF EXISTS "copyright_transaction_part1_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part1" ADD CONSTRAINT "copyright_transaction_part1_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part1" DROP CONSTRAINT IF EXISTS "copyright_transaction_part1_copyright_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part1" ADD CONSTRAINT "copyright_transaction_part1_copyright_id_fkey" FOREIGN KEY ("copyright_id") REFERENCES "public"."copyright_application"("copyright_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "disclosure_confirmation" DROP CONSTRAINT IF EXISTS "disclosure_confirmation_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "disclosure_confirmation" ADD CONSTRAINT "disclosure_confirmation_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_disclosure_applicant" DROP CONSTRAINT IF EXISTS "ip_disclosure_applicant_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_disclosure_applicant" ADD CONSTRAINT "ip_disclosure_applicant_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_disclosure_inventor" DROP CONSTRAINT IF EXISTS "ip_disclosure_inventor_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_disclosure_inventor" ADD CONSTRAINT "ip_disclosure_inventor_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "idx_copyright_application" ON "copyright_application" USING btree ("disclosure_id");--> statement-breakpoint
-CREATE INDEX "idx_copyright_transaction_part1_disclosure" ON "copyright_transaction_part1" USING btree ("disclosure_id");--> statement-breakpoint
-CREATE INDEX "idx_copyright_transaction_part1_copyright" ON "copyright_transaction_part1" USING btree ("copyright_id");--> statement-breakpoint
-CREATE INDEX "idx_disclosure_confirmation" ON "disclosure_confirmation" USING btree ("disclosure_id");--> statement-breakpoint
-CREATE INDEX "idx_ip_disclosure_applicant" ON "ip_disclosure_applicant" USING btree ("disclosure_id");--> statement-breakpoint
-CREATE INDEX "idx_ip_disclosure_inventor" ON "ip_disclosure_inventor" USING btree ("disclosure_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_copyright_application" ON "copyright_application" USING btree ("disclosure_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_copyright_transaction_part1_disclosure" ON "copyright_transaction_part1" USING btree ("disclosure_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_copyright_transaction_part1_copyright" ON "copyright_transaction_part1" USING btree ("copyright_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_disclosure_confirmation" ON "disclosure_confirmation" USING btree ("disclosure_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_ip_disclosure_applicant" ON "ip_disclosure_applicant" USING btree ("disclosure_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_ip_disclosure_inventor" ON "ip_disclosure_inventor" USING btree ("disclosure_id");--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part2" DROP CONSTRAINT IF EXISTS "copyright_transaction_part2_disclosure_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD CONSTRAINT "copyright_transaction_part2_disclosure_id_fkey" FOREIGN KEY ("disclosure_id") REFERENCES "public"."ip_disclosure"("disclosure_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part2" DROP CONSTRAINT IF EXISTS "copyright_transaction_part2_copyright_id_fkey";--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD CONSTRAINT "copyright_transaction_part2_copyright_id_fkey" FOREIGN KEY ("copyright_id") REFERENCES "public"."copyright_application"("copyright_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ip_disclosure" DROP CONSTRAINT IF EXISTS "ip_disclosure_client_id_fkey";--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ADD CONSTRAINT "ip_disclosure_client_id_fkey" FOREIGN KEY ("client_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "idx_copyright_transaction_part2_disclosure" ON "copyright_transaction_part2" USING btree ("disclosure_id");--> statement-breakpoint
-CREATE INDEX "idx_copyright_transaction_part2_copyright" ON "copyright_transaction_part2" USING btree ("copyright_id");--> statement-breakpoint
-CREATE INDEX "idx_ip_disclosure_client" ON "ip_disclosure" USING btree ("client_id");--> statement-breakpoint
-CREATE INDEX "idx_ip_disclosure_status" ON "ip_disclosure" USING btree ("status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_copyright_transaction_part2_disclosure" ON "copyright_transaction_part2" USING btree ("disclosure_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_copyright_transaction_part2_copyright" ON "copyright_transaction_part2" USING btree ("copyright_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_ip_disclosure_client" ON "ip_disclosure" USING btree ("client_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_ip_disclosure_status" ON "ip_disclosure" USING btree ("status");--> statement-breakpoint
 ALTER TABLE "client_profile" DROP COLUMN "company_address";--> statement-breakpoint
 ALTER TABLE "client_profile" DROP COLUMN "has_research_output";--> statement-breakpoint
 ALTER TABLE "client_profile" DROP COLUMN "research_output_status";--> statement-breakpoint
@@ -154,7 +163,11 @@ ALTER TABLE "copyright_transaction_part2" DROP COLUMN "number_of_copies";--> sta
 ALTER TABLE "copyright_transaction_part2" DROP COLUMN "ipso_region";--> statement-breakpoint
 ALTER TABLE "copyright_work_creation" DROP COLUMN "transaction_detail_id";--> statement-breakpoint
 ALTER TABLE "ip_disclosure" DROP COLUMN "ip_types";--> statement-breakpoint
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_highest_degree_check";--> statement-breakpoint
 ALTER TABLE "client_profile" ADD CONSTRAINT "client_profile_highest_degree_check" CHECK ((highest_degree)::text = ANY ((ARRAY['bachelor'::character varying, 'master'::character varying, 'doctorate'::character varying, 'other'::character varying])::text[]));--> statement-breakpoint
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_published_research_check";--> statement-breakpoint
 ALTER TABLE "client_profile" ADD CONSTRAINT "client_profile_published_research_check" CHECK ((published_research)::text = ANY ((ARRAY['yes'::character varying, 'no'::character varying, 'submitted'::character varying])::text[]));--> statement-breakpoint
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_developed_materials_check";--> statement-breakpoint
 ALTER TABLE "client_profile" ADD CONSTRAINT "client_profile_developed_materials_check" CHECK ((developed_materials)::text = ANY ((ARRAY['yes'::character varying, 'no'::character varying, 'ongoing'::character varying])::text[]));--> statement-breakpoint
+ALTER TABLE "client_profile" DROP CONSTRAINT IF EXISTS "client_profile_gender_check";--> statement-breakpoint
 ALTER TABLE "client_profile" ADD CONSTRAINT "client_profile_gender_check" CHECK ((gender)::text = ANY ((ARRAY['male'::character varying, 'female'::character varying, 'prefer_not_to_say'::character varying])::text[]));

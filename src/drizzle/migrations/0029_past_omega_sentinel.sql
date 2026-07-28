@@ -49,11 +49,17 @@ ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "phase_reminder_pkey";-->
 ALTER TABLE "phase_reminder" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "reminder_type" varchar(20) DEFAULT 'none';--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "reminder_day" varchar(20) DEFAULT 'none';--> statement-breakpoint
+ALTER TABLE "internal_validation_assignee" DROP CONSTRAINT IF EXISTS "fr_internal_validation_id";--> statement-breakpoint
 ALTER TABLE "internal_validation_assignee" ADD CONSTRAINT "fr_internal_validation_id" FOREIGN KEY ("internal_validation_id") REFERENCES "public"."internal_validation"("validation_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "internal_validation_assignee" DROP CONSTRAINT IF EXISTS "fr_user_id";--> statement-breakpoint
 ALTER TABLE "internal_validation_assignee" ADD CONSTRAINT "fr_user_id" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "phase_task_assignee" DROP CONSTRAINT IF EXISTS "fk_task_id";--> statement-breakpoint
 ALTER TABLE "phase_task_assignee" ADD CONSTRAINT "fk_task_id" FOREIGN KEY ("task_id") REFERENCES "public"."phase_task"("task_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "phase_task_assignee" DROP CONSTRAINT IF EXISTS "fk_user_id";--> statement-breakpoint
 ALTER TABLE "phase_task_assignee" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_application_id_fkey";--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD CONSTRAINT "calendar_event_application_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."ip_application"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "event_participant" DROP CONSTRAINT IF EXISTS "event_participant_event_id_fkey";--> statement-breakpoint
 ALTER TABLE "event_participant" ADD CONSTRAINT "event_participant_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "public"."calendar_event"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "calendar_event" DROP COLUMN "event_id";--> statement-breakpoint
 ALTER TABLE "calendar_event" DROP COLUMN "priority";--> statement-breakpoint
@@ -66,10 +72,17 @@ ALTER TABLE "phase_reminder" DROP COLUMN "reminder_id";--> statement-breakpoint
 ALTER TABLE "phase_reminder" DROP COLUMN "frequency";--> statement-breakpoint
 ALTER TABLE "phase_reminder" DROP COLUMN "custom_days";--> statement-breakpoint
 ALTER TABLE "phase_reminder" DROP COLUMN "is_active";--> statement-breakpoint
+ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "phase_reminder_phase_id_key";--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD CONSTRAINT "phase_reminder_phase_id_key" UNIQUE("phase_id");--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_event_type_check";--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD CONSTRAINT "calendar_event_event_type_check" CHECK ((event_type)::text = ANY (ARRAY[('meeting'::character varying)::text, ('phase'::character varying)::text, ('task'::character varying)::text, ('other'::character varying)::text]));--> statement-breakpoint
+ALTER TABLE "external_collaboration" DROP CONSTRAINT IF EXISTS "reminder_day_check";--> statement-breakpoint
 ALTER TABLE "external_collaboration" ADD CONSTRAINT "reminder_day_check" CHECK ((reminder_day)::text = ANY (ARRAY[('none'::character varying)::text, ('mon'::character varying)::text, ('tue'::character varying)::text, ('wed'::character varying)::text, ('thu'::character varying)::text, ('fri'::character varying)::text, ('sat'::character varying)::text, ('sun'::character varying)::text]));--> statement-breakpoint
+ALTER TABLE "external_collaboration" DROP CONSTRAINT IF EXISTS "reminder_type_check";--> statement-breakpoint
 ALTER TABLE "external_collaboration" ADD CONSTRAINT "reminder_type_check" CHECK ((reminder_type)::text = ANY (ARRAY[('none'::character varying)::text, ('daily'::character varying)::text, ('weekly'::character varying)::text]));--> statement-breakpoint
+ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_validator_role_check";--> statement-breakpoint
 ALTER TABLE "internal_validation" ADD CONSTRAINT "internal_validation_validator_role_check" CHECK ((validator_role)::text = ANY (ARRAY[('admin'::character varying)::text, ('director'::character varying)::text]));--> statement-breakpoint
+ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "reminder_day_check";--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD CONSTRAINT "reminder_day_check" CHECK ((reminder_day)::text = ANY (ARRAY[('none'::character varying)::text, ('mon'::character varying)::text, ('tue'::character varying)::text, ('wed'::character varying)::text, ('thu'::character varying)::text, ('fri'::character varying)::text, ('sat'::character varying)::text, ('sun'::character varying)::text]));--> statement-breakpoint
+ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "reminder_type_check";--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD CONSTRAINT "reminder_type_check" CHECK ((reminder_type)::text = ANY (ARRAY[('none'::character varying)::text, ('daily'::character varying)::text, ('weekly'::character varying)::text]));

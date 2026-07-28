@@ -55,21 +55,28 @@ CREATE TABLE IF NOT EXISTS "other_documents" (
 	"metadata" jsonb,
 	CONSTRAINT "other_documents_status_check" CHECK ((status)::text = ANY ((ARRAY['active'::character varying, 'archived'::character varying, 'deleted'::character varying])::text[]))
 );
+ALTER TABLE "form_data_mapping" DROP CONSTRAINT IF EXISTS "fk_form_data_mapping_registry";--> statement-breakpoint
 ALTER TABLE "form_data_mapping" ADD CONSTRAINT "fk_form_data_mapping_registry" FOREIGN KEY ("registry_id") REFERENCES "public"."form_submission_registry"("registry_id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "form_submission_registry" DROP CONSTRAINT IF EXISTS "fk_form_submission_registry_user";--> statement-breakpoint
 ALTER TABLE "form_submission_registry" ADD CONSTRAINT "fk_form_submission_registry_user" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "form_submission_registry" DROP CONSTRAINT IF EXISTS "fk_form_submission_registry_ip_application";--> statement-breakpoint
 ALTER TABLE "form_submission_registry" ADD CONSTRAINT "fk_form_submission_registry_ip_application" FOREIGN KEY ("ip_application_id") REFERENCES "public"."ip_application"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "ip_application_notification" DROP CONSTRAINT IF EXISTS "fk_ip_app_notification_ip_application";--> statement-breakpoint
 ALTER TABLE "ip_application_notification" ADD CONSTRAINT "fk_ip_app_notification_ip_application" FOREIGN KEY ("ip_application_id") REFERENCES "public"."ip_application"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "ip_application_notification" DROP CONSTRAINT IF EXISTS "fk_ip_app_notification_form_registry";--> statement-breakpoint
 ALTER TABLE "ip_application_notification" ADD CONSTRAINT "fk_ip_app_notification_form_registry" FOREIGN KEY ("form_registry_id") REFERENCES "public"."form_submission_registry"("registry_id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "ip_application_notification" DROP CONSTRAINT IF EXISTS "fk_ip_app_notification_admin";--> statement-breakpoint
 ALTER TABLE "ip_application_notification" ADD CONSTRAINT "fk_ip_app_notification_admin" FOREIGN KEY ("admin_id") REFERENCES "public"."user_account"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "other_documents" DROP CONSTRAINT IF EXISTS "other_documents_user_id_fkey";--> statement-breakpoint
 ALTER TABLE "other_documents" ADD CONSTRAINT "other_documents_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_account"("id") ON DELETE cascade ON UPDATE no action;
-CREATE INDEX "idx_form_data_mapping_registry" ON "form_data_mapping" USING btree ("registry_id");
-CREATE INDEX "idx_form_submission_registry_user" ON "form_submission_registry" USING btree ("user_id");
-CREATE INDEX "idx_form_submission_registry_source" ON "form_submission_registry" ("source_type", "source_id");
-CREATE INDEX "idx_form_submission_registry_status" ON "form_submission_registry" USING btree ("status");
-CREATE INDEX "idx_form_submission_registry_ip_app" ON "form_submission_registry" USING btree ("ip_application_id");
-CREATE INDEX "idx_ip_app_notification_app" ON "ip_application_notification" USING btree ("ip_application_id");
-CREATE INDEX "idx_ip_app_notification_admin" ON "ip_application_notification" USING btree ("admin_id");
-CREATE INDEX "idx_ip_app_notification_registry" ON "ip_application_notification" USING btree ("form_registry_id");
-CREATE INDEX "idx_ip_app_notification_read" ON "ip_application_notification" USING btree ("is_read");
-CREATE INDEX "idx_other_documents_form" ON "other_documents" USING btree ("form_id");
-CREATE INDEX "idx_other_documents_user" ON "other_documents" USING btree ("user_id"); 
+CREATE INDEX IF NOT EXISTS "idx_form_data_mapping_registry" ON "form_data_mapping" USING btree ("registry_id");
+CREATE INDEX IF NOT EXISTS "idx_form_submission_registry_user" ON "form_submission_registry" USING btree ("user_id");
+CREATE INDEX IF NOT EXISTS "idx_form_submission_registry_source" ON "form_submission_registry" ("source_type", "source_id");
+CREATE INDEX IF NOT EXISTS "idx_form_submission_registry_status" ON "form_submission_registry" USING btree ("status");
+CREATE INDEX IF NOT EXISTS "idx_form_submission_registry_ip_app" ON "form_submission_registry" USING btree ("ip_application_id");
+CREATE INDEX IF NOT EXISTS "idx_ip_app_notification_app" ON "ip_application_notification" USING btree ("ip_application_id");
+CREATE INDEX IF NOT EXISTS "idx_ip_app_notification_admin" ON "ip_application_notification" USING btree ("admin_id");
+CREATE INDEX IF NOT EXISTS "idx_ip_app_notification_registry" ON "ip_application_notification" USING btree ("form_registry_id");
+CREATE INDEX IF NOT EXISTS "idx_ip_app_notification_read" ON "ip_application_notification" USING btree ("is_read");
+CREATE INDEX IF NOT EXISTS "idx_other_documents_form" ON "other_documents" USING btree ("form_id");
+CREATE INDEX IF NOT EXISTS "idx_other_documents_user" ON "other_documents" USING btree ("user_id"); 

@@ -21,6 +21,7 @@ ENV DATABASE_URL="postgres://postgres:postgres@localhost:5432/build_db_placehold
 ENV AUTH_SECRET="build_secret_key_for_static_generation_32_bytes"
 
 RUN npm run build
+RUN npx esbuild src/drizzle/migrate.ts --bundle --platform=node --target=node20 --outfile=dist/migrate.js
 
 # Stage 4: Production runner
 FROM node:20-alpine AS runner
@@ -38,9 +39,9 @@ RUN apk add --no-cache curl
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy static assets, migration files, and standalone server bundle
+# Copy static assets, migration runner, and standalone server bundle
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder /app/dist/migrate.js ./dist/migrate.js
 COPY --from=builder /app/src/drizzle/migrations ./src/drizzle/migrations
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

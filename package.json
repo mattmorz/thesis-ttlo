@@ -7,12 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "drizzle:studio": "drizzle-kit studio",
-    "drizzle:pull": "drizzle-kit pull",
-    "drizzle:push": "drizzle-kit push",
-    "drizzle:generate": "drizzle-kit generate",
-    "db:seed": "tsx src/drizzle/seed.ts",
-    "drizzle:migrate": "drizzle-kit migrate"
+    "db:migrate": "tsx src/drizzle/migrate.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:pull": "drizzle-kit pull",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/drizzle/seed.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",

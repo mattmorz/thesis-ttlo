@@ -1,6 +1,6 @@
 CREATE TYPE "public"."form_source_type" AS ENUM('client_profile', 'ip_disclosure', 'substantial_use', 'deed_of_assignment', 'other_document');
 CREATE TYPE "public"."form_submission_status" AS ENUM('draft', 'submitted', 'processed', 'pending_review', 'failed');
-CREATE TABLE "form_data_mapping" (
+CREATE TABLE IF NOT EXISTS "form_data_mapping" (
 	"mapping_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"registry_id" uuid NOT NULL,
 	"fieldKey" varchar(100) NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE "form_data_mapping" (
 	"field_array_value" jsonb,
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE "form_submission_registry" (
+CREATE TABLE IF NOT EXISTS "form_submission_registry" (
 	"registry_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
 	"source_type" "form_source_type" NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE "form_submission_registry" (
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE "ip_application_notification" (
+CREATE TABLE IF NOT EXISTS "ip_application_notification" (
 	"notification_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"ip_application_id" uuid NOT NULL,
 	"form_registry_id" uuid,
@@ -38,7 +38,7 @@ CREATE TABLE "ip_application_notification" (
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
 	"read_at" timestamp
 );
-CREATE TABLE "other_documents" (
+CREATE TABLE IF NOT EXISTS "other_documents" (
 	"document_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"form_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,

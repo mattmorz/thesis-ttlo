@@ -1,5 +1,5 @@
 DO $$ BEGIN CREATE TYPE "public"."ip_disclosure_status" AS ENUM('draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_revision'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
-CREATE TABLE "copyright_application" (
+CREATE TABLE IF NOT EXISTS "copyright_application" (
 	"copyright_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"title" varchar(255) NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE "copyright_application" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "copyright_transaction_part1" (
+CREATE TABLE IF NOT EXISTS "copyright_transaction_part1" (
 	"transaction_part1_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"copyright_id" uuid NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE "copyright_transaction_part1" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "disclosure_confirmation" (
+CREATE TABLE IF NOT EXISTS "disclosure_confirmation" (
 	"confirmation_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"written_disclosures" jsonb DEFAULT '{"past": false, "planned": false, "notApplicable": false}' NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE "disclosure_confirmation" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "ip_disclosure_applicant" (
+CREATE TABLE IF NOT EXISTS "ip_disclosure_applicant" (
 	"applicant_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"first_name" varchar(100) NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE "ip_disclosure_applicant" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "ip_disclosure_inventor" (
+CREATE TABLE IF NOT EXISTS "ip_disclosure_inventor" (
 	"inventor_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"first_name" varchar(100) NOT NULL,

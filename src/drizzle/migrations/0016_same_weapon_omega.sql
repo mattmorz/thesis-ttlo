@@ -1,4 +1,4 @@
-CREATE TABLE "documents_verification" (
+CREATE TABLE IF NOT EXISTS "documents_verification" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"document_id" uuid NOT NULL,
 	"validation_status" varchar(50) DEFAULT 'pending' NOT NULL,

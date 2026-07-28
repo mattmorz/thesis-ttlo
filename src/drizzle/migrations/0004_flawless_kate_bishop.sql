@@ -1,4 +1,4 @@
-CREATE TABLE "copyright_transaction_part1" (
+CREATE TABLE IF NOT EXISTS "copyright_transaction_part1" (
 	"transaction_part1_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"copyright_id" uuid NOT NULL,

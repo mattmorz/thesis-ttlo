@@ -2,14 +2,14 @@ ALTER TYPE "public"."application_type" ADD VALUE 'industrial_design';--> stateme
 ALTER TYPE "public"."application_type" ADD VALUE 'trade_secret';--> statement-breakpoint
 ALTER TYPE "public"."application_type" ADD VALUE 'not_sure';--> statement-breakpoint
 ALTER TYPE "public"."application_type" ADD VALUE 'other';--> statement-breakpoint
-CREATE TABLE "internal_validation_assignee" (
+CREATE TABLE IF NOT EXISTS "internal_validation_assignee" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"internal_validation_id" uuid,
 	"user_id" uuid,
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "phase_task_assignee" (
+CREATE TABLE IF NOT EXISTS "phase_task_assignee" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"task_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,

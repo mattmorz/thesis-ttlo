@@ -1,4 +1,4 @@
-CREATE TABLE "archives" (
+CREATE TABLE IF NOT EXISTS "archives" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"application_id" uuid NOT NULL,
 	"archive_at" timestamp DEFAULT CURRENT_TIMESTAMP,

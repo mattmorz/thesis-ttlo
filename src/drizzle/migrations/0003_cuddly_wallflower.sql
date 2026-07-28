@@ -1,4 +1,4 @@
-CREATE TABLE "client_profile_backup" (
+CREATE TABLE IF NOT EXISTS "client_profile_backup" (
 	"client_id" uuid,
 	"user_id" uuid,
 	"first_name" varchar(100),
@@ -29,7 +29,7 @@ CREATE TABLE "client_profile_backup" (
 	"familiar_with_ip_rights" jsonb
 );
 --> statement-breakpoint
-CREATE TABLE "comment" (
+CREATE TABLE IF NOT EXISTS "comment" (
 	"comment_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"entity_type" varchar(50) NOT NULL,
 	"entity_id" uuid NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE "comment" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "contact_message" (
+CREATE TABLE IF NOT EXISTS "contact_message" (
 	"message_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"email" varchar(255) NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE "contact_message" (
 	CONSTRAINT "contact_message_status_check" CHECK ((status)::text = ANY ((ARRAY['pending'::character varying, 'in-progress'::character varying, 'resolved'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "deed_of_assignment" (
+CREATE TABLE IF NOT EXISTS "deed_of_assignment" (
 	"deed_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid,
 	"research_title" varchar(255),
@@ -78,7 +78,7 @@ CREATE TABLE "deed_of_assignment" (
 	CONSTRAINT "deed_of_assignment_status_check" CHECK ((status)::text = ANY ((ARRAY['draft'::character varying, 'submitted'::character varying, 'approved'::character varying, 'rejected'::character varying, 'pending_revision'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "event_participant" (
+CREATE TABLE IF NOT EXISTS "event_participant" (
 	"event_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
 	"status" varchar(50) DEFAULT 'pending',
@@ -86,7 +86,7 @@ CREATE TABLE "event_participant" (
 	CONSTRAINT "event_participant_status_check" CHECK ((status)::text = ANY ((ARRAY['pending'::character varying, 'accepted'::character varying, 'declined'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "ip_contributors" (
+CREATE TABLE IF NOT EXISTS "ip_contributors" (
 	"contributor_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"application_id" uuid,
 	"first_name" varchar(100) NOT NULL,
@@ -98,7 +98,7 @@ CREATE TABLE "ip_contributors" (
 	CONSTRAINT "ip_contributors_role_check" CHECK ((role)::text = ANY ((ARRAY['inventor'::character varying, 'author'::character varying, 'applicant'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "ip_details" (
+CREATE TABLE IF NOT EXISTS "ip_details" (
 	"detail_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"application_id" uuid,
 	"filing_date" date,
@@ -111,7 +111,7 @@ CREATE TABLE "ip_details" (
 	CONSTRAINT "ip_details_commercialization_status_check" CHECK ((commercialization_status)::text = ANY ((ARRAY['not_licensed'::character varying, 'licensed'::character varying, 'in_negotiation'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "ip_disclosure_attachment" (
+CREATE TABLE IF NOT EXISTS "ip_disclosure_attachment" (
 	"attachment_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"ip_type" "application_type" NOT NULL,
@@ -123,7 +123,7 @@ CREATE TABLE "ip_disclosure_attachment" (
 	"uploaded_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "ip_disclosure_review" (
+CREATE TABLE IF NOT EXISTS "ip_disclosure_review" (
 	"review_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"reviewer_id" uuid NOT NULL,
@@ -135,7 +135,7 @@ CREATE TABLE "ip_disclosure_review" (
 	CONSTRAINT "ip_disclosure_review_status_check" CHECK ((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'needs_revision'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "matrix_features" (
+CREATE TABLE IF NOT EXISTS "matrix_features" (
 	"feature_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"matrix_id" uuid NOT NULL,
 	"feature_description" text NOT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE "matrix_features" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "notification" (
+CREATE TABLE IF NOT EXISTS "notification" (
 	"notification_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid,
 	"title" varchar(255) NOT NULL,
@@ -158,7 +158,7 @@ CREATE TABLE "notification" (
 	CONSTRAINT "notification_type_check" CHECK ((type)::text = ANY ((ARRAY['info'::character varying, 'warning'::character varying, 'success'::character varying, 'error'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "patent_inventors" (
+CREATE TABLE IF NOT EXISTS "patent_inventors" (
 	"inventor_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"patent_id" uuid NOT NULL,
 	"name" varchar(255) NOT NULL,
@@ -171,7 +171,7 @@ CREATE TABLE "patent_inventors" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "patent_matrix_sample" (
+CREATE TABLE IF NOT EXISTS "patent_matrix_sample" (
 	"matrix_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"patent_id" uuid NOT NULL,
@@ -185,7 +185,7 @@ CREATE TABLE "patent_matrix_sample" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "patent_search_documents" (
+CREATE TABLE IF NOT EXISTS "patent_search_documents" (
 	"document_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"search_id" uuid NOT NULL,
 	"document_number" varchar(100),
@@ -200,7 +200,7 @@ CREATE TABLE "patent_search_documents" (
 	CONSTRAINT "patent_search_documents_relevance_rating_check" CHECK ((relevance_rating >= 1) AND (relevance_rating <= 5))
 );
 --> statement-breakpoint
-CREATE TABLE "patent_search_report" (
+CREATE TABLE IF NOT EXISTS "patent_search_report" (
 	"search_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"patent_id" uuid NOT NULL,
@@ -214,7 +214,7 @@ CREATE TABLE "patent_search_report" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "patent_utility_model_application" (
+CREATE TABLE IF NOT EXISTS "patent_utility_model_application" (
 	"patent_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"title" varchar(255) NOT NULL,
@@ -235,7 +235,7 @@ CREATE TABLE "patent_utility_model_application" (
 	CONSTRAINT "patent_utility_model_application_type_check" CHECK ((type)::text = ANY ((ARRAY['patent'::character varying, 'utility_model'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "phase_review" (
+CREATE TABLE IF NOT EXISTS "phase_review" (
 	"review_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"phase_id" uuid NOT NULL,
 	"reviewer_id" uuid NOT NULL,
@@ -250,7 +250,7 @@ CREATE TABLE "phase_review" (
 	CONSTRAINT "review_status_check" CHECK ((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying, 'needs_revision'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "phase_review_attachment" (
+CREATE TABLE IF NOT EXISTS "phase_review_attachment" (
 	"attachment_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"review_id" uuid,
 	"file_path" text NOT NULL,
@@ -260,7 +260,7 @@ CREATE TABLE "phase_review_attachment" (
 	"uploaded_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "substantial_use" (
+CREATE TABLE IF NOT EXISTS "substantial_use" (
 	"substantial_use_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid,
 	"research_title" varchar(255) NOT NULL,
@@ -274,7 +274,7 @@ CREATE TABLE "substantial_use" (
 	CONSTRAINT "substantial_use_status_check" CHECK ((status)::text = ANY ((ARRAY['draft'::character varying, 'submitted'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[]))
 );
 --> statement-breakpoint
-CREATE TABLE "trade_secret_application" (
+CREATE TABLE IF NOT EXISTS "trade_secret_application" (
 	"trade_secret_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"description" text NOT NULL,
@@ -283,7 +283,7 @@ CREATE TABLE "trade_secret_application" (
 	"updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE "trademark_application" (
+CREATE TABLE IF NOT EXISTS "trademark_application" (
 	"trademark_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,
 	"trademark_name" varchar(255) NOT NULL,

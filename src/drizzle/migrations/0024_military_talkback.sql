@@ -1,4 +1,4 @@
-CREATE TABLE "ip_application_enrollment" (
+CREATE TABLE IF NOT EXISTS "ip_application_enrollment" (
 	"enrollment_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"application_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,

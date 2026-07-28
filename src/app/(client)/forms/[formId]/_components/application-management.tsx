@@ -221,15 +221,32 @@ export function ApplicationManagement({
         setNewAppDescription("");
         setNewAppTypes(["patent"]);
 
-        // Clear form data
-        clearFormData();
-
-        // Refresh the applications list
-        refetchApplications();
-
-        // Select the newly created application
+        // Seamlessly add the new application to the list and set it as active
         if (data?.id) {
-          handleSwitchApplication(data.id);
+          const newApp: Application = {
+            id: data.id,
+            title: data.title || "New Application",
+            status: data.status || "draft",
+            description: data.description,
+            progress: data.progress || 0,
+            ipType: data.ipType,
+            createdAt: data.createdAt,
+            selectedIpTypes: data.selectedIpTypes as any,
+          };
+          // Add to applications list immediately
+          setApplications((prev) => [newApp, ...prev]);
+          // Clear form data BEFORE activating new app
+          clearFormData();
+          // Seamlessly activate the new application (no page reload)
+          setActiveApplicationId(data.id, {
+            clearFormData: false,
+            emitEvent: true,
+            skipReload: true,
+          });
+          // Invalidate in background to keep cache fresh
+          trpcUtils.formIntegration.getUserApplications.invalidate();
+        } else {
+          refetchApplications();
         }
       },
       onError: (error) => {
@@ -310,15 +327,10 @@ export function ApplicationManagement({
         const deletedId = context?.deletedId;
         const remainingApps = context?.remainingApps || [];
         
-        toast.success("Application deleted successfully");
+        toast.success("Application deleted successfully", { id: "deleting-app" });
         deleteTargetRef.current = null;
 
         trpcUtils.formIntegration.getUserApplications.invalidate();
-        refetchApplications();
-
-        if (deleteWasActiveRef.current && remainingApps.length === 0) {
-          window.location.href = "/forms";
-        }
         
         deleteWasActiveRef.current = false;
       },
@@ -477,28 +489,15 @@ export function ApplicationManagement({
         console.error("Error resetting store:", error);
       }
 
-      // Use a controlled delay before setting the new application
-      setTimeout(() => {
-        try {
-          // Now set active application ID using the standard method
-          setActiveApplicationId(applicationId);
-
-          // Only after a brief delay, reload the page for a completely fresh state
-          setTimeout(() => {
-            toast.dismiss("switching-application");
-            toast.success("Application switched successfully");
-
-            // Reload the current page after a short delay
-            setTimeout(() => {
-              window.location.reload();
-            }, 100);
-          }, 300);
-        } catch (switchError) {
-          console.error("Error during final application switch:", switchError);
-          toast.dismiss("switching-application");
-          toast.error("Error switching application");
-        }
-      }, 200);
+      // Seamlessly switch to the new application (no page reload)
+      clearFormData();
+      setActiveApplicationId(applicationId, {
+        clearFormData: false,
+        emitEvent: true,
+        skipReload: true,
+      });
+      toast.dismiss("switching-application");
+      toast.success("Application switched");
     } catch (error) {
       console.error("Error switching application:", error);
       toast.dismiss("switching-application");

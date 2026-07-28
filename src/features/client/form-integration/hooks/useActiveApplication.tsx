@@ -301,6 +301,9 @@ export function useActiveApplication(): UseActiveApplicationReturn {
               // Reload the page - this ensures a clean state
               window.location.reload();
             }, 300); // Increased delay to ensure all events are processed
+          } else {
+            // When skipping reload, release the lock immediately
+            setUnlock("application-switching");
           }
         }
       } finally {

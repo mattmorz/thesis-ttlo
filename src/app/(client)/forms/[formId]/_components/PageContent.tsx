@@ -2110,8 +2110,8 @@ useEffect(() => {
             activeForm={activeForm}
           />
         )}
-        {/* Application Selection Header - Simplified and compact */}
-        <div className="bg-white border rounded-lg shadow-sm mb-6 overflow-hidden">
+        {/* Application Selection Header - Only show when there are applications */}
+        {applications.length > 0 && <div className="bg-white border rounded-lg shadow-sm mb-6 overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b bg-gray-50">
             <div className="flex items-center gap-3">
               <div className="bg-[#1B5E20]/10 p-2 rounded-full">
@@ -2246,7 +2246,7 @@ useEffect(() => {
               />
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Add Getting Started Guide here - right after the application section */}
         {activeApplicationId && (

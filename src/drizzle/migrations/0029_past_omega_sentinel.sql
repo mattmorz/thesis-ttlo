@@ -29,6 +29,7 @@ ALTER TABLE "event_participant" DROP CONSTRAINT IF EXISTS "event_participant_eve
 ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_assigned_to_fkey";
 --> statement-breakpoint
 ALTER TABLE "phase_reminder" ALTER COLUMN "reminder_time" SET DEFAULT '12:00:00';--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_pkey";--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "project_id" uuid;--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "other_event_type" text;--> statement-breakpoint
@@ -44,6 +45,7 @@ ALTER TABLE "internal_validation" ADD COLUMN "file_name" text NOT NULL;--> state
 ALTER TABLE "internal_validation" ADD COLUMN "file_type" text NOT NULL;--> statement-breakpoint
 ALTER TABLE "internal_validation" ADD COLUMN "file_size" integer NOT NULL;--> statement-breakpoint
 ALTER TABLE "internal_validation" ADD COLUMN "title" text;--> statement-breakpoint
+ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "phase_reminder_pkey";--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "reminder_type" varchar(20) DEFAULT 'none';--> statement-breakpoint
 ALTER TABLE "phase_reminder" ADD COLUMN "reminder_day" varchar(20) DEFAULT 'none';--> statement-breakpoint

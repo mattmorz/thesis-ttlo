@@ -108,6 +108,7 @@ ALTER TABLE "client_profile" ADD COLUMN "developed_materials" jsonb DEFAULT '{"v
 ALTER TABLE "client_profile" ADD COLUMN "familiar_with_ip_rights" jsonb DEFAULT '{"value":"no"}'::jsonb;--> statement-breakpoint
 ALTER TABLE "client_profile" ADD COLUMN "ip_experience" jsonb DEFAULT '{"hasExperience":"no","types":{"patent":false,"copyright":false,"trademark":false,"industrialDesign":false,"utilityModel":false,"other":false},"otherSpecify":""}'::jsonb;--> statement-breakpoint
 ALTER TABLE "client_profile" ADD COLUMN "status" varchar(20) DEFAULT 'draft';--> statement-breakpoint
+ALTER TABLE "copyright_transaction_part2" DROP CONSTRAINT IF EXISTS "copyright_transaction_part2_pkey";--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD COLUMN "transaction_part2_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD COLUMN "disclosure_id" uuid NOT NULL;--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD COLUMN "transaction_data" jsonb NOT NULL;--> statement-breakpoint

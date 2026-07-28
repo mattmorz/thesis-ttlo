@@ -120,7 +120,7 @@ export const {
           (email) => email.trim().toLowerCase() === normalizedEmail
         );
 
-        // Default role is client for all new users
+        // Determine user role
         let userRole: UserRole = "client";
         if (isAdmin) {
           userRole = "admin";
@@ -128,66 +128,80 @@ export const {
           userRole = "ttlo_staff";
         }
 
-        const updateSet: Record<string, any> = {
-          name: user.name,
-          image: user.image,
-          emailVerified: new Date().toISOString(),
-        };
+        user.role = userRole;
 
-        if (isAdmin || isStaff) {
-          updateSet.role = userRole;
-        }
+        // Check if user exists in database
+        const existingUser = await db.query.userAccount.findFirst({
+          where: eq(userAccount.email, normalizedEmail),
+        });
 
-        // Perform atomic UPSERT
-        const [upsertedUser] = await db
-          .insert(userAccount)
-          .values({
-            name: user.name,
-            email: normalizedEmail,
-            role: userRole,
-            isActive: true,
-            image: user.image,
-            emailVerified: new Date().toISOString(),
-          })
-          .onConflictDoUpdate({
-            target: userAccount.email,
-            set: updateSet,
-          })
-          .returning();
+        if (!existingUser) {
+          const inserted = await db
+            .insert(userAccount)
+            .values({
+              name: user.name || "",
+              email: normalizedEmail,
+              role: userRole,
+              isActive: true,
+              image: user.image || null,
+            })
+            .returning();
 
-        if (upsertedUser) {
-          user.id = upsertedUser.id;
-          user.role = String(upsertedUser.role || userRole);
+          if (inserted && inserted[0]) {
+            user.id = inserted[0].id;
+          }
+        } else {
+          const targetRole =
+            isAdmin || isStaff ? userRole : existingUser.role || userRole;
+
+          await db
+            .update(userAccount)
+            .set({
+              name: user.name || existingUser.name,
+              image: user.image || existingUser.image,
+              role: targetRole,
+            })
+            .where(eq(userAccount.email, normalizedEmail));
+
+          user.id = existingUser.id;
+          user.role = String(targetRole);
         }
 
         return true;
       } catch (error) {
         console.error("Error in signIn callback:", error);
-        return false;
+        // Fail-safe: If DB write hits a transient issue, STILL allow sign-in for allowed domains
+        return true;
       }
     },
 
     async jwt({ token, user, trigger }) {
-      // Only update token if it's a sign in event or token update
-      if (user || trigger === "update") {
-        const targetEmail = user?.email || token?.email;
-        if (targetEmail) {
-          // Look up user by email (indexed & unique) to avoid invalid UUID syntax errors when Google ID is a numeric string
-          const dbUser = await db.query.userAccount.findFirst({
-            where: eq(userAccount.email, targetEmail.trim().toLowerCase()),
-            columns: {
-              role: true,
-              id: true,
-            },
-          });
-
-          token.role = String(dbUser?.role || user?.role || token.role || "client");
-          token.id = String(dbUser?.id || user?.id || token.id);
-        }
-
-        // Add a timestamp to help with caching
-        token._updatedAt = Date.now();
+      if (user) {
+        token.role = user.role || "client";
+        token.id = user.id;
+        token.email = user.email;
       }
+
+      const targetEmail = user?.email || token?.email;
+      if (targetEmail) {
+        const normalizedEmail = String(targetEmail).trim().toLowerCase();
+        const isAdmin = ADMIN_EMAILS.some(
+          (email) => email.trim().toLowerCase() === normalizedEmail
+        );
+        const isStaff = TTLO_STAFF_EMAILS.some(
+          (email) => email.trim().toLowerCase() === normalizedEmail
+        );
+
+        if (isAdmin) {
+          token.role = "admin";
+        } else if (isStaff && token.role !== "admin") {
+          token.role = "ttlo_staff";
+        } else if (!token.role) {
+          token.role = "client";
+        }
+      }
+
+      token._updatedAt = Date.now();
       return token;
     },
 

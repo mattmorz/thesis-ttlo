@@ -102,10 +102,35 @@ export async function middleware(request: NextRequest) {
 
   console.log("🔑 Middleware token:", token ? "FOUND" : "NOT FOUND", pathname);
 
+  const envAdminEmails = process.env.ADMIN_EMAILS
+    ? process.env.ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase())
+    : [];
+  const ADMIN_EMAILS = [
+    "eomorales@carsu.edu.ph",
+    ...envAdminEmails,
+    ...(process.env.NODE_ENV !== "production" ? ["admin@example.com", "super@example.com"] : []),
+  ];
+
+  const envStaffEmails = process.env.TTLO_STAFF_EMAILS
+    ? process.env.TTLO_STAFF_EMAILS.split(",").map((e) => e.trim().toLowerCase())
+    : [];
+  const TTLO_STAFF_EMAILS = [
+    ...envStaffEmails,
+    ...(process.env.NODE_ENV !== "production" ? ["staff@example.com", "ttlo@example.com"] : []),
+  ];
+
+  const userEmail = token?.email ? String(token.email).trim().toLowerCase() : "";
+  const isAdminEmail = ADMIN_EMAILS.includes(userEmail);
+  const isStaffEmail = TTLO_STAFF_EMAILS.includes(userEmail);
+
   const isAuthenticated = !!token;
   const isPublic = isPublicPath(pathname);
   const isAuthOnly = isAuthOnlyPath(pathname);
-  const isAdmin = token?.role === "admin" || token?.role === "ttlo_staff";
+  const isAdmin =
+    token?.role === "admin" ||
+    token?.role === "ttlo_staff" ||
+    isAdminEmail ||
+    isStaffEmail;
   const AdminPath = pathname.startsWith("/admin");
 
   const callbackUrl = searchParams.get("callbackUrl") || pathname;

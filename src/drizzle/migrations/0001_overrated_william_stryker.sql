@@ -101,8 +101,12 @@ ALTER TABLE "ip_application" ALTER COLUMN "ip_type" DROP DEFAULT;--> statement-b
 ALTER TABLE "ip_application" ALTER COLUMN "ip_type" SET DATA TYPE "public"."application_type" USING "ip_type"::"public"."application_type";--> statement-breakpoint
 ALTER TABLE "ip_application" ALTER COLUMN "status" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "ip_application" ALTER COLUMN "status" SET DATA TYPE "public"."application_status" USING "status"::"public"."application_status";--> statement-breakpoint
+ALTER TABLE "account" DROP CONSTRAINT IF EXISTS "account_pkey";--> statement-breakpoint
+ALTER TABLE "account" DROP CONSTRAINT IF EXISTS "account_provider_providerAccountId_pk";--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_provider_providerAccountId_pk" PRIMARY KEY("provider","providerAccountId");--> statement-breakpoint
+ALTER TABLE "activity_log" DROP CONSTRAINT IF EXISTS "activity_log_pkey";--> statement-breakpoint
 ALTER TABLE "activity_log" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "ip_application_pkey";--> statement-breakpoint
 ALTER TABLE "ip_application" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "user_account" ADD COLUMN "image" text;--> statement-breakpoint
 ALTER TABLE "user_account" ADD COLUMN "emailVerified" timestamp;--> statement-breakpoint

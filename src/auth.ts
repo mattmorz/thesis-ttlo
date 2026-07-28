@@ -128,7 +128,17 @@ export const {
           userRole = "ttlo_staff";
         }
 
-        // Perform atomic UPSERT so 1st click & repeat clicks work atomically without race conditions
+        const updateSet: Record<string, any> = {
+          name: user.name,
+          image: user.image,
+          emailVerified: new Date().toISOString(),
+        };
+
+        if (isAdmin || isStaff) {
+          updateSet.role = userRole;
+        }
+
+        // Perform atomic UPSERT
         const [upsertedUser] = await db
           .insert(userAccount)
           .values({
@@ -141,13 +151,7 @@ export const {
           })
           .onConflictDoUpdate({
             target: userAccount.email,
-            set: {
-              name: user.name,
-              image: user.image,
-              // If admin/staff email, promote role; otherwise preserve existing database role
-              role: isAdmin || isStaff ? userRole : sql`${userAccount.role}`,
-              emailVerified: new Date().toISOString(),
-            },
+            set: updateSet,
           })
           .returning();
 

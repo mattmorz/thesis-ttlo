@@ -1,51 +1,47 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ShieldAlert, LogIn } from "lucide-react";
+import { ChevronLeft, ShieldAlert, LogIn, Home, UserCheck } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
 
-// Export a special metadata function for this page
-export default function UnauthorizedPage() {
+export default function ErrorPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const errorCode = searchParams.get("error");
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [userSession, setUserSession] = useState<{
+    id?: string;
+    email?: string;
+    role?: string;
+  } | null>(null);
 
-  // Debounce navigation to prevent duplicate session checks
   const handleGoBack = useCallback(() => {
     if (isRedirecting) return;
 
     setIsRedirecting(true);
     router.back();
 
-    // Reset after navigation
     setTimeout(() => setIsRedirecting(false), 500);
   }, [router, isRedirecting]);
 
-  // Use a single navigation guard to prevent duplicate session checks
   useEffect(() => {
-    // Create a controller for the session check
     const controller = new AbortController();
     const signal = controller.signal;
 
-    // Check session only once on mount
     const checkSession = async () => {
       try {
-        // Simple fetch to check if already signed in
         const res = await fetch("/api/auth/session", {
           signal,
           headers: { "Cache-Control": "no-cache" },
         });
         const data = await res.json();
 
-        // If we have a session but got redirected to unauthorized page,
-        // it might be a permission issue rather than auth issue
         if (data?.user?.id) {
-          // We're authenticated but unauthorized - handle appropriately
-          console.log("User is authenticated but unauthorized");
+          setUserSession(data.user);
         }
       } catch (err) {
-        // Ignore fetch errors (like aborts)
         if (err instanceof Error && err.name !== "AbortError") {
           console.error("Session check error:", err);
         }
@@ -54,7 +50,6 @@ export default function UnauthorizedPage() {
 
     checkSession();
 
-    // Cleanup on unmount
     return () => {
       controller.abort();
     };
@@ -65,27 +60,60 @@ export default function UnauthorizedPage() {
       <div className="w-full max-w-md p-8 space-y-8 text-center">
         <ShieldAlert className="mx-auto h-16 w-16 text-red-600" />
 
-        <h1 className="text-3xl font-bold text-gray-900">Error</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Access Denied</h1>
 
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-red-100">
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-red-100 text-left">
+          {userSession?.email ? (
+            <div className="mb-4 p-3 bg-emerald-50 rounded-md border border-emerald-200 text-sm text-emerald-900">
+              <div className="flex items-center gap-2 font-semibold">
+                <UserCheck className="h-4 w-4 text-emerald-600" />
+                Signed in as:
+              </div>
+              <p className="mt-1 font-mono text-xs text-gray-800">
+                {userSession.email}
+              </p>
+              <p className="mt-1 text-xs text-gray-600">
+                Role: <span className="font-semibold capitalize">{userSession.role || "client"}</span>
+              </p>
+            </div>
+          ) : null}
+
           <p className="text-gray-700 mb-4">
-            You don't have permission to access this page. This could be
-            because:
+            {userSession?.email
+              ? "Your account is logged in, but you do not have permission to view the requested page."
+              : "You don't have permission to access this page. This could be because:"}
           </p>
 
-          <ul className="text-left text-gray-600 mb-4 space-y-2">
-            <li className="flex items-start">
-              <span className="text-red-500 mr-2">•</span>
-              <span>You need to sign in first</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-red-500 mr-2">•</span>
-              <span>Your account doesn't have the required permissions</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-red-500 mr-2">•</span>
-              <span>You've been signed out due to inactivity</span>
-            </li>
+          <ul className="text-gray-600 mb-4 space-y-2 text-sm">
+            {userSession?.email ? (
+              <>
+                <li className="flex items-start">
+                  <span className="text-red-500 mr-2">•</span>
+                  <span>
+                    Your account has <strong>{userSession.role || "client"}</strong> access. Admin routes require an account listed in <code>ADMIN_EMAILS</code> or <code>TTLO_STAFF_EMAILS</code>.
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-red-500 mr-2">•</span>
+                  <span>If you are a client user, please use the Client Portal dashboard instead.</span>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="flex items-start">
+                  <span className="text-red-500 mr-2">•</span>
+                  <span>You are using an unauthorized email domain.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-red-500 mr-2">•</span>
+                  <span>Your account does not have the required permissions.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-red-500 mr-2">•</span>
+                  <span>Your session has expired or you need to sign in again.</span>
+                </li>
+              </>
+            )}
           </ul>
         </div>
 
@@ -100,12 +128,21 @@ export default function UnauthorizedPage() {
             Go Back
           </Button>
 
-          <Button className="bg-[#1B5E20] hover:bg-[#2E7D32] text-white border-none gap-2">
-            <Link href="/auth/signin" className="flex items-center">
-              <LogIn className="h-4 w-4 mr-2" />
-              Sign In
-            </Link>
-          </Button>
+          {userSession?.email ? (
+            <Button className="bg-[#1B5E20] hover:bg-[#2E7D32] text-white border-none gap-2" asChild>
+              <Link href="/dashboard">
+                <Home className="h-4 w-4 mr-2" />
+                Client Dashboard
+              </Link>
+            </Button>
+          ) : (
+            <Button className="bg-[#1B5E20] hover:bg-[#2E7D32] text-white border-none gap-2" asChild>
+              <Link href="/auth/signin">
+                <LogIn className="h-4 w-4 mr-2" />
+                Sign In
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </div>

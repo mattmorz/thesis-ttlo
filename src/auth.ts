@@ -86,11 +86,14 @@ export const {
     async signIn({ user, account, profile }) {
       if (!user.email) return false;
 
-      // Extract domain from email
-      const emailDomain = user.email.split("@")[1];
+      const normalizedEmail = user.email.trim().toLowerCase();
 
-      // Only allow specified domains
-      if (!ALLOWED_DOMAINS.includes(emailDomain)) {
+      // Extract domain from email
+      const emailDomain = normalizedEmail.split("@")[1];
+
+      // Only allow specified domains (case-insensitive)
+      const allowedDomains = ALLOWED_DOMAINS.map((d) => d.toLowerCase());
+      if (!allowedDomains.includes(emailDomain)) {
         console.log(`Unauthorized email domain: ${emailDomain}`);
         return false;
       }
@@ -98,21 +101,23 @@ export const {
       try {
         // Check if user exists
         const existingUser = await db.query.userAccount.findFirst({
-          where: eq(userAccount.email, user.email),
+          where: eq(userAccount.email, normalizedEmail),
         });
 
         // Default role is client for all new users
         let userRole: UserRole = "client";
 
-        // Check for admin emails - exact match only
-        const isAdmin = ADMIN_EMAILS.some((email) => user.email === email);
+        // Check for admin emails - case-insensitive match
+        const isAdmin = ADMIN_EMAILS.some(
+          (email) => email.trim().toLowerCase() === normalizedEmail
+        );
 
         if (isAdmin) {
           userRole = "admin";
         } else {
-          // Check for TTLO staff emails - exact match only
+          // Check for TTLO staff emails - case-insensitive match
           const isStaff = TTLO_STAFF_EMAILS.some(
-            (email) => user.email === email
+            (email) => email.trim().toLowerCase() === normalizedEmail
           );
           if (isStaff) {
             userRole = "ttlo_staff";
@@ -123,7 +128,7 @@ export const {
           // Create new user with determined role
           const result = await db.insert(userAccount).values({
             name: user.name,
-            email: user.email,
+            email: normalizedEmail,
             role: userRole,
             isActive: true,
             image: user.image,
@@ -132,7 +137,7 @@ export const {
 
           if (result) {
             const newUser = await db.query.userAccount.findFirst({
-              where: eq(userAccount.email, user.email),
+              where: eq(userAccount.email, normalizedEmail),
             });
             if (newUser) {
               user.id = newUser.id;
@@ -140,19 +145,22 @@ export const {
             }
           }
         } else {
-          // Update existing user but preserve their role
+          // Determine target role: if isAdmin or isStaff match, promote user role; otherwise preserve existing role
+          const targetRole =
+            isAdmin || isStaff ? userRole : existingUser.role || userRole;
+
           await db
             .update(userAccount)
             .set({
               name: user.name,
               image: user.image,
+              role: targetRole,
               emailVerified: new Date().toISOString(),
-              // Never update the role for existing users
             })
-            .where(eq(userAccount.email, user.email));
+            .where(eq(userAccount.email, normalizedEmail));
 
           user.id = existingUser.id;
-          user.role = existingUser.role || userRole;
+          user.role = String(targetRole);
         }
 
         return true;

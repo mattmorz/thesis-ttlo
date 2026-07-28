@@ -17,12 +17,18 @@ let client: postgres.Sql | undefined;
 let db: DB;
 
 if (isServer) {
+  const connectionString =
+    process.env.DATABASE_URL ||
+    "postgres://postgres:postgres@localhost:5432/build_db_placeholder";
+
   if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is not set");
+    console.warn(
+      "⚠️ DATABASE_URL is not set. Using build placeholder connection string for static analysis."
+    );
   }
 
   // Create a PostgreSQL client with connection pooling
-  client = postgres(process.env.DATABASE_URL, {
+  client = postgres(connectionString, {
     max: 10, // Increased pool size
     ssl:
       process.env.DATABASE_URL?.includes("localhost") ||

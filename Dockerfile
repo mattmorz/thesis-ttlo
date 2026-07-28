@@ -16,6 +16,8 @@ COPY . .
 # Set production environment for build optimization
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV DATABASE_URL="postgres://postgres:postgres@localhost:5432/build_db_placeholder"
+ENV AUTH_SECRET="build_secret_key_for_static_generation_32_bytes"
 
 RUN npm run build
 

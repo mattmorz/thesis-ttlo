@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { db } from "@/drizzle/db";
 import { userAccount } from "@/drizzle/migrations/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { CustomSession, CustomUser, UserRole } from "./lib/types/auth";
 
 declare module "next-auth" {
@@ -103,68 +103,50 @@ export const {
       }
 
       try {
-        // Check if user exists
-        const existingUser = await db.query.userAccount.findFirst({
-          where: eq(userAccount.email, normalizedEmail),
-        });
-
-        // Default role is client for all new users
-        let userRole: UserRole = "client";
-
         // Check for admin emails - case-insensitive match
         const isAdmin = ADMIN_EMAILS.some(
           (email) => email.trim().toLowerCase() === normalizedEmail
         );
 
+        // Check for TTLO staff emails - case-insensitive match
+        const isStaff = TTLO_STAFF_EMAILS.some(
+          (email) => email.trim().toLowerCase() === normalizedEmail
+        );
+
+        // Default role is client for all new users
+        let userRole: UserRole = "client";
         if (isAdmin) {
           userRole = "admin";
-        } else {
-          // Check for TTLO staff emails - case-insensitive match
-          const isStaff = TTLO_STAFF_EMAILS.some(
-            (email) => email.trim().toLowerCase() === normalizedEmail
-          );
-          if (isStaff) {
-            userRole = "ttlo_staff";
-          }
+        } else if (isStaff) {
+          userRole = "ttlo_staff";
         }
 
-        if (!existingUser) {
-          // Create new user with determined role
-          const result = await db.insert(userAccount).values({
+        // Perform atomic UPSERT so 1st click & repeat clicks work atomically without race conditions
+        const [upsertedUser] = await db
+          .insert(userAccount)
+          .values({
             name: user.name,
             email: normalizedEmail,
             role: userRole,
             isActive: true,
             image: user.image,
             emailVerified: new Date().toISOString(),
-          });
-
-          if (result) {
-            const newUser = await db.query.userAccount.findFirst({
-              where: eq(userAccount.email, normalizedEmail),
-            });
-            if (newUser) {
-              user.id = newUser.id;
-              user.role = String(newUser.role || userRole);
-            }
-          }
-        } else {
-          // Determine target role: if isAdmin or isStaff match, promote user role; otherwise preserve existing role
-          const targetRole =
-            isAdmin || isStaff ? userRole : existingUser.role || userRole;
-
-          await db
-            .update(userAccount)
-            .set({
+          })
+          .onConflictDoUpdate({
+            target: userAccount.email,
+            set: {
               name: user.name,
               image: user.image,
-              role: targetRole,
+              // If admin/staff email, promote role; otherwise preserve existing database role
+              role: isAdmin || isStaff ? userRole : sql`${userAccount.role}`,
               emailVerified: new Date().toISOString(),
-            })
-            .where(eq(userAccount.email, normalizedEmail));
+            },
+          })
+          .returning();
 
-          user.id = existingUser.id;
-          user.role = String(targetRole);
+        if (upsertedUser) {
+          user.id = upsertedUser.id;
+          user.role = String(upsertedUser.role || userRole);
         }
 
         return true;

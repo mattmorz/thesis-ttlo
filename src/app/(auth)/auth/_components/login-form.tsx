@@ -21,11 +21,10 @@ function LoginFormComponent({
       {...props}
       action={async () => {
         "use server";
-        // Use a short-term cookie to prevent multiple sign-in attempts
-        // This helps reduce duplicate session checks
+        const targetUrl = callbackUrl && callbackUrl !== "/auth/signin" ? callbackUrl : "/dashboard";
         await signIn("google", {
-          callbackUrl,
-          // Allow redirects so we don't trigger duplicate session checks
+          redirectTo: targetUrl,
+          callbackUrl: targetUrl,
           redirect: true,
         });
       }}

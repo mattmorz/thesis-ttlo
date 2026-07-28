@@ -104,8 +104,14 @@ export async function middleware(request: NextRequest) {
   const callbackUrl = searchParams.get("callbackUrl") || pathname;
 
   if (isAuthenticated && isAuthOnly) {
-    const redirectUrl =
-      callbackUrl && callbackUrl !== "/auth/signin" ? callbackUrl : "/";
+    let redirectUrl =
+      callbackUrl && callbackUrl !== "/auth/signin" ? callbackUrl : "/dashboard";
+
+    // If client user is trying to follow a callback to an admin route, send to client dashboard
+    if (!isAdmin && redirectUrl.startsWith("/admin")) {
+      redirectUrl = "/dashboard";
+    }
+
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 

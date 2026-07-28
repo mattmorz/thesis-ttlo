@@ -27,16 +27,15 @@ if (isServer) {
     );
   }
 
+  const shouldEnableSSL =
+    process.env.DB_SSL === "true" ||
+    process.env.DATABASE_URL?.includes("sslmode=require") ||
+    process.env.DATABASE_URL?.includes("ssl=true");
+
   // Create a PostgreSQL client with connection pooling
   client = postgres(connectionString, {
     max: 10, // Increased pool size
-    ssl:
-      process.env.DATABASE_URL?.includes("localhost") ||
-      process.env.DATABASE_URL?.includes("127.0.0.1")
-        ? false
-        : {
-            rejectUnauthorized: false,
-          },
+    ssl: shouldEnableSSL ? { rejectUnauthorized: false } : false,
     idle_timeout: 20,
     connect_timeout: 10,
     max_lifetime: 60 * 30, // 30 minutes

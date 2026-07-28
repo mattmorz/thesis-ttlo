@@ -91,9 +91,13 @@ export const {
       // Extract domain from email
       const emailDomain = normalizedEmail.split("@")[1];
 
-      // Only allow specified domains (case-insensitive)
-      const allowedDomains = ALLOWED_DOMAINS.map((d) => d.toLowerCase());
-      if (!allowedDomains.includes(emailDomain)) {
+      // Only allow specified domains (case-insensitive, including subdomains)
+      const allowedDomains = ALLOWED_DOMAINS.map((d) => d.trim().toLowerCase());
+      const isAllowedDomain = allowedDomains.some(
+        (domain) => emailDomain === domain || emailDomain.endsWith("." + domain)
+      );
+
+      if (!isAllowedDomain) {
         console.log(`Unauthorized email domain: ${emailDomain}`);
         return false;
       }
@@ -183,9 +187,8 @@ export const {
             },
           });
 
-          // add role to token, default to client if not found
-          token.role = String(dbUser?.role || "client");
-          token.id = String(dbUser?.id);
+          token.role = String(dbUser?.role || user.role || "client");
+          token.id = String(dbUser?.id || user.id);
         }
 
         // Add a timestamp to help with caching

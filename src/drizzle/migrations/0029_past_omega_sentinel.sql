@@ -16,17 +16,17 @@ CREATE TABLE "phase_task_assignee" (
 	"created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-ALTER TABLE "calendar_event" DROP CONSTRAINT "calendar_event_priority_check";--> statement-breakpoint
-ALTER TABLE "calendar_event" DROP CONSTRAINT "calendar_event_event_type_check";--> statement-breakpoint
-ALTER TABLE "internal_validation" DROP CONSTRAINT "internal_validation_validator_role_check";--> statement-breakpoint
-ALTER TABLE "phase_reminder" DROP CONSTRAINT "phase_reminder_frequency_check";--> statement-breakpoint
-ALTER TABLE "calendar_event" DROP CONSTRAINT "calendar_event_phase_id_fkey";
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_priority_check";--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_event_type_check";--> statement-breakpoint
+ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_validator_role_check";--> statement-breakpoint
+ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "phase_reminder_frequency_check";--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_phase_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "calendar_event" DROP CONSTRAINT "calendar_event_application_id_fkey";
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_application_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "event_participant" DROP CONSTRAINT "event_participant_event_id_fkey";
+ALTER TABLE "event_participant" DROP CONSTRAINT IF EXISTS "event_participant_event_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "internal_validation" DROP CONSTRAINT "internal_validation_assigned_to_fkey";
+ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_assigned_to_fkey";
 --> statement-breakpoint
 ALTER TABLE "phase_reminder" ALTER COLUMN "reminder_time" SET DEFAULT '12:00:00';--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint

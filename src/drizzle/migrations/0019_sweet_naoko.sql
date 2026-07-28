@@ -1,30 +1,30 @@
-ALTER TABLE "application_phase" DROP CONSTRAINT "ck_phase_status";--> statement-breakpoint
-ALTER TABLE "calendar_event" DROP CONSTRAINT "calendar_event_event_type_check";--> statement-breakpoint
-ALTER TABLE "calendar_event" DROP CONSTRAINT "calendar_event_priority_check";--> statement-breakpoint
-ALTER TABLE "calendar_event" DROP CONSTRAINT "calendar_event_status_check";--> statement-breakpoint
-ALTER TABLE "contact_message" DROP CONSTRAINT "contact_message_status_check";--> statement-breakpoint
-ALTER TABLE "deed_of_assignment" DROP CONSTRAINT "deed_of_assignment_status_check";--> statement-breakpoint
-ALTER TABLE "digital_signature" DROP CONSTRAINT "digital_signature_signer_type_check";--> statement-breakpoint
-ALTER TABLE "document_management" DROP CONSTRAINT "document_management_entity_type_check";--> statement-breakpoint
-ALTER TABLE "document_management" DROP CONSTRAINT "document_status_check";--> statement-breakpoint
-ALTER TABLE "documents" DROP CONSTRAINT "document_category_check";--> statement-breakpoint
-ALTER TABLE "event_participant" DROP CONSTRAINT "event_participant_status_check";--> statement-breakpoint
-ALTER TABLE "external_collaboration" DROP CONSTRAINT "external_collaboration_status_check";--> statement-breakpoint
-ALTER TABLE "internal_validation" DROP CONSTRAINT "internal_validation_status_check";--> statement-breakpoint
-ALTER TABLE "internal_validation" DROP CONSTRAINT "internal_validation_validator_role_check";--> statement-breakpoint
-ALTER TABLE "ip_application" DROP CONSTRAINT "ck_commercialization";--> statement-breakpoint
-ALTER TABLE "ip_contributors" DROP CONSTRAINT "ip_contributors_role_check";--> statement-breakpoint
-ALTER TABLE "ip_details" DROP CONSTRAINT "ip_details_commercialization_status_check";--> statement-breakpoint
-ALTER TABLE "ip_disclosure_review" DROP CONSTRAINT "ip_disclosure_review_status_check";--> statement-breakpoint
-ALTER TABLE "notification" DROP CONSTRAINT "notification_status_check";--> statement-breakpoint
-ALTER TABLE "notification" DROP CONSTRAINT "notification_type_check";--> statement-breakpoint
-ALTER TABLE "patent_utility_model_application" DROP CONSTRAINT "patent_utility_model_application_type_check";--> statement-breakpoint
-ALTER TABLE "phase_reminder" DROP CONSTRAINT "phase_reminder_frequency_check";--> statement-breakpoint
-ALTER TABLE "phase_review" DROP CONSTRAINT "review_status_check";--> statement-breakpoint
-ALTER TABLE "phase_task" DROP CONSTRAINT "task_priority_check";--> statement-breakpoint
-ALTER TABLE "phase_task" DROP CONSTRAINT "task_status_check";--> statement-breakpoint
-ALTER TABLE "substantial_use" DROP CONSTRAINT "substantial_use_status_check";--> statement-breakpoint
-ALTER TABLE "task_assignment" DROP CONSTRAINT "task_assignment_status_check";--> statement-breakpoint
+ALTER TABLE "application_phase" DROP CONSTRAINT IF EXISTS "ck_phase_status";--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_event_type_check";--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_priority_check";--> statement-breakpoint
+ALTER TABLE "calendar_event" DROP CONSTRAINT IF EXISTS "calendar_event_status_check";--> statement-breakpoint
+ALTER TABLE "contact_message" DROP CONSTRAINT IF EXISTS "contact_message_status_check";--> statement-breakpoint
+ALTER TABLE "deed_of_assignment" DROP CONSTRAINT IF EXISTS "deed_of_assignment_status_check";--> statement-breakpoint
+ALTER TABLE "digital_signature" DROP CONSTRAINT IF EXISTS "digital_signature_signer_type_check";--> statement-breakpoint
+ALTER TABLE "document_management" DROP CONSTRAINT IF EXISTS "document_management_entity_type_check";--> statement-breakpoint
+ALTER TABLE "document_management" DROP CONSTRAINT IF EXISTS "document_status_check";--> statement-breakpoint
+ALTER TABLE "documents" DROP CONSTRAINT IF EXISTS "document_category_check";--> statement-breakpoint
+ALTER TABLE "event_participant" DROP CONSTRAINT IF EXISTS "event_participant_status_check";--> statement-breakpoint
+ALTER TABLE "external_collaboration" DROP CONSTRAINT IF EXISTS "external_collaboration_status_check";--> statement-breakpoint
+ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_status_check";--> statement-breakpoint
+ALTER TABLE "internal_validation" DROP CONSTRAINT IF EXISTS "internal_validation_validator_role_check";--> statement-breakpoint
+ALTER TABLE "ip_application" DROP CONSTRAINT IF EXISTS "ck_commercialization";--> statement-breakpoint
+ALTER TABLE "ip_contributors" DROP CONSTRAINT IF EXISTS "ip_contributors_role_check";--> statement-breakpoint
+ALTER TABLE "ip_details" DROP CONSTRAINT IF EXISTS "ip_details_commercialization_status_check";--> statement-breakpoint
+ALTER TABLE "ip_disclosure_review" DROP CONSTRAINT IF EXISTS "ip_disclosure_review_status_check";--> statement-breakpoint
+ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "notification_status_check";--> statement-breakpoint
+ALTER TABLE "notification" DROP CONSTRAINT IF EXISTS "notification_type_check";--> statement-breakpoint
+ALTER TABLE "patent_utility_model_application" DROP CONSTRAINT IF EXISTS "patent_utility_model_application_type_check";--> statement-breakpoint
+ALTER TABLE "phase_reminder" DROP CONSTRAINT IF EXISTS "phase_reminder_frequency_check";--> statement-breakpoint
+ALTER TABLE "phase_review" DROP CONSTRAINT IF EXISTS "review_status_check";--> statement-breakpoint
+ALTER TABLE "phase_task" DROP CONSTRAINT IF EXISTS "task_priority_check";--> statement-breakpoint
+ALTER TABLE "phase_task" DROP CONSTRAINT IF EXISTS "task_status_check";--> statement-breakpoint
+ALTER TABLE "substantial_use" DROP CONSTRAINT IF EXISTS "substantial_use_status_check";--> statement-breakpoint
+ALTER TABLE "task_assignment" DROP CONSTRAINT IF EXISTS "task_assignment_status_check";--> statement-breakpoint
 ALTER TABLE "substantial_use" ADD COLUMN "application_id" uuid;--> statement-breakpoint
 ALTER TABLE "substantial_use" ADD CONSTRAINT "substantial_use_application_id_fkey" FOREIGN KEY ("application_id") REFERENCES "public"."ip_application"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "idx_substantial_use_application" ON "substantial_use" USING btree ("application_id" uuid_ops);--> statement-breakpoint

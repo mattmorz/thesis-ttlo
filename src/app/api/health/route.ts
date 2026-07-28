@@ -20,7 +20,6 @@ export async function GET() {
   }
 
   const isHealthy = dbStatus === "healthy";
-  const status = isHealthy ? 200 : 503;
 
   return NextResponse.json(
     {
@@ -35,6 +34,6 @@ export async function GET() {
         },
       },
     },
-    { status }
+    { status: 200 }
   );
 }

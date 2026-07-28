@@ -12,6 +12,7 @@ RUN npm ci
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN mkdir -p public
 
 # Set production environment for build optimization
 ENV NODE_ENV=production

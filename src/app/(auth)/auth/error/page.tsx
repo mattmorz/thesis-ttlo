@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ShieldAlert, LogIn, Home, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, Suspense } from "react";
 
-export default function ErrorPage() {
+export const dynamic = "force-dynamic";
+
+function ErrorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const errorCode = searchParams.get("error");
@@ -146,5 +148,19 @@ export default function ErrorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ErrorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      }
+    >
+      <ErrorContent />
+    </Suspense>
   );
 }

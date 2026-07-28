@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: ttlo_migration
-    command: npx drizzle-kit migrate --config=drizzle.config.ts
+    command: npx drizzle-kit@0.30.5 migrate --config=drizzle.config.ts
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_password_secure}@db:5432/${POSTGRES_DB:-ttlo_db}
     depends_on:

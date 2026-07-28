@@ -93,6 +93,7 @@ ALTER TABLE "client_profile" ALTER COLUMN "citizenship" SET DEFAULT '{"value":"f
 ALTER TABLE "client_profile" ALTER COLUMN "citizenship" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ALTER COLUMN "copyright_id" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ALTER COLUMN "client_id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "ip_disclosure" ALTER COLUMN "status" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ALTER COLUMN "status" SET DATA TYPE "public"."ip_disclosure_status" USING "status"::"public"."ip_disclosure_status";--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ALTER COLUMN "status" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "client_profile" ADD COLUMN "company_street" text;--> statement-breakpoint

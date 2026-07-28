@@ -71,25 +71,32 @@ export async function middleware(request: NextRequest) {
 
   console.log("🍪 Middleware cookies:", request.cookies.getAll());
 
-  // ✅ Try multiple cookie names (v4 + v5)
-  const possibleCookieNames = [
-    "authjs.session-token",           // v5
-    "__Secure-authjs.session-token",  // v5 secure
-    "next-auth.session-token",        // v4
-    "__Secure-next-auth.session-token" // v4 secure
-  ];
+  const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
 
-  let token = null;
+  // Try standard auto-detected getToken first (handles salt & secure cookies automatically)
+  let token = await getToken({
+    req: request,
+    secret,
+  });
 
-  for (const cookieName of possibleCookieNames) {
-    token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-      cookieName,
-    });
-    if (token) {
-      console.log(`✅ Found token in cookie: ${cookieName}`);
-      break;
+  if (!token) {
+    const possibleCookieNames = [
+      "authjs.session-token",           // v5
+      "__Secure-authjs.session-token",  // v5 secure
+      "next-auth.session-token",        // v4
+      "__Secure-next-auth.session-token" // v4 secure
+    ];
+
+    for (const cookieName of possibleCookieNames) {
+      token = await getToken({
+        req: request,
+        secret,
+        cookieName,
+      });
+      if (token) {
+        console.log(`✅ Found token in fallback cookie: ${cookieName}`);
+        break;
+      }
     }
   }
 

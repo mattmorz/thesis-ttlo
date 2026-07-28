@@ -159,18 +159,19 @@ export const {
     async jwt({ token, user, trigger }) {
       // Only update token if it's a sign in event or token update
       if (user || trigger === "update") {
-        if (user) {
-          // get the user from db
+        const targetEmail = user?.email || token?.email;
+        if (targetEmail) {
+          // Look up user by email (indexed & unique) to avoid invalid UUID syntax errors when Google ID is a numeric string
           const dbUser = await db.query.userAccount.findFirst({
-            where: eq(userAccount.id, user.id as string),
+            where: eq(userAccount.email, targetEmail.trim().toLowerCase()),
             columns: {
               role: true,
               id: true,
             },
           });
 
-          token.role = String(dbUser?.role || user.role || "client");
-          token.id = String(dbUser?.id || user.id);
+          token.role = String(dbUser?.role || user?.role || token.role || "client");
+          token.id = String(dbUser?.id || user?.id || token.id);
         }
 
         // Add a timestamp to help with caching

@@ -19,8 +19,8 @@ echo -e "\n${GREEN}[3/5] Executing database migrations...${NC}"
 docker compose up migration
 
 echo -e "\n${GREEN}[4/5] Reloading Web Application & Nginx...${NC}"
-docker compose up -d --no-deps web
-docker compose exec nginx nginx -s reload || docker compose restart nginx
+docker compose up -d web nginx
+docker compose exec nginx nginx -s reload || echo "Nginx started."
 
 echo -e "\n${GREEN}[5/5] Cleaning up old images...${NC}"
 docker image prune -f

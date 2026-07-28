@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Development override for local docker compose testing
 services:
   db:

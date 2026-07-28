@@ -38,8 +38,10 @@ RUN apk add --no-cache curl
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy static assets and standalone server bundle
+# Copy static assets, migration files, and standalone server bundle
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder /app/src/drizzle/migrations ./src/drizzle/migrations
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 

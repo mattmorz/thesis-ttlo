@@ -82,18 +82,18 @@ ALTER TABLE "copyright_author_creator" DROP CONSTRAINT "copyright_author_creator
 --> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" DROP CONSTRAINT "copyright_transaction_part2_copyright_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "copyright_work_creation" DROP CONSTRAINT "copyright_work_creation_transaction_detail_id_fkey";
+ALTER TABLE "copyright_work_creation" DROP CONSTRAINT IF EXISTS "copyright_work_creation_transaction_detail_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "ip_disclosure" DROP CONSTRAINT "ip_disclosure_client_id_fkey";
+ALTER TABLE "ip_disclosure" DROP CONSTRAINT IF EXISTS "ip_disclosure_client_id_fkey";
 --> statement-breakpoint
-ALTER TABLE "client_profile" ALTER COLUMN "gender" SET DATA TYPE jsonb;--> statement-breakpoint
+ALTER TABLE "client_profile" ALTER COLUMN "gender" SET DATA TYPE jsonb USING "gender"::text::jsonb;--> statement-breakpoint
 ALTER TABLE "client_profile" ALTER COLUMN "gender" SET DEFAULT '{"value":"male"}'::jsonb;--> statement-breakpoint
-ALTER TABLE "client_profile" ALTER COLUMN "citizenship" SET DATA TYPE jsonb;--> statement-breakpoint
+ALTER TABLE "client_profile" ALTER COLUMN "citizenship" SET DATA TYPE jsonb USING "citizenship"::text::jsonb;--> statement-breakpoint
 ALTER TABLE "client_profile" ALTER COLUMN "citizenship" SET DEFAULT '{"value":"filipino","otherValue":null}'::jsonb;--> statement-breakpoint
 ALTER TABLE "client_profile" ALTER COLUMN "citizenship" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ALTER COLUMN "copyright_id" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ALTER COLUMN "client_id" SET NOT NULL;--> statement-breakpoint
-ALTER TABLE "ip_disclosure" ALTER COLUMN "status" SET DATA TYPE ip_disclosure_status;--> statement-breakpoint
+ALTER TABLE "ip_disclosure" ALTER COLUMN "status" SET DATA TYPE "public"."ip_disclosure_status" USING "status"::"public"."ip_disclosure_status";--> statement-breakpoint
 ALTER TABLE "ip_disclosure" ALTER COLUMN "status" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "client_profile" ADD COLUMN "company_street" text;--> statement-breakpoint
 ALTER TABLE "client_profile" ADD COLUMN "company_barangay" text;--> statement-breakpoint

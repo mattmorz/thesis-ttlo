@@ -89,15 +89,15 @@ ALTER TABLE "session" DROP CONSTRAINT IF EXISTS "session_userId_user_id_fk";
 --> statement-breakpoint
 ALTER TABLE "task_assignment" DROP CONSTRAINT IF EXISTS "task_assignment_staff_id_fkey";
 --> statement-breakpoint
-DROP INDEX "idx_ip_application_type";--> statement-breakpoint
-DROP INDEX "ix_ip_application_status";--> statement-breakpoint
-DROP INDEX "ix_ip_application_type";--> statement-breakpoint
-ALTER TABLE "activity_log" ALTER COLUMN "activity_type" SET DATA TYPE activity_type;--> statement-breakpoint
+DROP INDEX IF EXISTS "idx_ip_application_type";--> statement-breakpoint
+DROP INDEX IF EXISTS "ix_ip_application_status";--> statement-breakpoint
+DROP INDEX IF EXISTS "ix_ip_application_type";--> statement-breakpoint
+ALTER TABLE "activity_log" ALTER COLUMN "activity_type" SET DATA TYPE "public"."activity_type" USING "activity_type"::"public"."activity_type";--> statement-breakpoint
 ALTER TABLE "client_profile" ALTER COLUMN "gender" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "client_profile" ALTER COLUMN "contact_number" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "client_profile" ALTER COLUMN "mailing_address" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "ip_application" ALTER COLUMN "ip_type" SET DATA TYPE application_type;--> statement-breakpoint
-ALTER TABLE "ip_application" ALTER COLUMN "status" SET DATA TYPE application_status;--> statement-breakpoint
+ALTER TABLE "ip_application" ALTER COLUMN "ip_type" SET DATA TYPE "public"."application_type" USING "ip_type"::"public"."application_type";--> statement-breakpoint
+ALTER TABLE "ip_application" ALTER COLUMN "status" SET DATA TYPE "public"."application_status" USING "status"::"public"."application_status";--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_provider_providerAccountId_pk" PRIMARY KEY("provider","providerAccountId");--> statement-breakpoint
 ALTER TABLE "activity_log" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
 ALTER TABLE "ip_application" ADD COLUMN "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint

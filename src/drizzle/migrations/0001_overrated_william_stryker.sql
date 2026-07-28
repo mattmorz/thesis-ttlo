@@ -180,6 +180,10 @@ ALTER TABLE "client_profile" ADD CONSTRAINT "client_profile_inst_materials_statu
 ALTER TABLE "ip_application" ADD CONSTRAINT "ck_commercialization" CHECK ((commercialization_status)::text = ANY ((ARRAY['not_licensed'::character varying, 'licensed'::character varying, 'in_negotiation'::character varying, 'technology_transfer'::character varying, 'internal_use'::character varying])::text[]));--> statement-breakpoint
 ALTER TABLE "ip_application" ADD CONSTRAINT "ck_progress" CHECK ((progress >= 0) AND (progress <= 100));--> statement-breakpoint
 ALTER TABLE "public"."activity_log" ALTER COLUMN "activity_type" SET DATA TYPE text;--> statement-breakpoint
-DROP TYPE "public"."activity_type";--> statement-breakpoint
-CREATE TYPE "public"."activity_type" AS ENUM('created', 'updated', 'deleted', 'viewed', 'downloaded', 'uploaded', 'validated', 'verified', 'archived', 'unarchived', 'assigned', 'unassigned', 'completed', 'incompleted', 'approved', 'rejected', 'commented', 'replied', 'signed', 'unsigned', 'sent', 'received', 'read', 'unread', 'other');--> statement-breakpoint
+DROP TYPE IF EXISTS "public"."activity_type" CASCADE;--> statement-breakpoint
+DO $$ BEGIN
+    CREATE TYPE "public"."activity_type" AS ENUM('created', 'updated', 'deleted', 'viewed', 'downloaded', 'uploaded', 'validated', 'verified', 'archived', 'unarchived', 'assigned', 'unassigned', 'completed', 'incompleted', 'approved', 'rejected', 'commented', 'replied', 'signed', 'unsigned', 'sent', 'received', 'read', 'unread', 'other');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 ALTER TABLE "public"."activity_log" ALTER COLUMN "activity_type" SET DATA TYPE "public"."activity_type" USING "activity_type"::"public"."activity_type";

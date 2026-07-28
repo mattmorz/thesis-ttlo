@@ -1,4 +1,4 @@
-CREATE TYPE "public"."ip_disclosure_status" AS ENUM('draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_revision');--> statement-breakpoint
+DO $$ BEGIN CREATE TYPE "public"."ip_disclosure_status" AS ENUM('draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_revision'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
 CREATE TABLE "copyright_application" (
 	"copyright_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"disclosure_id" uuid NOT NULL,

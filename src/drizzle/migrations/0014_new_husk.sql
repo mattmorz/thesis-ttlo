@@ -1,5 +1,5 @@
-CREATE TYPE "public"."form_source_type" AS ENUM('client_profile', 'ip_disclosure', 'substantial_use', 'deed_of_assignment', 'other_document');
-CREATE TYPE "public"."form_submission_status" AS ENUM('draft', 'submitted', 'processed', 'pending_review', 'failed');
+DO $$ BEGIN CREATE TYPE "public"."form_source_type" AS ENUM('client_profile', 'ip_disclosure', 'substantial_use', 'deed_of_assignment', 'other_document'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "public"."form_submission_status" AS ENUM('draft', 'submitted', 'processed', 'pending_review', 'failed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 CREATE TABLE "form_data_mapping" (
 	"mapping_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"registry_id" uuid NOT NULL,

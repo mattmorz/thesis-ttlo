@@ -393,6 +393,6 @@ ALTER TABLE "copyright_transaction_part2" ADD CONSTRAINT "check_transaction_type
 ALTER TABLE "copyright_transaction_part2" ADD CONSTRAINT "check_submission_type" CHECK ((transaction_data->'submissionType')::jsonb ?| array['filingMethod', 'filingType']);--> statement-breakpoint
 ALTER TABLE "copyright_transaction_part2" ADD CONSTRAINT "check_applicant_type" CHECK ((transaction_data->'applicantType')::jsonb ?| array['agent', 'copyrightClaimant', 'licensee', 'heir', 'newOwner']);--> statement-breakpoint
 ALTER TABLE "public"."activity_log" ALTER COLUMN "activity_type" SET DATA TYPE text;--> statement-breakpoint
-DROP TYPE "public"."activity_type";--> statement-breakpoint
-CREATE TYPE "public"."activity_type" AS ENUM('update', 'comment', 'status_change');--> statement-breakpoint
+DROP TYPE IF EXISTS "public"."activity_type" CASCADE;--> statement-breakpoint
+DO $$ BEGIN CREATE TYPE "public"."activity_type" AS ENUM('update', 'comment', 'status_change'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
 ALTER TABLE "public"."activity_log" ALTER COLUMN "activity_type" SET DATA TYPE "public"."activity_type" USING "activity_type"::"public"."activity_type";

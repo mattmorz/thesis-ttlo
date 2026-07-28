@@ -1,7 +1,7 @@
-CREATE TYPE "public"."activity_type" AS ENUM('update', 'comment', 'status_change');--> statement-breakpoint
-CREATE TYPE "public"."application_status" AS ENUM('draft', 'pending', 'in_progress', 'approved', 'rejected', 'completed', 'archived');--> statement-breakpoint
-CREATE TYPE "public"."application_type" AS ENUM('patent', 'copyright', 'trademark', 'utility_model');--> statement-breakpoint
-CREATE TYPE "public"."user_role" AS ENUM('admin', 'ttlo_staff', 'client');--> statement-breakpoint
+DO $$ BEGIN CREATE TYPE "public"."activity_type" AS ENUM('update', 'comment', 'status_change'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+DO $$ BEGIN CREATE TYPE "public"."application_status" AS ENUM('draft', 'pending', 'in_progress', 'approved', 'rejected', 'completed', 'archived'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+DO $$ BEGIN CREATE TYPE "public"."application_type" AS ENUM('patent', 'copyright', 'trademark', 'utility_model'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+DO $$ BEGIN CREATE TYPE "public"."user_role" AS ENUM('admin', 'ttlo_staff', 'client'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
 CREATE TABLE "account" (
 	"userId" uuid NOT NULL,
 	"type" text NOT NULL,

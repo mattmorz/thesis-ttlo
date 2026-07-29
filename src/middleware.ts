@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
@@ -44,7 +45,7 @@ const shouldSkipTokenValidation = (path: string) => {
   return skipTokenValidationPaths.some((prefix) => path.startsWith(prefix));
 };
 
-export async function middleware(request: NextRequest) {
+export default auth(async function middleware(request: NextRequest & { auth?: any }) {
   const { pathname, searchParams } = request.nextUrl;
 
   if (shouldSkipTokenValidation(pathname)) {
@@ -69,38 +70,49 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  console.log("🍪 Middleware cookies:", request.cookies.getAll());
-
   const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
 
-  // Try standard auto-detected getToken first (handles salt & secure cookies automatically)
-  let token = await getToken({
-    req: request,
-    secret,
-  });
+  // First try request.auth provided directly by NextAuth v5 wrapper
+  let user: any = request.auth?.user;
+  let tokenRole = user?.role;
+  let tokenEmail = user?.email;
 
-  if (!token) {
-    const possibleCookieNames = [
-      "authjs.session-token",           // v5
-      "__Secure-authjs.session-token",  // v5 secure
-      "next-auth.session-token",        // v4
-      "__Secure-next-auth.session-token" // v4 secure
-    ];
+  // Fallback to manual getToken decoding if request.auth is missing
+  if (!user) {
+    let token = await getToken({
+      req: request,
+      secret,
+    });
 
-    for (const cookieName of possibleCookieNames) {
-      token = await getToken({
-        req: request,
-        secret,
-        cookieName,
-      });
-      if (token) {
-        console.log(`✅ Found token in fallback cookie: ${cookieName}`);
-        break;
+    if (!token) {
+      const possibleCookieNames = [
+        "__Secure-authjs.session-token",
+        "authjs.session-token",
+        "__Secure-next-auth.session-token",
+        "next-auth.session-token",
+      ];
+
+      for (const cookieName of possibleCookieNames) {
+        token = await getToken({
+          req: request,
+          secret,
+          cookieName,
+          salt: cookieName,
+        });
+        if (token) {
+          break;
+        }
       }
+    }
+
+    if (token) {
+      user = token;
+      tokenRole = token.role;
+      tokenEmail = token.email;
     }
   }
 
-  console.log("🔑 Middleware token:", token ? "FOUND" : "NOT FOUND", pathname);
+  console.log("🔑 Middleware user:", user ? "FOUND" : "NOT FOUND", pathname);
 
   const envAdminEmails = process.env.ADMIN_EMAILS
     ? process.env.ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase())
@@ -119,16 +131,16 @@ export async function middleware(request: NextRequest) {
     ...(process.env.NODE_ENV !== "production" ? ["staff@example.com", "ttlo@example.com"] : []),
   ];
 
-  const userEmail = token?.email ? String(token.email).trim().toLowerCase() : "";
+  const userEmail = tokenEmail ? String(tokenEmail).trim().toLowerCase() : "";
   const isAdminEmail = ADMIN_EMAILS.includes(userEmail);
   const isStaffEmail = TTLO_STAFF_EMAILS.includes(userEmail);
 
-  const isAuthenticated = !!token;
+  const isAuthenticated = !!user;
   const isPublic = isPublicPath(pathname);
   const isAuthOnly = isAuthOnlyPath(pathname);
   const isAdmin =
-    token?.role === "admin" ||
-    token?.role === "ttlo_staff" ||
+    tokenRole === "admin" ||
+    tokenRole === "ttlo_staff" ||
     isAdminEmail ||
     isStaffEmail;
   const AdminPath = pathname.startsWith("/admin");
@@ -164,7 +176,7 @@ export async function middleware(request: NextRequest) {
   }
 
   return response;
-}
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],

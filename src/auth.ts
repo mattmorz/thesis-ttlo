@@ -172,6 +172,8 @@ export const {
         return true;
       } catch (error) {
         console.error("Error in signIn callback:", error);
+        user.id = user.id || crypto.randomUUID();
+        user.role = user.role || "client";
         // Fail-safe: If DB write hits a transient issue, STILL allow sign-in for allowed domains
         return true;
       }

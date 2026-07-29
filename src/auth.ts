@@ -149,6 +149,8 @@ export const {
 
           if (inserted && inserted[0]) {
             user.id = inserted[0].id;
+          } else {
+            user.id = user.id || crypto.randomUUID();
           }
         } else {
           const targetRole =

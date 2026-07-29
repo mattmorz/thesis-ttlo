@@ -1,4 +1,3 @@
-import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
@@ -45,7 +44,7 @@ const shouldSkipTokenValidation = (path: string) => {
   return skipTokenValidationPaths.some((prefix) => path.startsWith(prefix));
 };
 
-export default auth(async function middleware(request: NextRequest & { auth?: any }) {
+export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
   if (shouldSkipTokenValidation(pathname)) {
@@ -72,47 +71,37 @@ export default auth(async function middleware(request: NextRequest & { auth?: an
 
   const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
 
-  // First try request.auth provided directly by NextAuth v5 wrapper
-  let user: any = request.auth?.user;
-  let tokenRole = user?.role;
-  let tokenEmail = user?.email;
+  let token = await getToken({
+    req: request,
+    secret,
+  });
 
-  // Fallback to manual getToken decoding if request.auth is missing
-  if (!user) {
-    let token = await getToken({
-      req: request,
-      secret,
-    });
+  if (!token) {
+    const cookieCandidates = [
+      { name: "__Secure-authjs.session-token", salt: "__Secure-authjs.session-token" },
+      { name: "authjs.session-token", salt: "authjs.session-token" },
+      { name: "__Secure-next-auth.session-token", salt: "__Secure-next-auth.session-token" },
+      { name: "next-auth.session-token", salt: "next-auth.session-token" },
+    ];
 
-    if (!token) {
-      const possibleCookieNames = [
-        "__Secure-authjs.session-token",
-        "authjs.session-token",
-        "__Secure-next-auth.session-token",
-        "next-auth.session-token",
-      ];
-
-      for (const cookieName of possibleCookieNames) {
+    for (const { name, salt } of cookieCandidates) {
+      if (request.cookies.has(name)) {
         token = await getToken({
           req: request,
           secret,
-          cookieName,
-          salt: cookieName,
+          cookieName: name,
+          salt: salt,
         });
         if (token) {
           break;
         }
       }
     }
-
-    if (token) {
-      user = token;
-      tokenRole = token.role;
-      tokenEmail = token.email;
-    }
   }
 
-  console.log("🔑 Middleware user:", user ? "FOUND" : "NOT FOUND", pathname);
+  const user = token;
+  const tokenRole = token?.role;
+  const tokenEmail = token?.email;
 
   const envAdminEmails = process.env.ADMIN_EMAILS
     ? process.env.ADMIN_EMAILS.split(",").map((e) => e.trim().toLowerCase())
@@ -151,7 +140,6 @@ export default auth(async function middleware(request: NextRequest & { auth?: an
     let redirectUrl =
       callbackUrl && callbackUrl !== "/auth/signin" ? callbackUrl : "/dashboard";
 
-    // If client user is trying to follow a callback to an admin route, send to client dashboard
     if (!isAdmin && redirectUrl.startsWith("/admin")) {
       redirectUrl = "/dashboard";
     }
@@ -176,7 +164,7 @@ export default auth(async function middleware(request: NextRequest & { auth?: an
   }
 
   return response;
-});
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],

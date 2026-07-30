@@ -172,11 +172,13 @@ const getStatusBadge = (status: string) => {
 const GettingStartedGuide = ({
   isCollapsed,
   setIsCollapsed,
+  onDismiss,
 }: {
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
+  onDismiss: () => void;
 }) => (
-  <Card className="w-full border-[#1B5E20]/20 bg-white shadow-sm">
+  <Card className="w-full border-[#1B5E20]/20 bg-white shadow-sm transition-all duration-200">
     <CardHeader className="pb-3 flex flex-row items-center justify-between border-b">
       <div>
         <CardTitle className="text-[#1B5E20] flex items-center gap-2 text-lg">
@@ -188,18 +190,30 @@ const GettingStartedGuide = ({
           application
         </CardDescription>
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {isCollapsed ? (
-          <ChevronDown className="h-4 w-4" />
-        ) : (
-          <ChevronUp className="h-4 w-4" />
-        )}
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 text-gray-500 hover:text-gray-900"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? "Expand Guide" : "Collapse Guide"}
+        >
+          {isCollapsed ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronUp className="h-4 w-4" />
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full"
+          onClick={onDismiss}
+          title="Dismiss Guide"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
     </CardHeader>
 
     {!isCollapsed && (
@@ -371,14 +385,24 @@ const GettingStartedGuide = ({
               <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-[#1B5E20]"
-            onClick={() => setIsCollapsed(true)}
-          >
-            Hide Guide
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-[#1B5E20]"
+              onClick={() => setIsCollapsed(true)}
+            >
+              Hide Guide
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-gray-500 hover:text-red-600 hover:bg-red-50"
+              onClick={onDismiss}
+            >
+              Dismiss Guide
+            </Button>
+          </div>
         </CardFooter>
       </>
     )}
@@ -412,7 +436,42 @@ export function PageContent() {
   const [hasSeenGuide, setHasSeenGuide] = useState(false);
   const [showHelpPanel, setShowHelpPanel] = useState(false);
   const [isGuideCollapsed, setIsGuideCollapsed] = useState(false);
+  const [isGuideDismissed, setIsGuideDismissed] = useState<boolean>(false);
   const [hasCompletedForms, setHasCompletedForms] = useState(false);
+
+  // Check if guide was dismissed in localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const dismissed = localStorage.getItem("gettingStartedGuideDismissed");
+      if (dismissed === "true") {
+        setIsGuideDismissed(true);
+      }
+    }
+  }, []);
+
+  const handleDismissGuide = () => {
+    setIsGuideDismissed(true);
+    try {
+      localStorage.setItem("gettingStartedGuideDismissed", "true");
+      toast.info("Getting Started Guide dismissed. You can restore it anytime.", {
+        id: "guide-dismissed",
+      });
+    } catch (e) {
+      console.error("Error storing guide dismissed state:", e);
+    }
+  };
+
+  const handleRestoreGuide = () => {
+    setIsGuideDismissed(false);
+    try {
+      localStorage.removeItem("gettingStartedGuideDismissed");
+      toast.success("Getting Started Guide restored.", {
+        id: "guide-restored",
+      });
+    } catch (e) {
+      console.error("Error clearing guide dismissed state:", e);
+    }
+  };
 
   // Application state
   const {
@@ -1411,6 +1470,22 @@ export function PageContent() {
 
   /* Add the Getting Started Guide here - with error handling */
   const renderGettingStartedGuide = () => {
+    if (isGuideDismissed) {
+      return (
+        <div className="flex justify-end mb-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRestoreGuide}
+            className="text-xs text-[#1B5E20] hover:bg-[#1B5E20]/10 gap-1.5"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            <span>Show Getting Started Guide</span>
+          </Button>
+        </div>
+      );
+    }
+
     try {
       return (
         <GettingStartedGuide
@@ -1422,6 +1497,7 @@ export function PageContent() {
               console.error("Error setting guide collapsed state:", e);
             }
           }}
+          onDismiss={handleDismissGuide}
         />
       );
     } catch (error) {
@@ -1547,16 +1623,7 @@ export function PageContent() {
                   </div>
                 </div>
 
-                <div className="ml-auto flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs gap-1.5 text-[#1B5E20] border-[#1B5E20]/30 bg-white hover:bg-[#1B5E20]/5"
-                    onClick={() => setShowDocuments(true)}
-                  >
-                    <Upload className="h-3 w-3" />
-                    <span>Manage Documents</span>
-                  </Button>
+                <div className="ml-auto">
                   <Button
                     variant="ghost"
                     size="sm"

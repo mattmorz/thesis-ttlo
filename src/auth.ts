@@ -68,12 +68,13 @@ export const {
         process.env.AUTH_GOOGLE_ID ||
         process.env.GOOGLE_CLIENT_ID ||
         process.env.GOOGLE_ID ||
-        "",
+        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+        "dummy-google-client-id",
       clientSecret:
         process.env.AUTH_GOOGLE_SECRET ||
         process.env.GOOGLE_CLIENT_SECRET ||
         process.env.GOOGLE_SECRET ||
-        "",
+        "dummy-google-client-secret",
       authorization: {
         params: {
           prompt: "select_account",

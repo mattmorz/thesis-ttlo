@@ -43,6 +43,7 @@ import { KanbanWorkflow } from "@/components/case-management/admin/kanban-workfl
 import { WorkloadDistribution } from "@/components/case-management/admin/workload-distribution";
 import { QuickInfoDrawer, QuickInfoData } from "@/components/case-management/admin/quick-info-drawer";
 import { Layers, Kanban, Inbox } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { data: session } = useSession();

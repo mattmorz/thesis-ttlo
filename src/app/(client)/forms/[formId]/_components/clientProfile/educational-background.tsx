@@ -706,7 +706,7 @@ export function EducationalBackground({
                   name="highestDegree.value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Highest Degree Earned</FormLabel>
+                      <FormLabel required>Highest Degree Earned</FormLabel>
                       <Select
                         onValueChange={(value) => {
                           field.onChange(value);
@@ -760,10 +760,10 @@ export function EducationalBackground({
                     name="highestDegree.otherValue"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Specify Other Degree</FormLabel>
+                        <FormLabel required>Please Specify Other Degree</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter your degree"
+                            placeholder="Specify degree"
                             {...field}
                             value={field.value || ""}
                             onChange={(e) => {
@@ -791,7 +791,7 @@ export function EducationalBackground({
                   name="degree"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Degree Program</FormLabel>
+                      <FormLabel required>Degree Program</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="e.g. Bachelor of Science in Information Technology"
@@ -808,7 +808,7 @@ export function EducationalBackground({
                   name="profession"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Current Profession</FormLabel>
+                      <FormLabel required>Current Profession</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="e.g. Software Engineer, Student"

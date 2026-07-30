@@ -1168,8 +1168,49 @@ export function PageContent() {
       ? false // Default to false on server
       : clientSideAllFormsCompleted;
 
-  // Define a function to change tabs and update URL with improved state handling
+  // Define a function to change tabs and update URL with improved state handling & sequential step gating
   const handleTabChange = (tabId: string) => {
+    // Sequential Step Prerequisite Check (HCI Error Prevention)
+    const FORM_STEP_PREREQUISITES: Record<
+      string,
+      { prevKey: "clientProfile" | "ipDisclosure" | "substantialUse" | "deedAssignment"; prevName: string }[]
+    > = {
+      "client-profile": [],
+      "ip-disclosure": [
+        { prevKey: "clientProfile", prevName: "Client Profile Form" },
+      ],
+      "substantial-use": [
+        { prevKey: "clientProfile", prevName: "Client Profile Form" },
+        { prevKey: "ipDisclosure", prevName: "IP Disclosure Form" },
+      ],
+      "deed-assignment": [
+        { prevKey: "clientProfile", prevName: "Client Profile Form" },
+        { prevKey: "ipDisclosure", prevName: "IP Disclosure Form" },
+        { prevKey: "substantialUse", prevName: "Certification of Substantial Use Form" },
+      ],
+    };
+
+    if (activeApplicationId) {
+      const currentStatus = knownApplicationStatus[activeApplicationId]?.status || {
+        clientProfile: false,
+        ipDisclosure: false,
+        substantialUse: false,
+        deedAssignment: false,
+      };
+
+      const missingPrereq = (FORM_STEP_PREREQUISITES[tabId] || []).find(
+        (prereq) => !currentStatus[prereq.prevKey]
+      );
+
+      if (missingPrereq) {
+        toast.error("Step Locked - Previous Form Required", {
+          description: `You cannot proceed to this form yet. Please complete the ${missingPrereq.prevName} first.`,
+          duration: 5000,
+        });
+        return;
+      }
+    }
+
     // First reset all section states to ensure we can navigate properly
     setShowDocuments(false);
     setShowNewAppDialog(false);

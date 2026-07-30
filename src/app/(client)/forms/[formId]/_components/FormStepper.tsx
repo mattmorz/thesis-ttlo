@@ -9,6 +9,7 @@ import {
   Check,
   ChevronRight,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -156,18 +157,32 @@ export function FormStepper({
             const isActive = activeForm === step.id;
             const isDisabled = !applicationId;
 
+            // Sequential Prerequisite check: Step is locked if ANY previous step is uncompleted
+            const isLocked =
+              idx > 0 &&
+              FORM_STEPS.slice(0, idx).some(
+                (prevStep) => !formStatus[prevStep.statusKey]
+              );
+
             return (
               <button
                 key={step.id}
                 type="button"
                 onClick={() => !isDisabled && onSelectForm(step.id)}
                 disabled={isDisabled}
+                title={
+                  isLocked
+                    ? `Step locked: Please complete Step ${idx} (${FORM_STEPS[idx - 1].label}) first.`
+                    : step.description
+                }
                 className={cn(
                   "group relative text-left p-3 rounded-lg border transition-all duration-200 flex flex-col justify-between",
                   isActive
                     ? "border-[#1B5E20] bg-[#1B5E20]/5 shadow-sm ring-1 ring-[#1B5E20]"
                     : isCompleted
                     ? "border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/80"
+                    : isLocked
+                    ? "border-amber-200/80 bg-amber-50/30 hover:bg-amber-50/60 cursor-pointer"
                     : "border-gray-200 bg-white hover:bg-gray-50",
                   isDisabled && "opacity-50 cursor-not-allowed hover:bg-white"
                 )}
@@ -177,11 +192,13 @@ export function FormStepper({
                   <div className="flex items-center gap-1.5">
                     <span
                       className={cn(
-                        "text-[11px] font-bold px-2 py-0.5 rounded-full",
+                        "text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1",
                         isActive
                           ? "bg-[#1B5E20] text-white"
                           : isCompleted
                           ? "bg-emerald-600 text-white"
+                          : isLocked
+                          ? "bg-amber-100 text-amber-800 border border-amber-300"
                           : "bg-gray-100 text-gray-600"
                       )}
                     >
@@ -205,11 +222,15 @@ export function FormStepper({
                         ? "bg-emerald-600 text-white shadow-sm"
                         : isActive
                         ? "bg-[#1B5E20] text-white ring-4 ring-[#1B5E20]/20"
+                        : isLocked
+                        ? "bg-amber-100 text-amber-700 border border-amber-300"
                         : "bg-gray-100 text-gray-500 border border-gray-300"
                     )}
                   >
                     {isCompleted ? (
                       <Check className="size-4 stroke-[3]" />
+                    ) : isLocked ? (
+                      <Lock className="size-3.5 text-amber-700" />
                     ) : (
                       <Icon className="size-3.5" />
                     )}
@@ -225,6 +246,8 @@ export function FormStepper({
                         ? "text-[#1B5E20]"
                         : isCompleted
                         ? "text-emerald-900"
+                        : isLocked
+                        ? "text-amber-900"
                         : "text-gray-800"
                     )}
                   >
@@ -244,6 +267,10 @@ export function FormStepper({
                   ) : isActive ? (
                     <span className="font-semibold text-[#1B5E20] flex items-center gap-0.5">
                       Current Step <ChevronRight className="size-3" />
+                    </span>
+                  ) : isLocked ? (
+                    <span className="inline-flex items-center gap-1 font-medium text-amber-800">
+                      <Lock className="size-3 text-amber-600" /> Locked (Step {idx} first)
                     </span>
                   ) : (
                     <span className="text-gray-400">Pending</span>

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Check, Lock, LucideIcon } from "lucide-react";
+import { Check, Lock, LucideIcon, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface StepperStep {
@@ -13,10 +13,16 @@ export interface StepperStep {
   required?: boolean;
 }
 
+export interface SubFormProgressInfo {
+  completed: number;
+  total: number;
+}
+
 export interface StickyStepperProps {
   steps: StepperStep[];
   activeStepId: string;
   completedStepIds: string[];
+  subFormProgress?: Record<string, SubFormProgressInfo>;
   onSelectStep: (stepId: string) => void;
   isSticky?: boolean;
   className?: string;
@@ -26,14 +32,27 @@ export function StickyStepper({
   steps,
   activeStepId,
   completedStepIds,
+  subFormProgress,
   onSelectStep,
   isSticky = true,
   className,
 }: StickyStepperProps) {
   const activeIndex = steps.findIndex((s) => s.id === activeStepId);
   const totalSteps = steps.length;
-  const completedCount = completedStepIds.length;
-  const progressPercent = Math.round((completedCount / totalSteps) * 100);
+
+  // Granular Sub-form weighted progress calculation
+  const totalSubForms = subFormProgress
+    ? Object.values(subFormProgress).reduce((sum, item) => sum + item.total, 0)
+    : 0;
+
+  const completedSubForms = subFormProgress
+    ? Object.values(subFormProgress).reduce((sum, item) => sum + item.completed, 0)
+    : 0;
+
+  const progressPercent =
+    totalSubForms > 0
+      ? Math.round((completedSubForms / totalSubForms) * 100)
+      : Math.round((completedStepIds.length / totalSteps) * 100);
 
   return (
     <nav
@@ -48,7 +67,7 @@ export function StickyStepper({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3.5 mb-3.5 border-b border-slate-100">
         <div>
           <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
-            Workflow Stepper
+            Progress
           </h2>
           <p className="text-xs text-slate-500">
             Step {activeIndex + 1} of {totalSteps}: {steps[activeIndex]?.label || ""}
@@ -61,7 +80,9 @@ export function StickyStepper({
               {progressPercent}% Complete
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              {completedCount} of {totalSteps} Steps Done
+              {totalSubForms > 0
+                ? `${completedSubForms} of ${totalSubForms} Sub-sections Done`
+                : `${completedStepIds.length} of ${totalSteps} Steps Done`}
             </span>
           </div>
           <div className="w-24 sm:w-32 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/80">
@@ -90,13 +111,27 @@ export function StickyStepper({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-2 relative z-10">
           {steps.map((step, idx) => {
             const Icon = step.icon;
-            const isCompleted = completedStepIds.includes(step.id);
+            const stepSubInfo = subFormProgress?.[step.id];
+            const isFullyCompleted =
+              completedStepIds.includes(step.id) ||
+              Boolean(stepSubInfo && stepSubInfo.completed === stepSubInfo.total && stepSubInfo.total > 0);
+            const isPartiallyCompleted = !isFullyCompleted && Boolean(stepSubInfo && stepSubInfo.completed > 0);
             const isActive = step.id === activeStepId;
 
             // Sequential lock check: step is locked if any preceding step is not completed
             const isLocked =
               idx > 0 &&
-              steps.slice(0, idx).some((prev) => !completedStepIds.includes(prev.id));
+              steps.slice(0, idx).some((prev) => {
+                const prevSubInfo = subFormProgress?.[prev.id];
+                const prevComplete =
+                  completedStepIds.includes(prev.id) ||
+                  Boolean(prevSubInfo && prevSubInfo.completed === prevSubInfo.total && prevSubInfo.total > 0);
+                return !prevComplete;
+              });
+
+            const stepPercent = stepSubInfo && stepSubInfo.total > 0
+              ? Math.round((stepSubInfo.completed / stepSubInfo.total) * 100)
+              : isFullyCompleted ? 100 : 0;
 
             return (
               <button
@@ -112,8 +147,10 @@ export function StickyStepper({
                   "group text-left p-3 rounded-xl border transition-all duration-200 flex flex-col justify-between relative",
                   isActive
                     ? "border-emerald-600 bg-emerald-50/40 shadow-xs ring-2 ring-emerald-600/20"
-                    : isCompleted
+                    : isFullyCompleted
                     ? "border-emerald-200 bg-emerald-50/20 hover:bg-emerald-50/50"
+                    : isPartiallyCompleted
+                    ? "border-amber-200 bg-amber-50/20 hover:bg-amber-50/50"
                     : isLocked
                     ? "border-slate-200 bg-slate-50/60 opacity-75 cursor-pointer"
                     : "border-slate-200 bg-white hover:bg-slate-50"
@@ -126,8 +163,10 @@ export function StickyStepper({
                       "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
                       isActive
                         ? "bg-emerald-700 text-white"
-                        : isCompleted
+                        : isFullyCompleted
                         ? "bg-emerald-100 text-emerald-800"
+                        : isPartiallyCompleted
+                        ? "bg-amber-100 text-amber-800"
                         : isLocked
                         ? "bg-slate-200 text-slate-600"
                         : "bg-slate-100 text-slate-600"
@@ -142,14 +181,16 @@ export function StickyStepper({
                       "size-7 rounded-full flex items-center justify-center transition-all",
                       isActive
                         ? "bg-emerald-700 text-white ring-4 ring-emerald-100 scale-110 shadow-xs"
-                        : isCompleted
+                        : isFullyCompleted
                         ? "bg-emerald-600 text-white"
+                        : isPartiallyCompleted
+                        ? "bg-amber-500 text-white"
                         : isLocked
                         ? "bg-slate-200 text-slate-500"
                         : "bg-slate-100 text-slate-600 border border-slate-300"
                     )}
                   >
-                    {isCompleted ? (
+                    {isFullyCompleted ? (
                       <Check className="size-4 stroke-[3]" />
                     ) : isLocked ? (
                       <Lock className="size-3.5 text-slate-500" />
@@ -168,7 +209,7 @@ export function StickyStepper({
                       "text-xs sm:text-sm font-bold truncate",
                       isActive
                         ? "text-emerald-950"
-                        : isCompleted
+                        : isFullyCompleted
                         ? "text-emerald-900"
                         : "text-slate-800"
                     )}
@@ -180,6 +221,31 @@ export function StickyStepper({
                       {step.description}
                     </p>
                   )}
+                </div>
+
+                {/* Granular Sub-form Status Indicator Bar */}
+                <div className="mt-2 pt-2 border-t border-slate-100 flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-[10px] font-medium text-slate-500">
+                    <span>
+                      {isFullyCompleted
+                        ? "Completed"
+                        : stepSubInfo && stepSubInfo.total > 0
+                        ? `${stepSubInfo.completed}/${stepSubInfo.total} Sub-sections`
+                        : "Pending"}
+                    </span>
+                    <span className="font-semibold text-slate-700">
+                      {stepPercent}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full transition-all duration-300",
+                        isFullyCompleted ? "bg-emerald-600" : isPartiallyCompleted ? "bg-amber-500" : "bg-slate-200"
+                      )}
+                      style={{ width: `${stepPercent}%` }}
+                    />
+                  </div>
                 </div>
               </button>
             );

@@ -1563,7 +1563,7 @@ export function PageContent() {
     }
   };
 
-  // Calculate completed step IDs for current application
+  // Calculate completed step IDs and sub-form progress for current application
   const currentAppStatus = activeApplicationId
     ? knownApplicationStatus[activeApplicationId]?.status || {
         clientProfile: false,
@@ -1573,7 +1573,100 @@ export function PageContent() {
       }
     : { clientProfile: false, ipDisclosure: false, substantialUse: false, deedAssignment: false };
 
-  const completedStepIds = FORM_STEPS.filter((s) => currentAppStatus[s.statusKey]).map((s) => s.id);
+  // Calculate granular sub-form completion per main form
+  const calculateSubFormProgress = () => {
+    let clientPersonalDone = false;
+    let clientEducationDone = false;
+    let clientBackgroundDone = false;
+
+    if (currentAppStatus.clientProfile) {
+      clientPersonalDone = true;
+      clientEducationDone = true;
+      clientBackgroundDone = true;
+    } else if (typeof window !== "undefined") {
+      try {
+        const pData = localStorage.getItem("clientInformationData");
+        if (pData) {
+          const parsed = JSON.parse(pData);
+          clientPersonalDone = Boolean(parsed?.firstName && parsed?.lastName);
+        }
+        const eData = localStorage.getItem("educationalBackgroundData");
+        if (eData) {
+          const parsed = JSON.parse(eData);
+          clientEducationDone = Boolean(parsed?.degree || parsed?.profession || parsed?.highestDegree);
+        }
+        const bData = localStorage.getItem("clientBackgroundIPData");
+        if (bData) {
+          const parsed = JSON.parse(bData);
+          clientBackgroundDone = Boolean(parsed?.publishedResearch || parsed?.familiarWithIPRights);
+        }
+      } catch (e) {}
+    }
+
+    const clientProfileCompletedCount = [clientPersonalDone, clientEducationDone, clientBackgroundDone].filter(Boolean).length;
+
+    let ipDisclosureCompletedCount = currentAppStatus.ipDisclosure ? 4 : 0;
+    if (!currentAppStatus.ipDisclosure && typeof window !== "undefined") {
+      try {
+        const discData = localStorage.getItem("ipDisclosureData");
+        if (discData) {
+          const parsed = JSON.parse(discData);
+          let count = 0;
+          if (parsed?.title || parsed?.description) count++;
+          if (parsed?.inventors?.length > 0) count++;
+          if (parsed?.developmentTimeline || parsed?.priorArt) count++;
+          if (parsed?.commercialPotential || parsed?.claims) count++;
+          ipDisclosureCompletedCount = Math.max(1, count);
+        }
+      } catch (e) {}
+    }
+
+    let substantialUseCompletedCount = currentAppStatus.substantialUse ? 2 : 0;
+    if (!currentAppStatus.substantialUse && typeof window !== "undefined") {
+      try {
+        const subData = localStorage.getItem("substantialUseData");
+        if (subData) {
+          const parsed = JSON.parse(subData);
+          let count = 0;
+          if (parsed?.facilities || parsed?.funding) count++;
+          if (parsed?.isCertified) count++;
+          substantialUseCompletedCount = Math.max(1, count);
+        }
+      } catch (e) {}
+    }
+
+    let deedAssignmentCompletedCount = currentAppStatus.deedAssignment ? 2 : 0;
+    if (!currentAppStatus.deedAssignment && typeof window !== "undefined") {
+      try {
+        const deedData = localStorage.getItem("deedAssignmentData");
+        if (deedData) {
+          const parsed = JSON.parse(deedData);
+          let count = 0;
+          if (parsed?.termsAccepted) count++;
+          if (parsed?.signatures?.length > 0) count++;
+          deedAssignmentCompletedCount = Math.max(1, count);
+        }
+      } catch (e) {}
+    }
+
+    return {
+      "client-profile": { completed: clientProfileCompletedCount, total: 3 },
+      "ip-disclosure": { completed: ipDisclosureCompletedCount, total: 4 },
+      "substantial-use": { completed: substantialUseCompletedCount, total: 2 },
+      "deed-assignment": { completed: deedAssignmentCompletedCount, total: 2 },
+    };
+  };
+
+  const subFormProgress = calculateSubFormProgress();
+  const totalSubForms = Object.values(subFormProgress).reduce((sum, item) => sum + item.total, 0);
+  const completedSubForms = Object.values(subFormProgress).reduce((sum, item) => sum + item.completed, 0);
+  const overallProgressPercent = Math.round((completedSubForms / totalSubForms) * 100);
+
+  const completedStepIds = FORM_STEPS.filter((s) => {
+    const subInfo = subFormProgress[s.id as keyof typeof subFormProgress];
+    return currentAppStatus[s.statusKey] || (subInfo && subInfo.completed === subInfo.total);
+  }).map((s) => s.id);
+
   const activeStepIdx = FORM_STEPS.findIndex((s) => s.id === activeForm);
   const currentStepItem = FORM_STEPS[activeStepIdx] || FORM_STEPS[0];
   const hasPrevious = activeStepIdx > 0;
@@ -1590,7 +1683,7 @@ export function PageContent() {
           title={activeApplication.title}
           ipType={activeApplication.ipType || "patent"}
           status={activeApplication.status || "draft"}
-          progressPercent={Math.round((completedStepIds.length / FORM_STEPS.length) * 100)}
+          progressPercent={overallProgressPercent}
           backUrl="/dashboard"
           onSave={() => toast.success("Draft auto-saved", { id: "draft-saved-toast" })}
           onPreview={() => toast.info("Form Preview mode active", { id: "preview-toast" })}
@@ -1619,11 +1712,12 @@ export function PageContent() {
           />
         ) : (
           <>
-            {/* Horizontal Workflow Stepper */}
+            {/* Horizontal Workflow Stepper with sub-form progress */}
             <StickyStepper
               steps={FORM_STEPS}
               activeStepId={activeForm}
               completedStepIds={completedStepIds}
+              subFormProgress={subFormProgress}
               onSelectStep={handleTabChange}
             />
 
@@ -1693,25 +1787,35 @@ export function PageContent() {
       </main>
 
       {/* Sticky Viewport Action Bar */}
-      {activeApplicationId && (
-        <StickyActionBar
-          hasPrevious={hasPrevious}
-          hasNext={hasNext}
-          onPrevious={() => prevStep && handleTabChange(prevStep.id)}
-          onNext={() => nextStep && handleTabChange(nextStep.id)}
-          onSaveDraft={() => toast.success("Draft saved successfully")}
-          onSubmit={() => {
-            toast.success("Application submitted successfully!");
-            router.push("/dashboard");
-          }}
-          canSubmit={allFormsCompleted}
-          validationStatus={{
-            isComplete: completedStepIds.includes(activeForm),
-            missingCount: completedStepIds.includes(activeForm) ? 0 : 1,
-          }}
-          nextLabel={nextStep ? `Continue to ${nextStep.shortLabel || "Next"}` : "Continue"}
-        />
-      )}
+      {activeApplicationId && (() => {
+        const activeStepSubInfo = subFormProgress[activeForm as keyof typeof subFormProgress];
+        const activeStepMissingCount = activeStepSubInfo
+          ? activeStepSubInfo.total - activeStepSubInfo.completed
+          : 0;
+        const isCurrentSectionComplete =
+          completedStepIds.includes(activeForm) ||
+          Boolean(activeStepSubInfo && activeStepSubInfo.completed === activeStepSubInfo.total && activeStepSubInfo.total > 0);
+
+        return (
+          <StickyActionBar
+            hasPrevious={hasPrevious}
+            hasNext={hasNext}
+            onPrevious={() => prevStep && handleTabChange(prevStep.id)}
+            onNext={() => nextStep && handleTabChange(nextStep.id)}
+            onSaveDraft={() => toast.success("Draft saved successfully")}
+            onSubmit={() => {
+              toast.success("Application submitted successfully!");
+              router.push("/dashboard");
+            }}
+            canSubmit={allFormsCompleted}
+            validationStatus={{
+              isComplete: isCurrentSectionComplete,
+              missingCount: isCurrentSectionComplete ? 0 : (activeStepMissingCount > 0 ? activeStepMissingCount : 1),
+            }}
+            nextLabel={nextStep ? `Continue to ${nextStep.shortLabel || "Next"}` : "Continue"}
+          />
+        );
+      })()}
 
       {/* Modals & Dialogs */}
       {showNewAppDialog && (

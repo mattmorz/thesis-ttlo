@@ -57,7 +57,7 @@ export function StickyActionBar({
               ) : (
                 <span className="inline-flex items-center gap-1.5 font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
                   <AlertCircle className="size-3.5 text-amber-600" />
-                  Missing {validationStatus.missingCount || "required"} field{(validationStatus.missingCount || 0) > 1 ? "s" : ""}
+                  Missing {validationStatus.missingCount || 1} required sub-section{(validationStatus.missingCount || 1) > 1 ? "s" : ""}
                 </span>
               )}
             </div>

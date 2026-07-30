@@ -38,6 +38,7 @@ import { TypographyMuted } from "@/components/ui/typography";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { FormValidationAlert } from "../FormValidationAlert";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -1211,6 +1212,9 @@ export function SubstantialUseForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {/* Top Form Validation Alert & Error Warnings */}
+        <FormValidationAlert errors={form.formState.errors} />
+
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             <p>An error occurred: {error.message}</p>

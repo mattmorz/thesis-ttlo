@@ -37,6 +37,7 @@ import { getFormPermissions, bypassPermissions } from "@/lib/auth/permissions";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { safeFetch } from "@/lib/utils";
+import { FormValidationAlert } from "../FormValidationAlert";
 
 // Add TypeScript declaration for window global methods
 declare global {

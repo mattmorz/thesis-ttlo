@@ -25,6 +25,7 @@ import { AlertCircle, Loader2, PlusCircle } from "lucide-react";
 import { useIpDisclosure } from "./hooks/use-ip-disclosure";
 import { useApplicationIpDisclosure } from "@/features/client/ip-disclosure/hooks/use-application-ip-disclosure";
 import { useRouter } from "next/navigation";
+import { FormValidationAlert } from "../FormValidationAlert";
 
 // Global logging control
 const DEBUG = false;
@@ -438,6 +439,15 @@ export function IPDisclosureForm() {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Form Validation & Inline Feedback Alert */}
+      <FormValidationAlert
+        warningMessage={
+          !activeApplicationId
+            ? "No active IP application selected. Please choose an application to save disclosure details."
+            : null
+        }
+      />
 
       <Card className="p-6 border-green-200 shadow-sm space-y-6">
         {/* HCI Sub-stepper Bar */}

@@ -38,6 +38,7 @@ import {
   CardContent,
   CardDescription,
 } from "@/components/ui/card";
+import { FormValidationAlert } from "../FormValidationAlert";
 
 /**
  * Form schema for client information
@@ -1905,6 +1906,9 @@ export function ClientInformation({
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {/* Top Form Validation Alert & Error Warnings */}
+          <FormValidationAlert errors={form.formState.errors} />
+
           {/* Display error message if there is one */}
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

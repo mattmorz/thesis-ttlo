@@ -15,6 +15,7 @@ import { useDeedAssignmentStore } from "@/lib/store/deed-assignment-store";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
 import { Button } from "@/components/ui/button";
+import { FormValidationAlert } from "../FormValidationAlert";
 
 // Add window interface for updateIPFormStatus
 declare global {
@@ -537,6 +538,15 @@ export function DeedAssignmentForm() {
         </TypographyMuted>
       </div>
       <Separator className="my-4" />
+
+      {/* Form Validation & Warning Alert */}
+      <FormValidationAlert
+        warningMessage={
+          !activeApplicationId
+            ? "No active IP application selected. Please select an application to save deed assignment details."
+            : null
+        }
+      />
 
       {/* HCI Sub-stepper Bar */}
       <div className="bg-slate-50 border rounded-lg p-3 mb-6">

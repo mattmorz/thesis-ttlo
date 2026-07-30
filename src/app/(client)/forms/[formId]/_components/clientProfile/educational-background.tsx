@@ -823,19 +823,8 @@ export function EducationalBackground({
             </CardContent>
           </Card>
 
-          <Separator className="my-6" />
-
-          <div className="flex justify-between gap-4">
-            <Button
-              type="button"
-              onClick={handlePreviousClick}
-              variant="outline"
-              className="text-[#1B5E20] border-[#1B5E20] hover:bg-[#1B5E20]/10"
-            >
-              Previous
-            </Button>
-            <div className="flex-1"></div>
-            {!isDisabled && (
+          {!isDisabled && (
+            <div className="flex justify-end gap-4 mt-6">
               <Button
                 variant="outline"
                 type="button"
@@ -843,17 +832,10 @@ export function EducationalBackground({
                 onClick={handleUpdate}
                 disabled={isUpdating}
               >
-                {isUpdating ? "Updating..." : "Update Form"}
+                {isUpdating ? "Updating..." : "Save Section"}
               </Button>
-            )}
-            <Button
-              type="button"
-              onClick={handleNextClick}
-              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
-            >
-              Next
-            </Button>
-          </div>
+            </div>
+          )}
         </form>
       </Form>
     </div>

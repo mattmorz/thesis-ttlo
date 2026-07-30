@@ -857,34 +857,15 @@ export function MatrixSampleForm({
           </CardContent>
         </Card>
 
-        <Separator />
-
-        <div className="flex justify-between">
+        <div className="flex justify-end mt-6">
           <Button
             variant="outline"
             type="button"
-            onClick={handlePreviousWithoutSubmit}
+            onClick={handleSave}
             className="border-[#1B5E20] text-[#1B5E20] hover:bg-[#E8F5E9] hover:text-[#1B5E20]"
           >
-            Previous
+            Save Section
           </Button>
-          <div className="flex gap-4">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={handleSave}
-              className="border-[#1B5E20] text-[#1B5E20] hover:bg-[#E8F5E9] hover:text-[#1B5E20]"
-            >
-              Update Form
-            </Button>
-            <Button
-              type="button"
-              onClick={handleNextWithoutSubmit}
-              className="bg-[#1B5E20] hover:bg-[#0A3A10] text-white"
-            >
-              Next
-            </Button>
-          </div>
         </div>
       </form>
     </Form>

@@ -1681,19 +1681,8 @@ export function ClientBackgroundIP({
             </CardContent>
           </Card>
 
-          <Separator className="my-6" />
-
-          <div className="flex justify-between gap-4">
-            <Button
-              type="button"
-              onClick={handlePreviousClick}
-              variant="outline"
-              className="text-[#1B5E20] border-[#1B5E20] hover:bg-[#1B5E20]/10"
-            >
-              Previous
-            </Button>
-            <div className="flex-1"></div>
-            {!isDisabled && (
+          {!isDisabled && (
+            <div className="flex justify-end gap-4 mt-6">
               <Button
                 variant="outline"
                 type="button"
@@ -1701,47 +1690,10 @@ export function ClientBackgroundIP({
                 onClick={handleUpdate}
                 disabled={isUpdating}
               >
-                {isUpdating ? "Updating..." : "Update Form"}
+                {isUpdating ? "Updating..." : "Save Section"}
               </Button>
-            )}
-            {canApprove && formStatus === "submitted" && (
-              <>
-                <Button
-                  variant="outline"
-                  type="button"
-                  className="text-green-600 border-green-600 hover:bg-green-600/10"
-                  onClick={() => handleApproval("approved")}
-                  disabled={isApproving}
-                >
-                  {isApproving ? "Processing..." : "Approve"}
-                </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  className="text-red-600 border-red-600 hover:bg-red-600/10"
-                  onClick={() => handleApproval("rejected")}
-                  disabled={isApproving}
-                >
-                  {isApproving ? "Processing..." : "Reject"}
-                </Button>
-              </>
-            )}
-            <Button
-              type="button"
-              onClick={handleCompleteForm}
-              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Form"
-              )}
-            </Button>
-          </div>
+            </div>
+          )}
         </form>
       </Form>
     </div>

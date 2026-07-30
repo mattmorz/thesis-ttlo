@@ -898,14 +898,8 @@ export function DeedAssignment({
           </CardContent>
         </Card>
 
-        <Separator className="my-6" />
-
-        <div className="flex justify-between items-center">
-          <div className="flex gap-4">
-            {/* No Previous button on first tab */}
-          </div>
-
-          <div className="flex gap-4">
+        {!isDisabled && (
+          <div className="flex justify-end mt-6">
             <Button
               variant="outline"
               type="button"
@@ -913,18 +907,10 @@ export function DeedAssignment({
               disabled={isDisabled || isUpdating}
               className="border-green-200 text-green-700 hover:bg-green-50"
             >
-              {isUpdating ? "Updating..." : "Update Form"}
-            </Button>
-            <Button
-              type="button"
-              onClick={handleNextClick}
-              disabled={isDisabled || isSubmitting}
-              className="bg-green-700 text-white hover:bg-green-800"
-            >
-              {isSubmitting ? "Saving..." : "Next"}
+              {isUpdating ? "Updating..." : "Save Section"}
             </Button>
           </div>
-        </div>
+        )}
       </form>
     </Form>
   );

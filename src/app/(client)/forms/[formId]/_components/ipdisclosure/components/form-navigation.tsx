@@ -32,8 +32,8 @@ interface FormNavigationProps {
 }
 
 export function FormNavigation({
-  showNext = true,
-  showPrevious = true,
+  showNext = false,
+  showPrevious = false,
   showSubmit = false,
   showSave = true,
   isNextDisabled = false,

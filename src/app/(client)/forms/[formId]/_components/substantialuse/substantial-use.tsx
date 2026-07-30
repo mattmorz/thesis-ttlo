@@ -1075,14 +1075,6 @@ export function SubstantialUse() {
             </CardContent>
           </Card>
 
-          <Separator />
-
-          <div className="flex gap-4">
-            <Button type="submit">Submit</Button>
-            <Button variant="outline" type="button">
-              Save Draft
-            </Button>
-          </div>
         </form>
       </Form>
     </>

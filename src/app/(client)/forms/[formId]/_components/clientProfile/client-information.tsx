@@ -2454,10 +2454,8 @@ export function ClientInformation({
             </CardContent>
           </Card>
 
-          <Separator className="my-6" />
-
-          <div className="flex justify-end gap-4">
-            {!isDisabled && (
+          {!isDisabled && (
+            <div className="flex justify-end gap-4 mt-6">
               <Button
                 variant="outline"
                 type="button"
@@ -2465,17 +2463,10 @@ export function ClientInformation({
                 onClick={handleUpdate}
                 disabled={isUpdating}
               >
-                {isUpdating ? "Updating..." : "Update Form"}
+                {isUpdating ? "Updating..." : "Save Section"}
               </Button>
-            )}
-            <Button
-              type="button"
-              onClick={handleNextClick}
-              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90"
-            >
-              Next
-            </Button>
-          </div>
+            </div>
+          )}
         </form>
       </Form>
     </div>

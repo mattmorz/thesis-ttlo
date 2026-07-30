@@ -1495,6 +1495,17 @@ export function PageContent() {
                   </SelectContent>
                 </Select>
               )}
+              {activeApplicationId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDocuments(true)}
+                  className="h-9 text-sm gap-1.5 text-[#1B5E20] border-[#1B5E20]/30 hover:bg-[#1B5E20]/10"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>Manage Documents</span>
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -1536,7 +1547,16 @@ export function PageContent() {
                   </div>
                 </div>
 
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1.5 text-[#1B5E20] border-[#1B5E20]/30 bg-white hover:bg-[#1B5E20]/5"
+                    onClick={() => setShowDocuments(true)}
+                  >
+                    <Upload className="h-3 w-3" />
+                    <span>Manage Documents</span>
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1591,190 +1611,83 @@ export function PageContent() {
           <div className="mb-6">{renderGettingStartedGuide()}</div>
         )}
 
-        {/* Main Content Area with Sidebar and Form */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Sidebar - Form Navigation */}
-          <div className="col-span-12 md:col-span-3 lg:col-span-3">
-            <div className="sticky top-6 space-y-5">
-              {/* Forms Navigation */}
-              <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
-                <div className="bg-gray-50 p-3 border-b flex items-center justify-between">
-                  <h2 className="font-medium text-sm text-gray-700">
-                    Form Sections
+        {/* Main Content Area - Full Width Form Workspace */}
+        <div className="w-full">
+          {/* Welcome Screen - Show when no application is selected */}
+          {!activeApplicationId ? (
+            <div className="rounded-lg border bg-white p-6 text-center shadow-sm">
+              <div className="max-w-xl mx-auto">
+                <div className="mb-6">
+                  <div className="bg-[#1B5E20]/10 size-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FileText className="h-8 w-8 text-[#1B5E20]" />
+                  </div>
+                  <h2 className="text-xl font-bold mb-2 text-gray-800">
+                    Welcome to the IP Application Portal
                   </h2>
-                  <div className="flex gap-1">
+                  <p className="text-gray-600 mb-5">
+                    To begin your intellectual property application, please
+                    create or select an application.
+                  </p>
+                  <Button
+                    onClick={() => setShowNewAppDialog(true)}
+                    className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Create Your First Application
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Main Form Content Area */}
+              <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                <div className="border-b bg-gray-50 py-3 px-4 flex items-center justify-between">
+                  <h2 className="font-medium text-[#1B5E20]">
+                    {sidebarItems.find((item) => item.id === activeForm)
+                      ?.label || "Form Content"}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-full"
+                    onClick={() => setShowHelpPanel(!showHelpPanel)}
+                    title="Show help"
+                  >
+                    <HelpCircle className="h-4 w-4 text-gray-500" />
+                  </Button>
+                </div>
+                <div className="p-5">
+                  <ClientOnlyContent activeForm={activeForm} />
+                </div>
+              </div>
+
+              {/* Contextual Help Panel - Sliding from right */}
+              {showHelpPanel && (
+                <div className="fixed top-[5.5rem] right-4 w-80 bg-white rounded-lg border shadow-lg p-4 z-50 animate-in slide-in-from-right">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-[#1B5E20] flex items-center gap-2">
+                      <HelpCircle className="h-4 w-4" />
+                      Help & Tips
+                    </h3>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 w-6 p-0 rounded-full"
-                      onClick={() => setShowHelpPanel(!showHelpPanel)}
-                      title="Show help"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setShowHelpPanel(false)}
                     >
-                      <HelpCircle className="h-3.5 w-3.5 text-gray-500" />
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-
-                <nav className="p-2 space-y-1">
-                  {sidebarItems.map((item) => {
-                    // Get form completion status
-                    const isCompleted =
-                      knownApplicationStatus[activeApplicationId || ""]
-                        ?.status?.[
-                        formTypeMapping[
-                          item.id as string
-                        ] as keyof (typeof knownApplicationStatus)[string]["status"]
-                      ];
-
-                    return (
-                      <Button
-                        key={item.id}
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-between gap-3 py-2.5 px-3 h-auto text-sm rounded-md",
-                          activeForm === item.id
-                            ? "bg-[#1B5E20]/10 text-[#1B5E20] font-medium"
-                            : "text-gray-600 hover:text-gray-900",
-                          !activeApplicationId &&
-                            "opacity-50 cursor-not-allowed hover:bg-transparent"
-                        )}
-                        onClick={() =>
-                          activeApplicationId &&
-                          handleTabChange(item.id as string)
-                        }
-                        disabled={!activeApplicationId}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              "size-6 rounded-md flex items-center justify-center",
-                              activeForm === item.id
-                                ? "bg-[#1B5E20]/20"
-                                : "bg-gray-100"
-                            )}
-                          >
-                            {item.icon}
-                          </div>
-                          <span>{item.label}</span>
-                        </div>
-                        {isCompleted && (
-                          <Check className="h-3.5 w-3.5 text-green-600" />
-                        )}
-                      </Button>
-                    );
-                  })}
-                </nav>
-              </div>
-
-              {/* Form Status Summary */}
-              {activeApplicationId && (
-                <Card className="shadow-sm">
-                  <CardHeader className="py-3 px-4">
-                    <CardTitle className="text-sm font-medium">
-                      Form Progress
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4 pt-0">
-                    <FormProgressTracker
-                      applicationId={activeApplicationId}
-                      refreshInterval={30000}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Additional Actions */}
-              {activeApplicationId && (
-                <div className="rounded-lg border bg-white overflow-hidden shadow-sm">
-                  <div className="bg-gray-50 p-3 border-b">
-                    <h2 className="font-medium text-sm text-gray-700">
-                      Additional Actions
-                    </h2>
-                  </div>
-                  <div className="p-3">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2 text-sm h-auto py-2 px-3 text-gray-700"
-                      onClick={() => setShowDocuments(true)}
-                    >
-                      <Upload className="h-3.5 w-3.5" />
-                      <span>Manage Documents</span>
-                    </Button>
+                  {getContextualHelp()}
+                  <Separator className="my-3" />
+                  <div className="text-xs text-gray-500">
+                    Need more help? Contact TTLO staff at ttlo@csu.edu.ph
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Right Content Area - Form Content */}
-          <div className="col-span-12 md:col-span-9 lg:col-span-9">
-            {/* Welcome Screen - Show when no application is selected */}
-            {!activeApplicationId ? (
-              <div className="rounded-lg border bg-white p-6 text-center shadow-sm">
-                <div className="max-w-xl mx-auto">
-                  <div className="mb-6">
-                    <div className="bg-[#1B5E20]/10 size-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FileText className="h-8 w-8 text-[#1B5E20]" />
-                    </div>
-                    <h2 className="text-xl font-bold mb-2 text-gray-800">
-                      Welcome to the IP Application Portal
-                    </h2>
-                    <p className="text-gray-600 mb-5">
-                      To begin your intellectual property application, please
-                      create or select an application.
-                    </p>
-                    <Button
-                      onClick={() => setShowNewAppDialog(true)}
-                      className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Create Your First Application
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Main Form Content Area */}
-                <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                  <div className="border-b bg-gray-50 py-3 px-4">
-                    <h2 className="font-medium text-[#1B5E20]">
-                      {sidebarItems.find((item) => item.id === activeForm)
-                        ?.label || "Form Content"}
-                    </h2>
-                  </div>
-                  <div className="p-5">
-                    <ClientOnlyContent activeForm={activeForm} />
-                  </div>
-                </div>
-
-                {/* Contextual Help Panel - Sliding from right */}
-                {showHelpPanel && (
-                  <div className="fixed top-[5.5rem] right-4 w-80 bg-white rounded-lg border shadow-lg p-4 z-50 animate-in slide-in-from-right">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-medium text-[#1B5E20] flex items-center gap-2">
-                        <HelpCircle className="h-4 w-4" />
-                        Help & Tips
-                      </h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => setShowHelpPanel(false)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {getContextualHelp()}
-                    <Separator className="my-3" />
-                    <div className="text-xs text-gray-500">
-                      Need more help? Contact TTLO staff at ttlo@csu.edu.ph
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </main>
 

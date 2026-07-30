@@ -65,7 +65,7 @@ import { ApplicationCreationDialog } from "../../../../../components/Application
 import { ClientFormStatusLoader } from "./ClientFormStatusLoader";
 import { ClientOnlyContent } from "./ClientOnlyContent";
 import { FormProgressTracker } from "./FormProgressTracker";
-import { FormStepper } from "./FormStepper";
+import { FormStepper, FORM_STEPS } from "./FormStepper";
 import {
   Accordion,
   AccordionContent,

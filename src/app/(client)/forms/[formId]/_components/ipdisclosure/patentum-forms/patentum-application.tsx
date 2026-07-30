@@ -816,7 +816,7 @@ export function PatentApplication({
             onClick={handleSave}
             className="border-[#1B5E20] text-[#1B5E20] hover:bg-[#E8F5E9] hover:text-[#1B5E20]"
           >
-            Save Section
+            Update Form
           </Button>
         </div>
       </form>

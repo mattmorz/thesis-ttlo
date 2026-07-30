@@ -1034,6 +1034,16 @@ export function ClientProfileForm() {
             isDisabled={isFormDisabled}
             formStatus={formStatus}
           />
+          {/* Action Bar */}
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              type="button"
+              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white gap-2 text-sm"
+              onClick={() => handleTabChange("education")}
+            >
+              Next: Educational Background →
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="education" className="mt-6 space-y-6">
@@ -1042,6 +1052,24 @@ export function ClientProfileForm() {
             isDisabled={isFormDisabled}
             formStatus={formStatus}
           />
+          {/* Action Bar */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleTabChange("personal")}
+              className="text-gray-700 text-sm"
+            >
+              ← Back to Personal Info
+            </Button>
+            <Button
+              type="button"
+              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white gap-2 text-sm"
+              onClick={() => handleTabChange("background")}
+            >
+              Next: Background IP →
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="background" className="mt-6 space-y-6">
@@ -1051,6 +1079,28 @@ export function ClientProfileForm() {
             formStatus={formStatus}
             canApprove={canApprove}
           />
+          {/* Action Bar */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleTabChange("education")}
+              className="text-gray-700 text-sm"
+            >
+              ← Back to Education
+            </Button>
+            <Button
+              type="button"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 text-sm font-semibold"
+              onClick={() => {
+                const params = new URLSearchParams(window.location.search);
+                params.set("tab", "ip-disclosure");
+                router.push(`?${params.toString()}`);
+              }}
+            >
+              Proceed to IP Disclosure Form →
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

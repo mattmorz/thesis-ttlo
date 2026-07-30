@@ -907,7 +907,7 @@ export function DeedAssignment({
               disabled={isDisabled || isUpdating}
               className="border-green-200 text-green-700 hover:bg-green-50"
             >
-              {isUpdating ? "Updating..." : "Save Section"}
+              {isUpdating ? "Updating..." : "Update Form"}
             </Button>
           </div>
         )}

@@ -832,7 +832,7 @@ export function EducationalBackground({
                 onClick={handleUpdate}
                 disabled={isUpdating}
               >
-                {isUpdating ? "Updating..." : "Save Section"}
+                {isUpdating ? "Updating..." : "Update Form"}
               </Button>
             </div>
           )}

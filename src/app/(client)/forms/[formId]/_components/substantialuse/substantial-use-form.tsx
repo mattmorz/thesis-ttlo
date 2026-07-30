@@ -1870,6 +1870,28 @@ export function SubstantialUseForm() {
                 </Button>
               </>
             )}
+            <Button
+              variant="outline"
+              type="button"
+              className="text-[#1B5E20] border-[#1B5E20] hover:bg-[#1B5E20]/10"
+              onClick={handleUpdate}
+              disabled={isUpdating}
+            >
+              {isUpdating ? "Updating..." : "Update Form"}
+            </Button>
+            <div className="ml-auto">
+              <Button
+                type="button"
+                className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 text-sm font-semibold"
+                onClick={() => {
+                  const params = new URLSearchParams(window.location.search);
+                  params.set("tab", "deed-assignment");
+                  router.push(`?${params.toString()}`);
+                }}
+              >
+                Proceed to Deed of Assignment Form →
+              </Button>
+            </div>
           </div>
         )}
       </form>

@@ -954,6 +954,37 @@ export function ClientProfileForm() {
         </p>
       </div>
 
+      {/* HCI Sub-stepper Bar */}
+      <div className="bg-slate-50 border rounded-lg p-3 mb-6">
+        <div className="flex items-center justify-between gap-2 overflow-x-auto">
+          {[
+            { id: "personal", label: "1. Personal Information", desc: "Basic details & contact info" },
+            { id: "education", label: "2. Educational Background", desc: "Highest degree & affiliation" },
+            { id: "background", label: "3. Background IP", desc: "Prior research & IP exposure" },
+          ].map((step) => {
+            const isActive = activeTab === step.id;
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => handleTabChange(step.id)}
+                className={cn(
+                  "flex-1 text-left px-3 py-2 rounded-md transition-all text-xs border",
+                  isActive
+                    ? "bg-white border-[#1B5E20] text-[#1B5E20] font-semibold shadow-sm ring-1 ring-[#1B5E20]"
+                    : "border-transparent text-gray-600 hover:bg-white/60"
+                )}
+              >
+                <div className="font-semibold">{step.label}</div>
+                <div className="text-[10px] text-gray-500 hidden sm:block mt-0.5">
+                  {step.desc}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <Tabs
         defaultValue="personal"
         value={activeTab}
@@ -996,27 +1027,79 @@ export function ClientProfileForm() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="personal" className="mt-6">
+        <TabsContent value="personal" className="mt-6 space-y-6">
           <ClientInformation
             initialData={formState.personal}
             isDisabled={isFormDisabled}
             formStatus={formStatus}
           />
+          {/* Action Bar */}
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              type="button"
+              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white gap-2 text-sm"
+              onClick={() => handleTabChange("education")}
+            >
+              Next: Educational Background →
+            </Button>
+          </div>
         </TabsContent>
-        <TabsContent value="education" className="mt-6">
+
+        <TabsContent value="education" className="mt-6 space-y-6">
           <EducationalBackground
             initialData={formState.education}
             isDisabled={isFormDisabled}
             formStatus={formStatus}
           />
+          {/* Action Bar */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleTabChange("personal")}
+              className="text-gray-700 text-sm"
+            >
+              ← Back to Personal Info
+            </Button>
+            <Button
+              type="button"
+              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white gap-2 text-sm"
+              onClick={() => handleTabChange("background")}
+            >
+              Next: Background IP →
+            </Button>
+          </div>
         </TabsContent>
-        <TabsContent value="background" className="mt-6">
+
+        <TabsContent value="background" className="mt-6 space-y-6">
           <ClientBackgroundIP
             initialData={formState.background}
             isDisabled={isFormDisabled}
             formStatus={formStatus}
             canApprove={canApprove}
           />
+          {/* Action Bar */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleTabChange("education")}
+              className="text-gray-700 text-sm"
+            >
+              ← Back to Education
+            </Button>
+            <Button
+              type="button"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 text-sm font-semibold"
+              onClick={() => {
+                const params = new URLSearchParams(window.location.search);
+                params.set("tab", "ip-disclosure");
+                router.push(`?${params.toString()}`);
+              }}
+            >
+              Proceed to IP Disclosure Form →
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

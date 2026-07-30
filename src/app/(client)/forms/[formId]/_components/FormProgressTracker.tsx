@@ -92,57 +92,9 @@ export function FormProgressTracker({
     }
   };
 
-  // Helper to update DOM elements directly
+  // Helper to sync form progress state safely
   const updateDOMFormProgress = (status: any) => {
-    try {
-      // Calculate completed forms count
-      const completedCount = Object.values(status).filter(Boolean).length;
-
-      // Update counter elements
-      const counterElements = document.querySelectorAll(
-        ".form-progress-counter"
-      );
-      if (counterElements && counterElements.length > 0) {
-        counterElements.forEach((el) => {
-          el.textContent = `${completedCount} of 4 completed`;
-        });
-      }
-
-      // Update status dots
-      const updateFormDot = (formType: string, isCompleted: boolean) => {
-        const formDot = document.querySelector(`.form-status-dot-${formType}`);
-        if (formDot) {
-          if (isCompleted) {
-            formDot.classList.remove("bg-gray-200");
-            formDot.classList.add("bg-[#1B5E20]");
-          } else {
-            formDot.classList.remove("bg-[#1B5E20]");
-            formDot.classList.add("bg-gray-200");
-          }
-        }
-
-        const formLabel = document.querySelector(
-          `.form-status-label-${formType}`
-        );
-        if (formLabel) {
-          if (isCompleted) {
-            formLabel.classList.remove("text-gray-500");
-            formLabel.classList.add("text-gray-800", "font-medium");
-          } else {
-            formLabel.classList.remove("text-gray-800", "font-medium");
-            formLabel.classList.add("text-gray-500");
-          }
-        }
-      };
-
-      // Update each form indicator
-      updateFormDot("client-profile", status.clientProfile);
-      updateFormDot("ip-disclosure", status.ipDisclosure);
-      updateFormDot("substantial-use", status.substantialUse);
-      updateFormDot("deed-assignment", status.deedAssignment);
-    } catch (err) {
-      console.error("Error updating DOM for form progress:", err);
-    }
+    // Component state handles UI rendering reactively
   };
 
   // Check form progress when applicationId changes or on initial mount

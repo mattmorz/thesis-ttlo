@@ -1833,7 +1833,7 @@ export function SubstantialUseForm() {
         </Card>
 
         {!isFormDisabled && (
-          <div className="flex gap-4">
+          <div className="flex flex-wrap items-center gap-4 pt-4 border-t">
             {canSubmit && (
               <Button
                 type="submit"
@@ -1872,6 +1872,19 @@ export function SubstantialUseForm() {
             >
               {isUpdating ? "Updating..." : "Update Form"}
             </Button>
+            <div className="ml-auto">
+              <Button
+                type="button"
+                className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 text-sm font-semibold"
+                onClick={() => {
+                  const params = new URLSearchParams(window.location.search);
+                  params.set("tab", "deed-assignment");
+                  router.push(`?${params.toString()}`);
+                }}
+              >
+                Proceed to Deed of Assignment Form →
+              </Button>
+            </div>
           </div>
         )}
       </form>

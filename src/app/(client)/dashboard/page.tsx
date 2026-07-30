@@ -1045,6 +1045,14 @@ export default function DashboardPage() {
                 {/* Actions */}
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => router.push("/projects")}
+                      className="h-9 text-xs bg-[#1B5E20] hover:bg-[#2E7D32] text-white font-semibold gap-1.5 shadow-sm"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Create New Application</span>
+                    </Button>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>

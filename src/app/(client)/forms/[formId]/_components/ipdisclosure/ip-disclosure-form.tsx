@@ -439,7 +439,31 @@ export function IPDisclosureForm() {
         </Alert>
       )}
 
-      <Card className="p-6 border-green-200">
+      <Card className="p-6 border-green-200 shadow-sm space-y-6">
+        {/* HCI Sub-stepper Bar */}
+        <div className="bg-slate-50 border rounded-lg p-3">
+          <div className="flex items-center justify-between gap-2 overflow-x-auto">
+            {visibleTabComponents.map((tab, idx) => {
+              const isActive = currentTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "flex-1 text-left px-3 py-2 rounded-md transition-all text-xs border min-w-[130px]",
+                    isActive
+                      ? "bg-white border-[#1B5E20] text-[#1B5E20] font-semibold shadow-sm ring-1 ring-[#1B5E20]"
+                      : "border-transparent text-gray-600 hover:bg-white/60"
+                  )}
+                >
+                  <div className="font-semibold">{idx + 1}. {tab.label}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <Tabs
           value={currentTab}
           defaultValue="applicants-information"
@@ -462,7 +486,65 @@ export function IPDisclosureForm() {
             </div>
           </div>
 
-          <div className="mt-6">{renderTabContent()}</div>
+          <div className="mt-6 space-y-6">
+            {renderTabContent()}
+
+            {/* Bottom Action Bar */}
+            <div className="flex justify-between items-center pt-4 border-t">
+              {(() => {
+                const currentIdx = visibleTabComponents.findIndex(
+                  (t) => t.id === currentTab
+                );
+                const prevTab =
+                  currentIdx > 0 ? visibleTabComponents[currentIdx - 1] : null;
+                const nextTab =
+                  currentIdx < visibleTabComponents.length - 1
+                    ? visibleTabComponents[currentIdx + 1]
+                    : null;
+
+                return (
+                  <>
+                    {prevTab ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleTabChange(prevTab.id)}
+                        className="text-gray-700 text-sm"
+                      >
+                        ← Back: {prevTab.label}
+                      </Button>
+                    ) : (
+                      <div />
+                    )}
+
+                    {nextTab ? (
+                      <Button
+                        type="button"
+                        className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white gap-2 text-sm"
+                        onClick={() => handleTabChange(nextTab.id)}
+                      >
+                        Next: {nextTab.label} →
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 text-sm font-semibold"
+                        onClick={() => {
+                          const params = new URLSearchParams(
+                            window.location.search
+                          );
+                          params.set("tab", "substantial-use");
+                          router.push(`?${params.toString()}`);
+                        }}
+                      >
+                        Proceed to Substantial Use Form →
+                      </Button>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
         </Tabs>
       </Card>
     </div>

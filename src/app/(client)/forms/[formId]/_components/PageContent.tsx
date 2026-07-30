@@ -65,6 +65,7 @@ import { ApplicationCreationDialog } from "../../../../../components/Application
 import { ClientFormStatusLoader } from "./ClientFormStatusLoader";
 import { ClientOnlyContent } from "./ClientOnlyContent";
 import { FormProgressTracker } from "./FormProgressTracker";
+import { FormStepper } from "./FormStepper";
 import {
   Accordion,
   AccordionContent,
@@ -497,72 +498,12 @@ export function PageContent() {
     try {
       // Calculate the count of completed forms
       const completedCount = Object.values(status).filter(Boolean).length;
-      console.log("DIRECT UPDATE: Form progress count =", completedCount);
+      console.log("Form progress count updated =", completedCount);
 
       // Safely update the guide state using our helper function
       safelyUpdateGuideState(completedCount);
-
-      // Update the form progress counter in the DOM
-      const counterElements = document.querySelectorAll(
-        ".form-progress-counter"
-      );
-
-      if (counterElements && counterElements.length > 0) {
-        counterElements.forEach((el) => {
-          el.textContent = `${completedCount} of 4 completed`;
-          console.log("Updated form progress counter:", el.textContent);
-        });
-
-        // Also update the form status indicators
-        const updateFormDot = (formType: string, isCompleted: boolean) => {
-          const formDot = document.querySelector(
-            `.form-status-dot-${formType}`
-          );
-          if (formDot) {
-            if (isCompleted) {
-              formDot.classList.remove("bg-gray-200");
-              formDot.classList.add("bg-[#1B5E20]");
-            } else {
-              formDot.classList.remove("bg-[#1B5E20]");
-              formDot.classList.add("bg-gray-200");
-            }
-          }
-
-          const formLabel = document.querySelector(
-            `.form-status-label-${formType}`
-          );
-          if (formLabel) {
-            if (isCompleted) {
-              formLabel.classList.remove("text-gray-500");
-              formLabel.classList.add("text-gray-800", "font-medium");
-            } else {
-              formLabel.classList.remove("text-gray-800", "font-medium");
-              formLabel.classList.add("text-gray-500");
-            }
-          }
-        };
-
-        // Update each form indicator
-        updateFormDot("client-profile", status.clientProfile);
-        updateFormDot("ip-disclosure", status.ipDisclosure);
-        updateFormDot("substantial-use", status.substantialUse);
-        updateFormDot("deed-assignment", status.deedAssignment);
-
-        // Show a notification about the update
-        if (completedCount > 0) {
-          toast.success(
-            `Form progress updated: ${completedCount} of 4 completed`,
-            {
-              id: "form-progress-updated",
-              duration: 3000,
-            }
-          );
-        }
-      } else {
-        console.log("Form progress counter not found in DOM");
-      }
     } catch (e) {
-      console.error("Error directly updating form progress display:", e);
+      console.error("Error updating form progress display state:", e);
     }
   };
 
@@ -1625,6 +1566,25 @@ export function PageContent() {
             </div>
           )}
         </div>
+
+        {/* Top HCI Form Workflow Stepper */}
+        {activeApplicationId && (
+          <div className="mb-6">
+            <FormStepper
+              activeForm={activeForm}
+              formStatus={
+                knownApplicationStatus[activeApplicationId]?.status || {
+                  clientProfile: false,
+                  ipDisclosure: false,
+                  substantialUse: false,
+                  deedAssignment: false,
+                }
+              }
+              onSelectForm={handleTabChange}
+              applicationId={activeApplicationId}
+            />
+          </div>
+        )}
 
         {/* Add Getting Started Guide here - right after the application section */}
         {activeApplicationId && (

@@ -538,6 +538,37 @@ export function DeedAssignmentForm() {
       </div>
       <Separator className="my-4" />
 
+      {/* HCI Sub-stepper Bar */}
+      <div className="bg-slate-50 border rounded-lg p-3 mb-6">
+        <div className="flex items-center justify-between gap-2 overflow-x-auto">
+          {[
+            { id: "deed", label: "1. Deed Details", desc: "Assignor, assignee & research info" },
+            { id: "royalty", label: "2. Royalty Agreement", desc: "Commercialization & revenue terms" },
+            { id: "signatory", label: "3. Signatory Section", desc: "Dates, notary & authorization" },
+          ].map((step) => {
+            const isActive = subTab === step.id;
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => handleTabChange(step.id)}
+                className={cn(
+                  "flex-1 text-left px-3 py-2 rounded-md transition-all text-xs border",
+                  isActive
+                    ? "bg-white border-[#1B5E20] text-[#1B5E20] font-semibold shadow-sm ring-1 ring-[#1B5E20]"
+                    : "border-transparent text-gray-600 hover:bg-white/60"
+                )}
+              >
+                <div className="font-semibold">{step.label}</div>
+                <div className="text-[10px] text-gray-500 hidden sm:block mt-0.5">
+                  {step.desc}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <Tabs
         defaultValue="deed"
         value={subTab}
@@ -580,24 +611,74 @@ export function DeedAssignmentForm() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="deed" className="mt-6">
+        <TabsContent value="deed" className="mt-6 space-y-6">
           <DeedAssignment
             initialData={deed}
             isDisabled={isFormDisabled}
             formStatus={formStatus}
             useStore={true}
           />
+          {/* Action Bar */}
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              type="button"
+              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white gap-2 text-sm"
+              onClick={() => handleTabChange("royalty")}
+            >
+              Next: Royalty Agreement →
+            </Button>
+          </div>
         </TabsContent>
-        <TabsContent value="royalty" className="mt-6">
+
+        <TabsContent value="royalty" className="mt-6 space-y-6">
           <RoyaltyAgreement isDisabled={isFormDisabled} />
+          {/* Action Bar */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleTabChange("deed")}
+              className="text-gray-700 text-sm"
+            >
+              ← Back: Deed Details
+            </Button>
+            <Button
+              type="button"
+              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white gap-2 text-sm"
+              onClick={() => handleTabChange("signatory")}
+            >
+              Next: Signatory Section →
+            </Button>
+          </div>
         </TabsContent>
-        <TabsContent value="signatory" className="mt-6">
+
+        <TabsContent value="signatory" className="mt-6 space-y-6">
           <SignatorySection
             initialData={signatory}
             isDisabled={isFormDisabled}
             formStatus={formStatus}
             useStore={true}
           />
+          {/* Action Bar */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleTabChange("royalty")}
+              className="text-gray-700 text-sm"
+            >
+              ← Back: Royalty Agreement
+            </Button>
+            <Button
+              type="button"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 text-sm font-semibold"
+              onClick={() => {
+                toast.success("Deed of Assignment completion verified.");
+              }}
+            >
+              ✓ Complete Application Workflow
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

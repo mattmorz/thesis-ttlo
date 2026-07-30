@@ -1565,6 +1565,9 @@ export function PageContent() {
   return (
     <div className="w-full">
       <main className="container mx-auto max-w-7xl pb-12">
+        {/* Getting Started Guide at the very top */}
+        <div className="mb-6">{renderGettingStartedGuide()}</div>
+
         {/* Application Selection Header - Simplified and compact */}
         <div className="bg-white border rounded-lg shadow-sm mb-6 overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b bg-gray-50">
@@ -1712,11 +1715,6 @@ export function PageContent() {
               applicationId={activeApplicationId}
             />
           </div>
-        )}
-
-        {/* Add Getting Started Guide here - right after the application section */}
-        {activeApplicationId && (
-          <div className="mb-6">{renderGettingStartedGuide()}</div>
         )}
 
         {/* Main Content Area - Full Width Form Workspace */}

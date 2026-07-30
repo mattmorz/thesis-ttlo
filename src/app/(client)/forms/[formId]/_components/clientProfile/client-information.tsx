@@ -1934,7 +1934,9 @@ export function ClientInformation({
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>
+                        First Name <span className="text-red-500 font-bold ml-0.5" title="Required field">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter first name" {...field} />
                       </FormControl>
@@ -1962,7 +1964,9 @@ export function ClientInformation({
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>
+                        Last Name <span className="text-red-500 font-bold ml-0.5" title="Required field">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter last name" {...field} />
                       </FormControl>
@@ -1979,7 +1983,9 @@ export function ClientInformation({
                   name="gender.value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Gender</FormLabel>
+                      <FormLabel>
+                        Gender <span className="text-red-500 font-bold ml-0.5" title="Required field">*</span>
+                      </FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -2041,7 +2047,9 @@ export function ClientInformation({
                     name="citizenship.value"
                     render={({ field }) => (
                       <FormItem className="space-y-1">
-                        <FormLabel>Citizenship</FormLabel>
+                        <FormLabel>
+                          Citizenship <span className="text-red-500 font-bold ml-0.5" title="Required field">*</span>
+                        </FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
@@ -2088,7 +2096,7 @@ export function ClientInformation({
                       render={({ field }) => (
                         <FormItem className="mt-2">
                           <FormLabel className="text-sm text-gray-600">
-                            Specify Citizenship
+                            Specify Citizenship <span className="text-red-500 font-bold ml-0.5" title="Required field">*</span>
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -2129,7 +2137,9 @@ export function ClientInformation({
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>
+                        Email <span className="text-red-500 font-bold ml-0.5" title="Required field">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter email address" {...field} />
                       </FormControl>
@@ -2143,7 +2153,9 @@ export function ClientInformation({
                   name="contactNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Contact Number</FormLabel>
+                      <FormLabel>
+                        Contact Number <span className="text-red-500 font-bold ml-0.5" title="Required field">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input placeholder="Enter contact number" {...field} />
                       </FormControl>
@@ -2171,7 +2183,9 @@ export function ClientInformation({
                 name="mailingAddress"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mailing Address</FormLabel>
+                    <FormLabel>
+                      Mailing Address <span className="text-red-500 font-bold ml-0.5" title="Required field">*</span>
+                    </FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Enter complete mailing address"

@@ -1256,7 +1256,9 @@ export function SubstantialUseForm() {
               name="researchTitle"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Research Title</FormLabel>
+                  <FormLabel className="text-base">
+                    Research Title <span className="text-red-500 font-bold ml-0.5" title="Required field">*</span>
+                  </FormLabel>
                   <FormDescription>
                     This is to certify that aside from the ordinarily available
                     resources of the University such as office, library,

@@ -15,6 +15,7 @@ import { useDeedAssignmentStore } from "@/lib/store/deed-assignment-store";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { FormValidationAlert } from "../FormValidationAlert";
 
 // Add window interface for updateIPFormStatus

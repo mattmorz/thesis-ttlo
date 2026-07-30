@@ -25,6 +25,7 @@ import { AlertCircle, Loader2, PlusCircle } from "lucide-react";
 import { useIpDisclosure } from "./hooks/use-ip-disclosure";
 import { useApplicationIpDisclosure } from "@/features/client/ip-disclosure/hooks/use-application-ip-disclosure";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { FormValidationAlert } from "../FormValidationAlert";
 
 // Global logging control

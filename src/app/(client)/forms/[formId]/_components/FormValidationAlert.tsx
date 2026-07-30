@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { AlertCircle, AlertTriangle, CheckCircle2, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -53,11 +53,11 @@ export function FormValidationAlert({
     });
   }
 
-  // Trigger Sonner toast notification whenever form errors occur
+  // Trigger Sonner toast notification whenever form errors occur (Toast is sufficient)
   useEffect(() => {
     if (errorList.length > 0) {
-      toast.error("Form Validation Required", {
-        description: `Please review missing field(s): ${errorList.slice(0, 3).join("; ")}${
+      toast.error("Please fill in required details", {
+        description: `${errorList.slice(0, 3).join("; ")}${
           errorList.length > 3 ? "..." : ""
         }`,
         id: "form-validation-toast-id",
@@ -66,35 +66,20 @@ export function FormValidationAlert({
     }
   }, [errorList.length]);
 
-  return (
-    <div className="space-y-3 my-4">
-      {/* Error Warning Banner */}
-      {errorList.length > 0 && (
-        <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-900 shadow-sm animate-in fade-in">
-          <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <div className="ml-2">
-            <AlertTitle className="text-sm font-semibold text-red-800">
-              Please Check Required Fields ({errorList.length} item{errorList.length > 1 ? "s" : ""})
-            </AlertTitle>
-            <AlertDescription className="text-xs text-red-700 mt-1">
-              Please complete the required details below to continue:
-              <ul className="list-disc list-inside mt-1.5 space-y-1 font-medium">
-                {errorList.map((msg, i) => (
-                  <li key={i}>{msg}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </div>
-        </Alert>
-      )}
+  // If there are only validation errors (or no warning/success messages), return null since toast handles error feedback
+  if (!warningMessage && !successMessage) {
+    return null;
+  }
 
+  return (
+    <div className="space-y-3 my-3">
       {/* Warning Alert Banner */}
       {warningMessage && errorList.length === 0 && (
-        <Alert className="bg-amber-50 border-amber-200 text-amber-900 shadow-sm">
-          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+        <Alert className="bg-amber-50 border-amber-200 text-amber-900 shadow-sm py-2 px-3">
+          <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
           <div className="ml-2">
-            <AlertTitle className="text-sm font-semibold text-amber-800">Attention Required</AlertTitle>
-            <AlertDescription className="text-xs text-amber-700 mt-0.5">
+            <AlertTitle className="text-xs font-semibold text-amber-800">Attention Required</AlertTitle>
+            <AlertDescription className="text-[11px] text-amber-700 mt-0.5">
               {warningMessage}
             </AlertDescription>
           </div>
@@ -103,12 +88,12 @@ export function FormValidationAlert({
 
       {/* Success Message Banner */}
       {successMessage && errorList.length === 0 && (
-        <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900 shadow-sm flex items-center justify-between">
+        <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900 shadow-sm flex items-center justify-between py-2 px-3">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
             <div>
-              <AlertTitle className="text-sm font-semibold text-emerald-800">Section Complete</AlertTitle>
-              <AlertDescription className="text-xs text-emerald-700">
+              <AlertTitle className="text-xs font-semibold text-emerald-800">Section Complete</AlertTitle>
+              <AlertDescription className="text-[11px] text-emerald-700">
                 {successMessage}
               </AlertDescription>
             </div>
@@ -118,10 +103,10 @@ export function FormValidationAlert({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 text-emerald-700 hover:bg-emerald-100"
+              className="h-6 w-6 p-0 text-emerald-700 hover:bg-emerald-100"
               onClick={onDismissSuccess}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           )}
         </Alert>

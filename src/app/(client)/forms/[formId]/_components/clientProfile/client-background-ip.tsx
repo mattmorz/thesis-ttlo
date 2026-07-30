@@ -171,6 +171,7 @@ export function ClientBackgroundIP({
   // Initialize the form first before using it
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur",
     defaultValues: {
       publishedResearch: { value: "no" },
       developedMaterials: { value: "no" },

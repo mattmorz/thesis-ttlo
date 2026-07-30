@@ -133,6 +133,7 @@ export function CopyrightApplication() {
   // Initialize form with the local state
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur",
     defaultValues: formData,
     values: formData, // Explicitly set values from our state
   });

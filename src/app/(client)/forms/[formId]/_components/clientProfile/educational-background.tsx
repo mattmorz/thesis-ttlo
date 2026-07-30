@@ -155,6 +155,7 @@ export function EducationalBackground({
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur",
     defaultValues: {
       highestDegree: { value: "bachelor", otherValue: null },
       degree: "",

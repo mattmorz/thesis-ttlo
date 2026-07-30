@@ -140,6 +140,7 @@ export function SignatorySection({
   // Initialize form with default values
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur",
     defaultValues: {
       day: "",
       month: "",

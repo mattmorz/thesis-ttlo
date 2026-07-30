@@ -79,14 +79,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Link from "next/link";
+
+// Guided UX Components
+import { GuidedHeader } from "@/components/case-management/guided-header";
+import { StickyStepper } from "@/components/case-management/sticky-stepper";
+import { CurrentTaskCard } from "@/components/case-management/current-task-card";
+import { StickyActionBar } from "@/components/case-management/sticky-action-bar";
+import { ActionableEmptyState } from "@/components/ui/actionable-empty-state";
 
 // Import form components
 import { ClientProfileForm } from "./clientProfile/client-profile-form";
@@ -1562,242 +1563,157 @@ export function PageContent() {
     }
   };
 
+  // Calculate completed step IDs for current application
+  const currentAppStatus = activeApplicationId
+    ? knownApplicationStatus[activeApplicationId]?.status || {
+        clientProfile: false,
+        ipDisclosure: false,
+        substantialUse: false,
+        deedAssignment: false,
+      }
+    : { clientProfile: false, ipDisclosure: false, substantialUse: false, deedAssignment: false };
+
+  const completedStepIds = FORM_STEPS.filter((s) => currentAppStatus[s.statusKey]).map((s) => s.id);
+  const activeStepIdx = FORM_STEPS.findIndex((s) => s.id === activeForm);
+  const currentStepItem = FORM_STEPS[activeStepIdx] || FORM_STEPS[0];
+  const hasPrevious = activeStepIdx > 0;
+  const hasNext = activeStepIdx < FORM_STEPS.length - 1;
+  const prevStep = hasPrevious ? FORM_STEPS[activeStepIdx - 1] : null;
+  const nextStep = hasNext ? FORM_STEPS[activeStepIdx + 1] : null;
+
   return (
-    <div className="w-full">
-      <main className="container mx-auto max-w-7xl pb-12">
-        {/* Getting Started Guide at the very top */}
-        <div className="mb-6">{renderGettingStartedGuide()}</div>
+    <div className="w-full min-h-screen bg-slate-50/60 pb-20">
+      {/* Sticky Enterprise Guided Header */}
+      {activeApplicationId && activeApplication && (
+        <GuidedHeader
+          id={activeApplicationId}
+          title={activeApplication.title}
+          ipType={activeApplication.ipType || "patent"}
+          status={activeApplication.status || "draft"}
+          progressPercent={Math.round((completedStepIds.length / FORM_STEPS.length) * 100)}
+          backUrl="/dashboard"
+          onSave={() => toast.success("Draft auto-saved", { id: "draft-saved-toast" })}
+          onPreview={() => toast.info("Form Preview mode active", { id: "preview-toast" })}
+          canSubmit={allFormsCompleted}
+          onSubmit={() => {
+            if (allFormsCompleted) {
+              toast.success("Application submitted successfully!");
+              router.push("/dashboard");
+            } else {
+              toast.error("Please complete all required steps before submitting.");
+            }
+          }}
+        />
+      )}
 
-        {/* Application Selection Header - Simplified and compact */}
-        <div className="bg-white border rounded-lg shadow-sm mb-6 overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b bg-gray-50">
-            <div className="flex items-center gap-3">
-              <div className="bg-[#1B5E20]/10 p-2 rounded-full">
-                <FileText className="h-5 w-5 text-[#1B5E20]" />
-              </div>
-              <div>
-                <h1 className="text-lg font-medium text-[#1B5E20]">
-                  IP Application Manager
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Manage your intellectual property submissions
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {applications.length > 0 && (
-                <Select
-                  value={activeApplicationId || ""}
-                  onValueChange={handleSwitchApplication}
-                >
-                  <SelectTrigger className="w-auto min-w-[220px] max-w-[320px] h-9 text-sm bg-white border-gray-200">
-                    <SelectValue placeholder="Select application" />
-                  </SelectTrigger>
-                  <SelectContent className="min-w-[280px]">
-                    {applications.map((app) => (
-                      <SelectItem key={app.id} value={app.id}>
-                        <span className="flex items-center gap-2 truncate pr-1">
-                          <span className="truncate">{app.title}</span>
-                          <span className="text-xs text-gray-500 whitespace-nowrap">
-                            (ID: {app.id.slice(0, 6)})
-                          </span>
-                          {app.id === activeApplicationId && (
-                            <Badge
-                              variant="outline"
-                              className="ml-1 bg-green-50 text-green-700 text-xs py-0 px-1.5 whitespace-nowrap"
-                            >
-                              Active
-                            </Badge>
-                          )}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              {activeApplicationId && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowDocuments(true)}
-                  className="h-9 text-sm gap-1.5 text-[#1B5E20] border-[#1B5E20]/30 hover:bg-[#1B5E20]/10"
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  <span>Manage Documents</span>
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowNewAppDialog(true)}
-                className="h-9 text-sm gap-1.5 text-[#1B5E20] border-[#1B5E20]/30"
-              >
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span>New Application</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Active Application Context */}
-          {activeApplicationId && activeApplication && (
-            <div className="p-3 bg-gray-50/50 border-b">
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <div className="flex items-center gap-2 mr-1">
-                  <span className="text-gray-600 font-medium">
-                    Active application:
-                  </span>
-                  <h3 className="font-semibold text-gray-900">
-                    {activeApplication.title}
-                  </h3>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className="bg-white text-xs border-gray-200"
-                  >
-                    {activeApplication.ipType?.replace("_", " ")}
-                  </Badge>
-                  {getStatusBadge(activeApplication.status)}
-                  <div className="flex items-center bg-gray-100/80 px-2 py-0.5 rounded border border-gray-200/80">
-                    <span className="text-xs text-gray-600 mr-1.5">ID:</span>
-                    <code className="text-xs font-mono text-indigo-600 font-medium">
-                      {activeApplicationId.slice(0, 8)}
-                    </code>
-                  </div>
-                </div>
-
-                <div className="ml-auto">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs text-gray-500"
-                    onClick={() =>
-                      setIsApplicationsExpanded(!isApplicationsExpanded)
-                    }
-                  >
-                    {isApplicationsExpanded
-                      ? "Hide Applications"
-                      : "Manage Applications"}
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 ml-1 transition-transform ${
-                        isApplicationsExpanded ? "rotate-180" : ""
-                      }`}
-                    />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Collapsible Application Management */}
-          {isApplicationsExpanded && (
-            <div className="p-4 border-b bg-white">
-              <ApplicationManagement hideCreateButton={true} />
-            </div>
-          )}
-        </div>
-
-        {/* Top HCI Form Workflow Stepper */}
-        {activeApplicationId && (
-          <div className="mb-6">
-            <FormStepper
-              activeForm={activeForm}
-              formStatus={
-                knownApplicationStatus[activeApplicationId]?.status || {
-                  clientProfile: false,
-                  ipDisclosure: false,
-                  substantialUse: false,
-                  deedAssignment: false,
-                }
-              }
-              onSelectForm={handleTabChange}
-              applicationId={activeApplicationId}
+      <main className="container mx-auto max-w-6xl px-4 sm:px-6 pt-6 space-y-6">
+        {!activeApplicationId ? (
+          <ActionableEmptyState
+            title="No Active Application Selected"
+            description="Create your first IP application or select an existing draft to start the guided submission process."
+            primaryAction={{
+              label: "Create New Application",
+              onClick: () => setShowNewAppDialog(true),
+              icon: PlusCircle,
+            }}
+          />
+        ) : (
+          <>
+            {/* Horizontal Workflow Stepper */}
+            <StickyStepper
+              steps={FORM_STEPS}
+              activeStepId={activeForm}
+              completedStepIds={completedStepIds}
+              onSelectStep={handleTabChange}
             />
-          </div>
-        )}
 
-        {/* Main Content Area - Full Width Form Workspace */}
-        <div className="w-full">
-          {/* Welcome Screen - Show when no application is selected */}
-          {!activeApplicationId ? (
-            <div className="rounded-lg border bg-white p-6 text-center shadow-sm">
-              <div className="max-w-xl mx-auto">
-                <div className="mb-6">
-                  <div className="bg-[#1B5E20]/10 size-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FileText className="h-8 w-8 text-[#1B5E20]" />
-                  </div>
-                  <h2 className="text-xl font-bold mb-2 text-gray-800">
-                    Welcome to the IP Application Portal
+            {/* Focused Guided Current Task Card */}
+            <CurrentTaskCard
+              taskTitle={currentStepItem.label}
+              taskDescription={currentStepItem.description}
+              estimatedTime="4 minutes"
+              remainingCount={FORM_STEPS.length - completedStepIds.length}
+              totalCount={FORM_STEPS.length}
+              isCompleted={completedStepIds.includes(currentStepItem.id)}
+              onContinue={() => {
+                const el = document.getElementById("active-form-container");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+            />
+
+            {/* Form workspace section */}
+            <div id="active-form-container" className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
+              <div className="border-b border-slate-100 bg-slate-50/50 py-3 px-5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h2 className="font-bold text-slate-900 text-sm sm:text-base">
+                    {currentStepItem.label}
                   </h2>
-                  <p className="text-gray-600 mb-5">
-                    To begin your intellectual property application, please
-                    create or select an application.
-                  </p>
-                  <Button
-                    onClick={() => setShowNewAppDialog(true)}
-                    className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white"
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Create Your First Application
-                  </Button>
+                  <Badge variant="outline" className="text-[11px] bg-slate-100 text-slate-600 border-slate-200">
+                    Step {activeStepIdx + 1} of {FORM_STEPS.length}
+                  </Badge>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 rounded-full text-slate-500 hover:text-slate-900"
+                  onClick={() => setShowHelpPanel(!showHelpPanel)}
+                  title="Toggle contextual help"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="p-5 sm:p-6">
+                <ClientOnlyContent activeForm={activeForm} />
               </div>
             </div>
-          ) : (
-            <>
-              {/* Main Form Content Area */}
-              <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                <div className="border-b bg-gray-50 py-3 px-4 flex items-center justify-between">
-                  <h2 className="font-medium text-[#1B5E20]">
-                    {sidebarItems.find((item) => item.id === activeForm)
-                      ?.label || "Form Content"}
-                  </h2>
+
+            {/* Contextual Help Drawer */}
+            {showHelpPanel && (
+              <div className="fixed top-20 right-6 w-80 bg-white rounded-xl border border-slate-200 shadow-xl p-4 z-50 animate-in slide-in-from-right">
+                <div className="flex items-center justify-between mb-3 border-b pb-2">
+                  <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <HelpCircle className="h-4 w-4 text-emerald-700" />
+                    Help & Guidance
+                  </h3>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 rounded-full"
-                    onClick={() => setShowHelpPanel(!showHelpPanel)}
-                    title="Show help"
+                    className="h-6 w-6 p-0"
+                    onClick={() => setShowHelpPanel(false)}
                   >
-                    <HelpCircle className="h-4 w-4 text-gray-500" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="p-5">
-                  <ClientOnlyContent activeForm={activeForm} />
-                </div>
+                {getContextualHelp()}
               </div>
-
-              {/* Contextual Help Panel - Sliding from right */}
-              {showHelpPanel && (
-                <div className="fixed top-[5.5rem] right-4 w-80 bg-white rounded-lg border shadow-lg p-4 z-50 animate-in slide-in-from-right">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-medium text-[#1B5E20] flex items-center gap-2">
-                      <HelpCircle className="h-4 w-4" />
-                      Help & Tips
-                    </h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      onClick={() => setShowHelpPanel(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {getContextualHelp()}
-                  <Separator className="my-3" />
-                  <div className="text-xs text-gray-500">
-                    Need more help? Contact TTLO staff at ttlo@csu.edu.ph
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+            )}
+          </>
+        )}
       </main>
 
-      {/* Modals and Dialogs */}
+      {/* Sticky Viewport Action Bar */}
+      {activeApplicationId && (
+        <StickyActionBar
+          hasPrevious={hasPrevious}
+          hasNext={hasNext}
+          onPrevious={() => prevStep && handleTabChange(prevStep.id)}
+          onNext={() => nextStep && handleTabChange(nextStep.id)}
+          onSaveDraft={() => toast.success("Draft saved successfully")}
+          onSubmit={() => {
+            toast.success("Application submitted successfully!");
+            router.push("/dashboard");
+          }}
+          canSubmit={allFormsCompleted}
+          validationStatus={{
+            isComplete: completedStepIds.includes(activeForm),
+            missingCount: completedStepIds.includes(activeForm) ? 0 : 1,
+          }}
+          nextLabel={nextStep ? `Continue to ${nextStep.shortLabel || "Next"}` : "Continue"}
+        />
+      )}
+
+      {/* Modals & Dialogs */}
       {showNewAppDialog && (
         <ApplicationCreationDialog
           open={showNewAppDialog}
@@ -1810,7 +1726,6 @@ export function PageContent() {
         />
       )}
 
-      {/* Document Upload/Management Dialog */}
       {showDocuments && activeApplicationId && (
         <Dialog open={showDocuments} onOpenChange={setShowDocuments}>
           <DialogContent className="max-w-3xl">

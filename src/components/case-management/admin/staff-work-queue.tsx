@@ -132,6 +132,91 @@ export function StaffWorkQueue({
         </div>
       </div>
 
+      {/* Staff Priority Action Counter Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab("waiting_review")}
+          className={cn(
+            "p-3 rounded-lg border text-left transition-all hover:shadow-xs",
+            activeTab === "waiting_review" ? "border-blue-500 bg-blue-50/80 ring-1 ring-blue-500" : "border-slate-200 bg-slate-50/50 hover:bg-slate-100/50"
+          )}
+        >
+          <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider block">Waiting Review</span>
+          <span className="text-xl font-extrabold text-blue-950 mt-1 block">
+            {applications.filter((a) => a.status === "submitted" || a.status === "under_review").length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("waiting_applicant")}
+          className={cn(
+            "p-3 rounded-lg border text-left transition-all hover:shadow-xs",
+            activeTab === "waiting_applicant" ? "border-orange-500 bg-orange-50/80 ring-1 ring-orange-500" : "border-slate-200 bg-slate-50/50 hover:bg-slate-100/50"
+          )}
+        >
+          <span className="text-[11px] font-bold text-orange-800 uppercase tracking-wider block">Waiting Applicant</span>
+          <span className="text-xl font-extrabold text-orange-950 mt-1 block">
+            {applications.filter((a) => a.status === "needs_revision" || a.status === "draft").length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("needs_assignment")}
+          className={cn(
+            "p-3 rounded-lg border text-left transition-all hover:shadow-xs",
+            activeTab === "needs_assignment" ? "border-amber-500 bg-amber-50/80 ring-1 ring-amber-500" : "border-slate-200 bg-slate-50/50 hover:bg-slate-100/50"
+          )}
+        >
+          <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block">Needs Assignment</span>
+          <span className="text-xl font-extrabold text-amber-950 mt-1 block">
+            {applications.filter((a) => !a.assignedStaffName).length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("ready_approval")}
+          className={cn(
+            "p-3 rounded-lg border text-left transition-all hover:shadow-xs",
+            activeTab === "ready_approval" ? "border-emerald-500 bg-emerald-50/80 ring-1 ring-emerald-500" : "border-slate-200 bg-slate-50/50 hover:bg-slate-100/50"
+          )}
+        >
+          <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">Ready Approval</span>
+          <span className="text-xl font-extrabold text-emerald-950 mt-1 block">
+            {applications.filter((a) => a.status === "approved" || a.status === "signing").length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("all")}
+          className={cn(
+            "p-3 rounded-lg border text-left transition-all hover:shadow-xs border-rose-200 bg-rose-50/40 hover:bg-rose-50/70"
+          )}
+        >
+          <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider block">Overdue</span>
+          <span className="text-xl font-extrabold text-rose-950 mt-1 block">
+            {applications.filter((a) => a.status === "needs_revision").length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("all")}
+          className={cn(
+            "p-3 rounded-lg border text-left transition-all hover:shadow-xs border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50/70"
+          )}
+        >
+          <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider block">Today's Tasks</span>
+          <span className="text-xl font-extrabold text-indigo-950 mt-1 block">
+            {applications.filter((a) => a.status === "under_review" || a.status === "submitted").length}
+          </span>
+        </button>
+      </div>
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start overflow-x-auto bg-slate-100/70 p-1 text-xs">

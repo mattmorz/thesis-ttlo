@@ -629,38 +629,10 @@ export function DeedAssignmentForm() {
             formStatus={formStatus}
             useStore={true}
           />
-          {/* Action Bar */}
-          <div className="flex justify-end pt-4 border-t">
-            <Button
-              type="button"
-              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white gap-2 text-sm"
-              onClick={() => handleTabChange("royalty")}
-            >
-              Next: Royalty Agreement →
-            </Button>
-          </div>
         </TabsContent>
 
         <TabsContent value="royalty" className="mt-6 space-y-6">
           <RoyaltyAgreement isDisabled={isFormDisabled} />
-          {/* Action Bar */}
-          <div className="flex justify-between items-center pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleTabChange("deed")}
-              className="text-gray-700 text-sm"
-            >
-              ← Back: Deed Details
-            </Button>
-            <Button
-              type="button"
-              className="bg-[#1B5E20] hover:bg-[#1B5E20]/90 text-white gap-2 text-sm"
-              onClick={() => handleTabChange("signatory")}
-            >
-              Next: Signatory Section →
-            </Button>
-          </div>
         </TabsContent>
 
         <TabsContent value="signatory" className="mt-6 space-y-6">
@@ -670,26 +642,6 @@ export function DeedAssignmentForm() {
             formStatus={formStatus}
             useStore={true}
           />
-          {/* Action Bar */}
-          <div className="flex justify-between items-center pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleTabChange("royalty")}
-              className="text-gray-700 text-sm"
-            >
-              ← Back: Royalty Agreement
-            </Button>
-            <Button
-              type="button"
-              className="bg-emerald-700 hover:bg-emerald-800 text-white gap-2 text-sm font-semibold"
-              onClick={() => {
-                toast.success("Deed of Assignment completion verified.");
-              }}
-            >
-              ✓ Complete Application Workflow
-            </Button>
-          </div>
         </TabsContent>
       </Tabs>
     </div>

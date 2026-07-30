@@ -38,12 +38,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { StaffWorkQueue } from "@/components/case-management/admin/staff-work-queue";
+import { KanbanWorkflow } from "@/components/case-management/admin/kanban-workflow";
+import { WorkloadDistribution } from "@/components/case-management/admin/workload-distribution";
+import { QuickInfoDrawer, QuickInfoData } from "@/components/case-management/admin/quick-info-drawer";
+import { Layers, Kanban, Inbox } from "lucide-react";
+
 export default function DashboardPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [selectedApplicationId, setSelectedApplicationId] = useState<
-    string | null
-  >(null);
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+  const [dashboardViewMode, setDashboardViewMode] = useState<"queue" | "kanban">("queue");
+  const [quickInfoData, setQuickInfoData] = useState<QuickInfoData | null>(null);
+  const [isQuickInfoOpen, setIsQuickInfoOpen] = useState(false);
 
   const currentUser = {
     name: session?.user?.name || "User",
@@ -238,6 +245,139 @@ export default function DashboardPage() {
 
       {/* Dashboard Stats */}
       <DashboardStats />
+
+      {/* Staff Case Operations Command Center Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div>
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-emerald-600" />
+            Case Workflow Operations Center
+          </h2>
+          <p className="text-xs text-slate-500">Switch between Categorized Work Queue and Kanban Pipeline View</p>
+        </div>
+
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+          <Button
+            size="sm"
+            variant={dashboardViewMode === "queue" ? "default" : "ghost"}
+            onClick={() => setDashboardViewMode("queue")}
+            className={cn(
+              "h-8 text-xs font-semibold gap-1.5",
+              dashboardViewMode === "queue" ? "bg-emerald-700 text-white hover:bg-emerald-800" : "text-slate-600"
+            )}
+          >
+            <Inbox className="w-3.5 h-3.5" />
+            Work Queue
+          </Button>
+          <Button
+            size="sm"
+            variant={dashboardViewMode === "kanban" ? "default" : "ghost"}
+            onClick={() => setDashboardViewMode("kanban")}
+            className={cn(
+              "h-8 text-xs font-semibold gap-1.5",
+              dashboardViewMode === "kanban" ? "bg-emerald-700 text-white hover:bg-emerald-800" : "text-slate-600"
+            )}
+          >
+            <Kanban className="w-3.5 h-3.5" />
+            Kanban Board
+          </Button>
+        </div>
+      </div>
+
+      {/* Active Workflow View */}
+      {dashboardViewMode === "queue" ? (
+        <StaffWorkQueue
+          applications={
+            myProjects?.map((p) => ({
+              id: p.application.id,
+              title: p.application.title,
+              applicantName: currentUser.name,
+              department: p.application.department || "Caraga State University",
+              ipType: p.application.ipType,
+              status: p.application.status || "draft",
+              assignedStaffName: currentUser.name,
+              createdAt: p.application.createdAt || new Date().toISOString(),
+              updatedAt: p.application.updatedAt || new Date().toISOString(),
+              progress: p.application.progress || 0,
+            })) || [
+              {
+                id: "CASE-2024-001",
+                title: "Smart IoT Soil Moisture & Environmental Monitoring System",
+                applicantName: "Dr. Maria Santos",
+                department: "College of Computing and Information Sciences",
+                ipType: "patent",
+                status: "under_review",
+                assignedStaffName: "Engr. Reyes",
+                createdAt: new Date(Date.now() - 3600000 * 72).toISOString(),
+                updatedAt: new Date().toISOString(),
+                progress: 45,
+              },
+              {
+                id: "CASE-2024-002",
+                title: "Automated Paddy Husk Charcoal Briquetting Machine",
+                applicantName: "Prof. James Cruz",
+                department: "College of Engineering and Geo-Sciences",
+                ipType: "utility_model",
+                status: "submitted",
+                assignedStaffName: undefined,
+                createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
+                updatedAt: new Date().toISOString(),
+                progress: 15,
+              },
+            ]
+          }
+          onOpenQuickInfo={(id) => {
+            setQuickInfoData({
+              id,
+              title: "Smart IoT Soil Moisture Monitoring System",
+              applicantName: "Dr. Maria Santos",
+              department: "College of Computing and Information Sciences",
+              ipType: "patent",
+              status: "under_review",
+              inventors: ["Dr. Maria Santos", "Engr. James Cruz"],
+              fundingSource: "DOST Grant",
+              documentsCount: 4,
+              pendingTasksCount: 1,
+            });
+            setIsQuickInfoOpen(true);
+          }}
+        />
+      ) : (
+        <KanbanWorkflow
+          applications={
+            myProjects?.map((p) => ({
+              id: p.application.id,
+              title: p.application.title,
+              applicantName: currentUser.name,
+              ipType: p.application.ipType,
+              status: p.application.status || "submitted",
+              department: p.application.department || "Caraga State University",
+            })) || [
+              {
+                id: "CASE-2024-001",
+                title: "Smart IoT Soil Moisture Monitoring System",
+                applicantName: "Dr. Maria Santos",
+                ipType: "patent",
+                status: "under_review",
+              },
+              {
+                id: "CASE-2024-002",
+                title: "Automated Paddy Briquetting Machine",
+                applicantName: "Prof. James Cruz",
+                ipType: "utility_model",
+                status: "submitted",
+              },
+            ]
+          }
+        />
+      )}
+
+      {/* Quick Info Drawer Component */}
+      <QuickInfoDrawer
+        isOpen={isQuickInfoOpen}
+        onClose={() => setIsQuickInfoOpen(false)}
+        data={quickInfoData}
+      />
 
       {/* Main Content - Redesigned */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -576,9 +716,16 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Right Column - Calendar */}
-        <div>
+        {/* Right Column - Calendar & Workload Distribution */}
+        <div className="space-y-6">
           <SmartCalendar />
+          <WorkloadDistribution
+            staffWorkloads={[
+              { staffId: "1", name: "Maria Santos", assignedCount: 8 },
+              { staffId: "2", name: "James Cruz", assignedCount: 5 },
+              { staffId: "3", name: "John Reyes", assignedCount: 2 },
+            ]}
+          />
         </div>
       </div>
 

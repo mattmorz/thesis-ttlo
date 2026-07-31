@@ -26,7 +26,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAuth } from "@/lib/auth/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import {
   Book,
@@ -119,6 +118,7 @@ ListItem.displayName = "ListItem";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated";
 
   return (
     <header className="w-full sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
@@ -143,10 +143,11 @@ export default function Navbar() {
           </div>
         </div>
 
-        <div className="col-span-3 hidden md:block mx-auto ">
+        <div className="col-span-3 hidden md:block mx-auto">
           <div className="w-fit">
             <NavigationMenu>
               <NavigationMenuList>
+                {/* Overview Dropdown */}
                 <NavigationMenuItem>
                   <TooltipProvider>
                     <Tooltip>
@@ -199,46 +200,51 @@ export default function Navbar() {
                         </TooltipProvider>
                       </li>
 
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ListItem
-                              href="/forms"
-                              title="Submit IP Application"
-                              icon={FileText}
-                            >
-                              Begin your intellectual property protection
-                              process
-                            </ListItem>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="right"
-                            className="bg-[#1B5E20] text-white border-0"
-                          >
-                            Start a new intellectual property application
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      {/* Render protected links in Overview only when logged in */}
+                      {isAuthenticated && (
+                        <>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <ListItem
+                                  href="/forms"
+                                  title="Submit IP Application"
+                                  icon={FileText}
+                                >
+                                  Begin your intellectual property protection
+                                  process
+                                </ListItem>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="right"
+                                className="bg-[#1B5E20] text-white border-0"
+                              >
+                                Start a new intellectual property application
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
 
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ListItem
-                              href="/projects"
-                              title="Track Your Applications"
-                              icon={Search}
-                            >
-                              Monitor and manage your ongoing IP submissions
-                            </ListItem>
-                          </TooltipTrigger>
-                          <TooltipContent
-                            side="right"
-                            className="bg-[#1B5E20] text-white border-0"
-                          >
-                            View and track all your application progress
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <ListItem
+                                  href="/projects"
+                                  title="Track Your Applications"
+                                  icon={Search}
+                                >
+                                  Monitor and manage your ongoing IP submissions
+                                </ListItem>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="right"
+                                className="bg-[#1B5E20] text-white border-0"
+                              >
+                                View and track all your application progress
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </>
+                      )}
 
                       <TooltipProvider>
                         <Tooltip>
@@ -264,53 +270,57 @@ export default function Navbar() {
                   </NavigationMenuContent>
                 </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <NavigationMenuTrigger className="bg-transparent text-gray-800 hover:bg-[#E8F5E9] hover:text-[#1B5E20] gap-1.5">
-                          <FormInput className="h-4 w-4" />
-                          Forms
-                        </NavigationMenuTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="bottom"
-                        className="bg-[#1B5E20] text-white border-0"
-                      >
-                        Access IP application forms
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                      {components.map((component) => (
-                        <TooltipProvider key={component.title}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <ListItem
-                                title={component.title}
-                                href={component.href.replace(
-                                  "/forms/test",
-                                  "/forms"
-                                )}
-                                icon={component.icon}
+                {/* Forms Menu Item - Only Visible When Logged In */}
+                {isAuthenticated && (
+                  <NavigationMenuItem>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <NavigationMenuTrigger className="bg-transparent text-gray-800 hover:bg-[#E8F5E9] hover:text-[#1B5E20] gap-1.5">
+                            <FormInput className="h-4 w-4" />
+                            Forms
+                          </NavigationMenuTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#1B5E20] text-white border-0"
+                        >
+                          Access IP application forms
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <NavigationMenuContent>
+                      <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                        {components.map((component) => (
+                          <TooltipProvider key={component.title}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <ListItem
+                                  title={component.title}
+                                  href={component.href.replace(
+                                    "/forms/test",
+                                    "/forms"
+                                  )}
+                                  icon={component.icon}
+                                >
+                                  {component.description}
+                                </ListItem>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="right"
+                                className="bg-[#1B5E20] text-white border-0"
                               >
-                                {component.description}
-                              </ListItem>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="right"
-                              className="bg-[#1B5E20] text-white border-0"
-                            >
-                              {`Complete the ${component.title} form`}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
+                                {`Complete the ${component.title} form`}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ))}
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                )}
 
+                {/* Guidelines Menu Item - Publicly Visible */}
                 <NavigationMenuItem>
                   <TooltipProvider>
                     <Tooltip>
@@ -336,30 +346,33 @@ export default function Navbar() {
                   </TooltipProvider>
                 </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Link
-                          href="/projects"
-                          className={cn(
-                            navigationMenuTriggerStyle(),
-                            "bg-transparent text-gray-800 hover:bg-[#E8F5E9] hover:text-[#1B5E20] gap-1 flex items-center"
-                          )}
+                {/* Projects Menu Item - Only Visible When Logged In */}
+                {isAuthenticated && (
+                  <NavigationMenuItem>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href="/projects"
+                            className={cn(
+                              navigationMenuTriggerStyle(),
+                              "bg-transparent text-gray-800 hover:bg-[#E8F5E9] hover:text-[#1B5E20] gap-1 flex items-center"
+                            )}
+                          >
+                            <ClipboardList className="h-4 w-4" />
+                            Projects
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#1B5E20] text-white border-0"
                         >
-                          <ClipboardList className="h-4 w-4" />
-                          Projects
-                        </Link>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="bottom"
-                        className="bg-[#1B5E20] text-white border-0"
-                      >
-                        Track your IP projects
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </NavigationMenuItem>
+                          Track your IP projects
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </NavigationMenuItem>
+                )}
               </NavigationMenuList>
             </NavigationMenu>
           </div>
@@ -371,7 +384,7 @@ export default function Navbar() {
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#1B5E20] border-t-transparent"></span>
               <span className="hidden sm:inline-block">Loading...</span>
             </Button>
-          ) : status === "authenticated" ? (
+          ) : isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-2 border-gray-300">
@@ -381,8 +394,8 @@ export default function Navbar() {
                       alt={session?.user?.name || "User"}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.onerror = null; // Prevent infinite loop
-                        target.style.display = "none"; // Hide the image on error
+                        target.onerror = null;
+                        target.style.display = "none";
                       }}
                     />
                     <AvatarFallback>
@@ -432,15 +445,17 @@ export default function Navbar() {
                         Guidelines
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Link
-                        href="/projects"
-                        className="cursor-pointer inline-flex items-center gap-2 w-full"
-                      >
-                        <ClipboardList className="size-4 opacity-60" />
-                        My Projects
-                      </Link>
-                    </DropdownMenuItem>
+                    {isAuthenticated && (
+                      <DropdownMenuItem>
+                        <Link
+                          href="/projects"
+                          className="cursor-pointer inline-flex items-center gap-2 w-full"
+                        >
+                          <ClipboardList className="size-4 opacity-60" />
+                          My Projects
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                 </div>

@@ -3,7 +3,7 @@
 import { FormProvider } from "./[formId]/_components/ipdisclosure/context/form-context";
 import { PageContent } from "./[formId]/_components/PageContent";
 import { TRPCProvider } from "@/components/providers/trpc-provider";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
@@ -18,7 +18,6 @@ const DynamicPageContent = dynamic(
 
 export default function FormsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

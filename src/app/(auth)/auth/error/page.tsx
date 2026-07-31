@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ShieldAlert, LogIn, Home, UserCheck, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState, useEffect } from "react";
-
-export const dynamic = "force-dynamic";
+import { useCallback, useState, useEffect, Suspense } from "react";
 
 function ErrorContent() {
   const router = useRouter();
@@ -172,5 +170,18 @@ function ErrorContent() {
 }
 
 export default function AuthErrorPage() {
-  return <ErrorContent />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-white to-amber-50/40 p-4">
+          <div className="w-full max-w-md p-8 text-center text-gray-500">
+            <ShieldAlert className="mx-auto h-16 w-16 text-amber-600 animate-pulse" />
+            <p className="mt-4 text-sm text-gray-600">Loading auth error details...</p>
+          </div>
+        </div>
+      }
+    >
+      <ErrorContent />
+    </Suspense>
+  );
 }

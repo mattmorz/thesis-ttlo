@@ -61,6 +61,7 @@ export const {
   unstable_update: update,
 } = NextAuth({
   trustHost: true,
+  debug: true,
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || "thesis-ttlo-secure-session-auth-secret-key-2026",
   providers: [
     Google({
@@ -79,6 +80,7 @@ export const {
             process.env.GOOGLE_SECRET ||
             "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"
         ).trim(),
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
           prompt: "select_account",

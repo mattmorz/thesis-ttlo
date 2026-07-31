@@ -69,7 +69,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+  const secret =
+    process.env.NEXTAUTH_SECRET ||
+    process.env.AUTH_SECRET ||
+    "thesis-ttlo-secure-session-auth-secret-key-2026";
 
   let token = await getToken({
     req: request,

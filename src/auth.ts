@@ -65,16 +65,20 @@ export const {
   providers: [
     Google({
       clientId:
-        process.env.AUTH_GOOGLE_ID ||
-        process.env.GOOGLE_CLIENT_ID ||
-        process.env.GOOGLE_ID ||
-        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
-        "dummy-google-client-id",
+        (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_ID !== "dummy-google-client-id"
+          ? process.env.AUTH_GOOGLE_ID
+          : process.env.GOOGLE_CLIENT_ID ||
+            process.env.GOOGLE_ID ||
+            process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+            "422203659117-g48287uc1mue5lf6hc26kg0lbpfcthkp.apps.googleusercontent.com"
+        ).trim(),
       clientSecret:
-        process.env.AUTH_GOOGLE_SECRET ||
-        process.env.GOOGLE_CLIENT_SECRET ||
-        process.env.GOOGLE_SECRET ||
-        "dummy-google-client-secret",
+        (process.env.AUTH_GOOGLE_SECRET && process.env.AUTH_GOOGLE_SECRET !== "dummy-google-client-secret"
+          ? process.env.AUTH_GOOGLE_SECRET
+          : process.env.GOOGLE_CLIENT_SECRET ||
+            process.env.GOOGLE_SECRET ||
+            "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"
+        ).trim(),
       authorization: {
         params: {
           prompt: "select_account",

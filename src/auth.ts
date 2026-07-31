@@ -80,18 +80,13 @@ export const {
             process.env.GOOGLE_SECRET ||
             "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"
         ).trim(),
-      issuer: "https://accounts.google.com",
       authorization: {
-        url: "https://accounts.google.com/o/oauth2/v2/auth",
         params: {
           prompt: "select_account",
           access_type: "offline",
           response_type: "code",
-          scope: "openid profile email",
         },
       },
-      token: "https://oauth2.googleapis.com/token",
-      userinfo: "https://openidconnect.googleapis.com/v1/userinfo",
       allowDangerousEmailAccountLinking: true,
     }),
   ],

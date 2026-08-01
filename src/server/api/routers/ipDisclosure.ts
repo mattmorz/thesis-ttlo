@@ -109,7 +109,6 @@ export const ipDisclosureRouter = {
           .insert(ipDisclosure)
           .values({
             clientId,
-            applicationId: input.applicationId,
             selectedIpTypes: JSON.stringify(jsonData),
           })
           .returning();
@@ -155,7 +154,6 @@ export const ipDisclosureRouter = {
           return {
             success: true,
             disclosure_id: createdDisclosureId,
-            applicationId: disclosure[0].applicationId,
           };
         }
 

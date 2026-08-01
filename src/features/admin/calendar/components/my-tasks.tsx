@@ -28,7 +28,7 @@ export default function MyTasks({
           {filteredEvents
             .filter(
               (event) =>
-                event.type === "deadline" &&
+                event.type === "Deadline" &&
                 event.participants?.includes("John D.") // Replace with actual logged-in user
             )
             .map((event) => (
@@ -38,7 +38,7 @@ export default function MyTasks({
               >
                 <div className="flex items-center gap-4">
                   <Checkbox
-                    checked={event.status === "completed"}
+                    checked={event.status === "Completed"}
                     onCheckedChange={() => {
                       // Handle status change
                     }}
@@ -52,7 +52,7 @@ export default function MyTasks({
                 </div>
                 <Badge
                   variant={
-                    event.priority === "high" ? "destructive" : "secondary"
+                    event.priority === "High" ? "destructive" : "secondary"
                   }
                 >
                   {event.priority}

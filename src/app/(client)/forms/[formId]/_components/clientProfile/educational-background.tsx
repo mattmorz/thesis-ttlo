@@ -62,6 +62,7 @@ const formSchema = z.object({
       .optional(),
     otherValue: z.string().optional().nullable(),
   }),
+  subType: z.string().optional().nullable(),
   degree: z.string().min(1, "Degree is required"),
   profession: z.string().min(1, "Profession is required"),
 });
@@ -807,7 +808,7 @@ export function EducationalBackground({
                             ...currentValues,
                             highestDegree: {
                               ...currentValues.highestDegree,
-                              value,
+                              value: value as typeof currentValues.highestDegree.value,
                             },
                           });
                         }}
@@ -839,7 +840,7 @@ export function EducationalBackground({
 
                 {/* 2️⃣ Sub-type for lower levels */}
                 {["associate", "vocational", "highschool"].includes(
-                  form.getValues("highestDegree.value"),
+                  form.getValues("highestDegree.value") || "",
                 ) && (
                   <FormField
                     control={form.control}

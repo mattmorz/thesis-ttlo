@@ -146,7 +146,7 @@ export async function fetchMainDisclosureInventory({
           email: disclosure.email ?? "",
           authorized_representative: disclosure.authorizedRepresentative,
           other_ip_type: disclosure.otherIpType,
-          application_id: disclosure.applicationId,
+          // application_id was removed from schema
           applicants: applicants.map(mapApplicant),
           inventors: inventors.map(mapInventor),
           confirmation: confirmation ? mapConfirmation(confirmation) : undefined,

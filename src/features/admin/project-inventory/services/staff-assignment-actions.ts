@@ -42,7 +42,15 @@ export type StaffAssignmentResult = {
 export type StaffIpApplicationDetails = {
   applicationId: string;
   title: string;
-  type: "patent" | "copyright" | "trademark" | "utility_model";
+  type:
+    | "patent"
+    | "copyright"
+    | "trademark"
+    | "utility_model"
+    | "industrial_design"
+    | "trade_secret"
+    | "other"
+    | "not_sure";
   status:
     | "draft"
     | "pending"
@@ -51,7 +59,7 @@ export type StaffIpApplicationDetails = {
     | "rejected"
     | "completed"
     | "archived";
-  enrolledAt: string;
+  enrolledAt: string | Date;
   taskCount: number;
 };
 
@@ -99,11 +107,11 @@ export async function getStaffAssignments(
 
     // Date range filters
     if (startDate) {
-      conditions.push(gte(ipApplicationEnrollment.createdAt, startDate));
+      conditions.push(gte(ipApplicationEnrollment.createdAt, new Date(startDate)));
     }
 
     if (endDate) {
-      conditions.push(lte(ipApplicationEnrollment.createdAt, endDate));
+      conditions.push(lte(ipApplicationEnrollment.createdAt, new Date(endDate)));
     }
 
     // Perform the query
@@ -346,14 +354,14 @@ export async function getStaffIpApplications(
       .where(eq(ipApplicationEnrollment.userId, userId))
       .orderBy(desc(ipApplicationEnrollment.createdAt));
 
-    // Filter out any null values and ensure type safety
+    // Filter out any null values and map to ensure type safety
     return applications
-      .filter((app): app is StaffIpApplicationDetails => {
-        return app.status !== null && app.enrolledAt !== null;
-      })
+      .filter((app) => app.status !== null && app.enrolledAt !== null)
       .map((app) => ({
         ...app,
-        enrolledAt: app.enrolledAt || new Date().toISOString(),
+        enrolledAt: app.enrolledAt as Date,
+        status: app.status as StaffIpApplicationDetails["status"],
+        type: app.type as StaffIpApplicationDetails["type"],
       }));
   } catch (error) {
     console.error("Error fetching staff IP applications:", error);

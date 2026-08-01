@@ -1,11 +1,10 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
-import {
-  DriveAuthError,
-  MAX_UPLOAD_SIZE_BYTES,
-  ensureDriveFolderPath,
-  uploadFileToDrive,
-} from "@/lib/google-drive";
+import path from "path";
+import fs from "fs/promises";
+import { v4 as uuidv4 } from "uuid";
+
+const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024; // 100MB
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +20,6 @@ export async function POST(request: Request) {
     }
 
     const uploadedFiles = [];
-    const formName = (formData.get("formName") as string | null) || "";
     const projectId = formData.get("projectId") as string;
 
     if (!projectId) {
@@ -31,15 +29,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const applicationFolderId = projectId;
-    // Use the configured Drive root folder directly; do not add an extra TTLO parent.
-    const folderPath = [applicationFolderId, formName || "General Uploads"];
-    const { folderId } = await ensureDriveFolderPath({
-      pathSegments: folderPath,
-    });
+    // Use local public/uploads directory for now as requested
+    const uploadDir = path.join(process.cwd(), "public", "uploads", projectId);
+    
+    // Ensure the directory exists
+    await fs.mkdir(uploadDir, { recursive: true });
 
     for (const file of files) {
-
       if (file.size > MAX_UPLOAD_SIZE_BYTES) {
         return NextResponse.json(
           { error: "File exceeds 100MB limit" },
@@ -47,27 +43,29 @@ export async function POST(request: Request) {
         );
       }
 
-      const driveFile = await uploadFileToDrive({
-        file,
-        fileName: `${projectId}-${file.name}`,
-        mimeType: file.type || "application/octet-stream",
-        parentId: folderId,
-      });
+      const fileExtension = path.extname(file.name);
+      const uniqueFilename = `${uuidv4()}${fileExtension}`;
+      const filePath = path.join(uploadDir, uniqueFilename);
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      await fs.writeFile(filePath, buffer);
+
+      // Return the public URL path
+      const publicPath = `/uploads/${projectId}/${uniqueFilename}`;
 
       uploadedFiles.push({
         name: file.name,
         size: file.size,
-        path: driveFile.webViewLink || driveFile.webContentLink || "",
-        driveFileId: driveFile.fileId,
+        path: publicPath,
+        driveFileId: uniqueFilename, // Storing filename here for compatibility
       });
     }
 
     return NextResponse.json({ files: uploadedFiles });
   } catch (error) {
     console.error("Upload error:", error);
-    if (error instanceof DriveAuthError) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
-    }
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }
 }

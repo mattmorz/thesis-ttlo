@@ -83,7 +83,7 @@ export function DocumentCard({
                 {badge.text}
               </Badge>
             )}
-            {document.requiresValidation && <DocumentCancelValidationDialog />}
+            {document.requiresValidation && documentValidation && <DocumentCancelValidationDialog validationId={documentValidation.id} />}
           </div>
         </CardHeader>
         <CardContent

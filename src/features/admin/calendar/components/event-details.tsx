@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Calendar, Calendar as CalendarIcon } from "lucide-react";
-import { EditEventDialog } from "../../../../features/admin/calendar/components/edit-event-dialog";
+import { EditEventDialog } from "./edit-event-dialog";
 import { Event } from "@/app/(admin)/admin/calendar/types";
 
 export default function EventDetails({

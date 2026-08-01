@@ -369,7 +369,6 @@ export function ProjectDetailsModal({ data }: ProjectDetailsModalProps) {
 
       {/* Footer */}
       <div className="p-4 border-t flex items-center justify-end gap-2">
-        <p>TODO: ADD TABS</p>
         <DialogClose asChild>
           <Button type="button" variant="outline">
             Close

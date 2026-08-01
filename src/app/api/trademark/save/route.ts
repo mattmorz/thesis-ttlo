@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { disclosureId, trademarkData } = body;
+    const { disclosureId, trademarkData, registerForm = true } = body;
 
     if (!disclosureId) {
       return NextResponse.json(

@@ -546,11 +546,7 @@ export class CategoryAdapter {
       // Get count for pagination
       const totalResult = await db
         .select({ count: count() })
-        .from(clientProfile)
-        .innerJoin(
-          ipApplication,
-          eq(clientProfile.ipApplicationId, ipApplication.id)
-        );
+        .from(clientProfile);
 
       const total = totalResult[0]?.count || 0;
 
@@ -558,7 +554,6 @@ export class CategoryAdapter {
       const result = await db
         .select({
           clientProfile: clientProfile,
-          ipApplication: ipApplication,
           user: {
             id: userAccount.id,
             name: userAccount.name,
@@ -567,10 +562,6 @@ export class CategoryAdapter {
           },
         })
         .from(clientProfile)
-        .innerJoin(
-          ipApplication,
-          eq(clientProfile.ipApplicationId, ipApplication.id)
-        )
         .leftJoin(userAccount, eq(clientProfile.userId, userAccount.id))
         .orderBy(
           sortDir === "asc"

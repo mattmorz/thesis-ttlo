@@ -151,11 +151,11 @@ export function PhasesDetails({
                         Reminder Settings
                       </TableCell>
                       <TableCell className="py-2 capitalize">
-                        {!selectedPhase.phaseReminders[0]?.reminderType ||
-                        selectedPhase.phaseReminders[0]?.reminderType === "none"
+                        {!selectedPhase.phaseReminders[0]?.frequency ||
+                        selectedPhase.phaseReminders[0]?.frequency === "none"
                           ? "No Reminder"
                           : null}
-                        {selectedPhase.phaseReminders[0]?.reminderType ===
+                        {selectedPhase.phaseReminders[0]?.frequency ===
                           "daily" &&
                           `Everyday at ${format(
                             parse(
@@ -166,10 +166,10 @@ export function PhasesDetails({
                             ),
                             "hh:mm a"
                           )}`}
-                        {selectedPhase.phaseReminders[0]?.reminderType ===
+                        {selectedPhase.phaseReminders[0]?.frequency ===
                           "weekly" &&
                           `Every ${
-                            selectedPhase.phaseReminders[0]?.reminderDay
+                            selectedPhase.phaseReminders[0]?.customDays || "day"
                           } at ${format(
                             parse(
                               selectedPhase.phaseReminders[0]?.reminderTime ||
@@ -349,8 +349,8 @@ export function PhasesDetails({
                       </TableRow>
                     )}
                     {selectedPhase.phaseTasks.map((task, index) => {
-                      const isAssignedToMe = task.phaseTaskAssignees.some(
-                        (assignee) => assignee.userId === session?.user?.id
+                      const isAssignedToMe = task.taskAssignments.some(
+                        (assignee: any) => assignee.userId === session?.user?.id
                       );
                       return (
                         <TableRow key={index}>

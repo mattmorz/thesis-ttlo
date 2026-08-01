@@ -30,11 +30,6 @@ import {
   eventParticipant,
   deedOfAssignment,
   substantialUse,
-  ipType,
-  formRecord,
-  inventionDisclosure,
-  clientProfileForm,
-  substantialUseAssignment,
 } from "./schema";
 
 // Account Relations
@@ -80,10 +75,6 @@ export const userAccountRelations = relations(userAccount, ({ many }) => ({
   phaseReviews: many(phaseReview),
   eventParticipants: many(eventParticipant),
   deedOfAssignments: many(deedOfAssignment),
-  formRecords: many(formRecord),
-  inventionDisclosures: many(inventionDisclosure),
-  clientProfileForms: many(clientProfileForm),
-  substantialUseAssignments: many(substantialUseAssignment),
 }));
 
 // Authenticator Relations
@@ -145,18 +136,6 @@ export const ipApplicationRelations = relations(
       fields: [ipApplication.userId],
       references: [userAccount.id],
     }),
-    createdBy: one(userAccount, {
-      fields: [ipApplication.createdBy],
-      references: [userAccount.id],
-    }),
-    ipType: one(ipType, {
-      fields: [ipApplication.ipTypeId],
-      references: [ipType.id],
-    }),
-    forms: many(formRecord),
-    inventionDisclosures: many(inventionDisclosure),
-    clientProfileForms: many(clientProfileForm),
-    substantialUseAssignments: many(substantialUseAssignment),
     deedOfAssignments: many(deedOfAssignment),
     archives: many(archives),
     applicationPhases: many(applicationPhase),

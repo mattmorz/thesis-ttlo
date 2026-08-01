@@ -104,7 +104,7 @@ export async function getAssignedStaff(projectId: string): Promise<
     name: string;
     role: string;
     assignmentRole: string;
-    assignedAt: string;
+    assignedAt: string | Date;
   }>
 > {
   try {

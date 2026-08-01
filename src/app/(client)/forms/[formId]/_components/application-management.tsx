@@ -234,7 +234,7 @@ export function ApplicationManagement({
             selectedIpTypes: data.selectedIpTypes as any,
           };
           // Add to applications list immediately
-          setApplications((prev) => [newApp, ...prev]);
+          setApplications((prev: Application[]) => [newApp, ...prev]);
           // Clear form data BEFORE activating new app
           clearFormData();
           // Seamlessly activate the new application (no page reload)
@@ -276,9 +276,9 @@ export function ApplicationManagement({
         const previousApps = [...applications];
         
         let remainingApps: Application[] = [];
-        setApplications((prev) => {
+        setApplications((prev: Application[]) => {
           remainingApps = deletedId
-            ? prev.filter((app) => app.id !== deletedId)
+            ? prev.filter((app: Application) => app.id !== deletedId)
             : prev;
           return remainingApps;
         });
@@ -642,7 +642,7 @@ export function ApplicationManagement({
 
   // Toggle sort order
   const toggleSortOrder = () => {
-    setSortOrder(sortOrder === "newest" ? "alp1habetical" : "newest");
+    setSortOrder(sortOrder === "newest" ? "alphabetical" : "newest");
   };
 
   // Get status badge with icon

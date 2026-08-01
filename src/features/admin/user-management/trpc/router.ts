@@ -82,12 +82,6 @@ export const userManagementRouter = router({
           conditions.push(eq(userAccount.isActive, input.isActive));
         }
 
-        // Apply where conditions if any
-        let finalQuery = query;
-        if (conditions.length > 0) {
-          finalQuery = query.where(and(...conditions));
-        }
-
         // Get total count (without pagination)
         const countQuery = db
           .select({ count: sql<number>`count(*)` })
@@ -98,35 +92,27 @@ export const userManagementRouter = router({
         const totalCount = await countQuery;
         const total = Number(totalCount[0]?.count || 0);
 
-        // Apply sorting
+        const offset = (input.page - 1) * input.limit;
+
+        let orderByClause = undefined;
         if (input.sortBy === "name") {
-          finalQuery =
-            input.sortOrder === "asc"
-              ? finalQuery.orderBy(asc(userAccount.name))
-              : finalQuery.orderBy(desc(userAccount.name));
+          orderByClause = input.sortOrder === "asc" ? asc(userAccount.name) : desc(userAccount.name);
         } else if (input.sortBy === "email") {
-          finalQuery =
-            input.sortOrder === "asc"
-              ? finalQuery.orderBy(asc(userAccount.email))
-              : finalQuery.orderBy(desc(userAccount.email));
+          orderByClause = input.sortOrder === "asc" ? asc(userAccount.email) : desc(userAccount.email);
         } else if (input.sortBy === "role") {
-          finalQuery =
-            input.sortOrder === "asc"
-              ? finalQuery.orderBy(asc(userAccount.role))
-              : finalQuery.orderBy(desc(userAccount.role));
+          orderByClause = input.sortOrder === "asc" ? asc(userAccount.role) : desc(userAccount.role);
         } else if (input.sortBy === "createdAt") {
-          finalQuery =
-            input.sortOrder === "asc"
-              ? finalQuery.orderBy(asc(userAccount.createdAt))
-              : finalQuery.orderBy(desc(userAccount.createdAt));
+          orderByClause = input.sortOrder === "asc" ? asc(userAccount.createdAt) : desc(userAccount.createdAt);
         }
 
-        // Apply pagination
-        const offset = (input.page - 1) * input.limit;
-        finalQuery = finalQuery.limit(input.limit).offset(offset);
-
         // Execute query
-        const users = await finalQuery;
+        const users = await db
+          .select()
+          .from(userAccount)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .orderBy(orderByClause ? orderByClause : desc(userAccount.createdAt))
+          .limit(input.limit)
+          .offset(offset);
 
         return {
           users,

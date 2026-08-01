@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       });
     }
 
-    let disclosures = [];
+    let disclosures: (typeof ipDisclosure.$inferSelect)[] = [];
 
     if (disclosureId) {
       disclosures = await db
@@ -74,13 +74,20 @@ export async function GET(request: Request) {
           .insert(ipDisclosure)
           .values({
             clientId: session.user.id,
-            applicationId: applicationId,
             selectedIpTypes: JSON.stringify({
               applicantsInfo: null,
               disclosureConfirmation: null,
             }),
           })
           .returning();
+
+        // Link the new disclosure to the application
+        await db.insert(formSubmissionRegistry).values({
+          userId: session.user.id as string,
+          ipApplicationId: applicationId,
+          sourceId: newDisclosure[0].disclosureId,
+          sourceType: "ip_disclosure",
+        });
 
         // Return the new empty disclosure
         return NextResponse.json({
@@ -115,7 +122,7 @@ export async function GET(request: Request) {
     // Return the disclosure data with IDs
     return NextResponse.json({
       disclosureId: disclosure.disclosureId,
-      applicationId: disclosure.applicationId,
+      applicationId: applicationId,
       ...parsedData,
     });
   } catch (error) {
@@ -170,16 +177,27 @@ export async function POST(request: Request) {
       }
     } else if (applicationId) {
       // Find or create a disclosure for this application
-      const existingDisclosures = await db
-        .select()
-        .from(ipDisclosure)
-        .where(
-          and(
-            eq(ipDisclosure.applicationId, applicationId),
-            eq(ipDisclosure.clientId, session.user.id as string),
-          ),
+      const registryEntry = await db.query.formSubmissionRegistry.findFirst({
+        where: and(
+          eq(formSubmissionRegistry.ipApplicationId, applicationId),
+          eq(formSubmissionRegistry.sourceType, "ip_disclosure")
         )
-        .limit(1);
+      });
+
+      let existingDisclosures: (typeof ipDisclosure.$inferSelect)[] = [];
+
+      if (registryEntry?.sourceId) {
+        existingDisclosures = await db
+          .select()
+          .from(ipDisclosure)
+          .where(
+            and(
+              eq(ipDisclosure.disclosureId, registryEntry.sourceId),
+              eq(ipDisclosure.clientId, session.user.id as string),
+            ),
+          )
+          .limit(1);
+      }
 
       if (existingDisclosures.length > 0) {
         // Use the existing disclosure
@@ -201,12 +219,18 @@ export async function POST(request: Request) {
           .insert(ipDisclosure)
           .values({
             clientId: session.user.id,
-            applicationId: applicationId,
             selectedIpTypes: JSON.stringify({}),
           })
           .returning();
 
         disclosure = newDisclosures[0];
+
+        await db.insert(formSubmissionRegistry).values({
+          userId: session.user.id as string,
+          ipApplicationId: applicationId,
+          sourceId: disclosure.disclosureId,
+          sourceType: "ip_disclosure",
+        });
       }
     }
 
@@ -281,7 +305,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       disclosureId: updatedDisclosure[0].disclosureId,
-      applicationId: updatedDisclosure[0].applicationId, // Include applicationId in the response
+      applicationId: applicationId, // Include applicationId in the response
     });
   } catch (error) {
     console.error("Error updating disclosure:", error);

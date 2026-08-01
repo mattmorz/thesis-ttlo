@@ -61,7 +61,45 @@ export default function RecentTasks() {
       { enabled: !!userId }
     );
 
-  const isLoading = isLoadingAssigned || isLoadingAll;
+  // Get user's enrolled projects
+  const { data: enrolledProjects, isLoading: isLoadingEnrolled, refetch: refetchEnrolled } =
+    trpc.ipApplicationEnrollment.getEnrollments.useQuery(
+      { userId: userId as string },
+      { enabled: !!userId }
+    );
+
+  // Get available projects for the user
+  const { data: availableProjects, isLoading: isLoadingAvailable, refetch: refetchAvailable } =
+    trpc.ipApplicationEnrollment.getAvailableApplications.useQuery(
+      { userId: userId as string, limit: 10 },
+      { enabled: !!userId }
+    );
+
+  const enrollMutation = trpc.ipApplicationEnrollment.enroll.useMutation({
+    onSuccess: () => {
+      refetchEnrolled();
+      refetchAvailable();
+    },
+  });
+
+  const unenrollMutation = trpc.ipApplicationEnrollment.unenroll.useMutation({
+    onSuccess: () => {
+      refetchEnrolled();
+      refetchAvailable();
+    },
+  });
+
+  const handleEnroll = (applicationId: string) => {
+    if (!userId) return;
+    enrollMutation.mutate({ userId, applicationId, role: "member" });
+  };
+
+  const handleUnenroll = (applicationId: string) => {
+    if (!userId) return;
+    unenrollMutation.mutate({ userId, applicationId });
+  };
+
+  const isLoading = isLoadingAssigned || isLoadingAll || isLoadingEnrolled || isLoadingAvailable;
 
   const renderTask = (task: TaskWithPhase) => (
     <div
@@ -176,43 +214,55 @@ export default function RecentTasks() {
               <TabsContent value="projects" className="h-[500px] mt-0">
                 <ScrollArea className="h-full">
                   <div className="space-y-4">
-                    <div className="divide-y divide-slate-200 rounded-lg border border-slate-200">
-                      <div className="flex items-center justify-between p-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="font-medium text-slate-800">
-                            World
+                    {enrolledProjects && enrolledProjects.length > 0 ? (
+                      <div className="divide-y divide-slate-200 rounded-lg border border-slate-200">
+                        {enrolledProjects.map(({ application }) => (
+                          <div key={application.id} className="flex items-center justify-between p-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="font-medium text-slate-800">
+                                {application.title}
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className="text-blue-600 border-blue-100 bg-blue-50"
+                              >
+                                {application.ipType || "N/A"}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="text-slate-600 border-slate-100 bg-slate-50"
+                              >
+                                {application.status}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                asChild
+                                variant="outline"
+                                size="sm"
+                                className="text-blue-600 border-blue-100 hover:bg-blue-50"
+                              >
+                                <Link href={`/admin/projects/${application.id}`}>View</Link>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUnenroll(application.id)}
+                                disabled={unenrollMutation.isPending}
+                                className="text-red-600 border-red-100 hover:bg-red-50"
+                              >
+                                {unenrollMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Leave"}
+                              </Button>
+                            </div>
                           </div>
-                          <Badge
-                            variant="outline"
-                            className="text-blue-600 border-blue-100 bg-blue-50"
-                          >
-                            patent
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className="text-slate-600 border-slate-100 bg-slate-50"
-                          >
-                            in progress
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-blue-600 border-blue-100 hover:bg-blue-50"
-                          >
-                            View
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-red-600 border-red-100 hover:bg-red-50"
-                          >
-                            Leave
-                          </Button>
-                        </div>
+                        ))}
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-8 text-slate-500 border border-slate-200 rounded-lg">
+                        <AlertCircle className="h-8 w-8 mb-2" />
+                        <p>You are not enrolled in any projects</p>
+                      </div>
+                    )}
 
                     <div className="mt-6">
                       <div className="flex items-center justify-between mb-4">
@@ -220,50 +270,56 @@ export default function RecentTasks() {
                           Available Projects
                         </h3>
                         <Button
+                          asChild
                           variant="outline"
                           size="sm"
                           className="text-slate-700 border-slate-200 hover:bg-slate-50"
                         >
-                          View All (3)
+                          <Link href="/admin/projects">View All ({availableProjects?.length || 0})</Link>
                         </Button>
                       </div>
-                      <div className="space-y-3">
-                        {[
-                          "Testing 3",
-                          "AI-Based Water Quality Monitoring System",
-                          "Hello",
-                        ].map((project) => (
-                          <div
-                            key={project}
-                            className="flex items-center justify-between p-4 border border-slate-200 rounded-lg"
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="font-medium text-slate-800">
-                                {project}
-                              </div>
-                              <Badge
-                                variant="outline"
-                                className="text-blue-600 border-blue-100 bg-blue-50"
-                              >
-                                patent
-                              </Badge>
-                              <Badge
-                                variant="outline"
-                                className="text-slate-600 border-slate-100 bg-slate-50"
-                              >
-                                draft
-                              </Badge>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-emerald-600 border-emerald-100 hover:bg-emerald-50"
+                      
+                      {availableProjects && availableProjects.length > 0 ? (
+                        <div className="space-y-3">
+                          {availableProjects.map((project) => (
+                            <div
+                              key={project.id}
+                              className="flex items-center justify-between p-4 border border-slate-200 rounded-lg"
                             >
-                              Assign
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                              <div className="flex items-center space-x-3">
+                                <div className="font-medium text-slate-800">
+                                  {project.title}
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className="text-blue-600 border-blue-100 bg-blue-50"
+                                >
+                                  {project.ipType || "N/A"}
+                                </Badge>
+                                <Badge
+                                  variant="outline"
+                                  className="text-slate-600 border-slate-100 bg-slate-50"
+                                >
+                                  {project.status}
+                                </Badge>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEnroll(project.id)}
+                                disabled={enrollMutation.isPending}
+                                className="text-emerald-600 border-emerald-100 hover:bg-emerald-50"
+                              >
+                                {enrollMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Assign"}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-6 text-slate-500 bg-slate-50 rounded-lg">
+                          <p>No available projects to join</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </ScrollArea>

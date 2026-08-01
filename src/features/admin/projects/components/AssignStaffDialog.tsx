@@ -96,10 +96,6 @@ export function AssignStaffDialog({
   const usersQuery = hasUsersEndpoint
     ? trpc.users.getAll.useQuery(undefined, {
         enabled: open,
-        onError: (err) => {
-          console.error("Error fetching users:", err);
-          setError("Failed to load staff members");
-        },
       })
     : { data: undefined, isLoading: false, error: null };
 
@@ -108,10 +104,6 @@ export function AssignStaffDialog({
     { applicationId: projectId },
     {
       enabled: open && !!projectId,
-      onError: (err) => {
-        console.error("Error fetching enrollments:", err);
-        setError("Failed to load current enrollments");
-      },
     }
   );
 

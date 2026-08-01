@@ -191,6 +191,7 @@ type FormStatus = {
   ipDisclosure: boolean;
   substantialUse: boolean;
   deedAssignment: boolean;
+  [key: string]: boolean;
 };
 
 const INITIAL_FORM_STATUS: FormStatus = {
@@ -1123,11 +1124,8 @@ useEffect(() => {
       if (!activeApplicationId) return false;
 
       const statusKey = formTypeMapping[tabId];
-      const knownStatus =
-        statusKey &&
-        knownApplicationStatus[activeApplicationId]?.status?.[
-          statusKey as keyof FormStatus
-        ];
+      const statusObj = knownApplicationStatus[activeApplicationId]?.status as Record<string, boolean> | undefined;
+      const knownStatus = statusKey && statusObj?.[statusKey];
 
       if (tabId === FormTabs.Application_Title) {
         return Boolean(knownStatus) || isApplicationTitleComplete();

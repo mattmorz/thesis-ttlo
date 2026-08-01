@@ -13,6 +13,7 @@ import { TRPCError } from "@trpc/server";
 const enrollmentInputSchema = z.object({
   applicationId: z.string().uuid(),
   userId: z.string().uuid(),
+  role: z.string().optional(),
 });
 
 // Input schema for fetching enrollments
@@ -64,6 +65,7 @@ export const ipApplicationEnrollmentRouter = router({
           .values({
             applicationId: input.applicationId,
             userId: input.userId,
+            role: input.role || "manager",
           })
           .returning();
 

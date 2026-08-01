@@ -122,12 +122,12 @@ export function BarSideNav() {
   const [currentFocus, setCurrentFocus] = React.useState<number>(-1);
 
   const { data: session } = useSession();
-  const user = session?.user || {};
+  const user = session?.user || ({} as any);
   const userInitials = React.useMemo(() => {
     if (!user.name) return "U";
     return user.name
       .split(" ")
-      .map((part) => part.charAt(0))
+      .map((part: string) => part.charAt(0))
       .join("")
       .toUpperCase()
       .slice(0, 2);

@@ -117,11 +117,11 @@ export async function POST(
     );
 
     const existingUserIds = existingEnrollments.map((e) => e.userId);
-    const newUserIds = userIds.filter((id) => !existingUserIds.includes(id));
+    const newUserIds = userIds.filter((id: string) => !existingUserIds.includes(id));
 
     // Create new enrollments
     if (newUserIds.length > 0) {
-      const enrollmentData = newUserIds.map((userId) => ({
+      const enrollmentData = newUserIds.map((userId: string) => ({
         applicationId: projectId,
         userId: userId,
       }));

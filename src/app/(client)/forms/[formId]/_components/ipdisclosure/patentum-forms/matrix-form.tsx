@@ -803,7 +803,7 @@ const [isSubmitting, setIsSubmitting] = React.useState(false);
                     <FormItem>
                       <FormControl>
                         <FileUploader
-                          value={field.value}
+                          value={field.value ?? undefined}
                           onValueChange={(files) => {
                             field.onChange(files ?? []);
                             console.log(
@@ -862,7 +862,7 @@ const [isSubmitting, setIsSubmitting] = React.useState(false);
                       <FormItem>
                         <FormControl>
                         <FileUploader
-                          value={field.value}
+                          value={field.value ?? undefined}
                           onValueChange={(files) => {
                             field.onChange(files ?? []);
                             console.log(

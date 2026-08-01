@@ -1836,7 +1836,7 @@ export function useIpDisclosure() {
           workTitle: sanitizedCopyrightApp?.workTitle,
           workDescription:
             sanitizedCopyrightApp?.workDescription?.substring(0, 50) +
-            (sanitizedCopyrightApp?.workDescription?.length > 50 ? "..." : ""),
+            (sanitizedCopyrightApp?.workDescription && sanitizedCopyrightApp.workDescription.length > 50 ? "..." : ""),
           creationDate: sanitizedCopyrightApp?.creationDate,
           copyrightId: sanitizedCopyrightApp?.copyrightId || "new record",
         }

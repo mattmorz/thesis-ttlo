@@ -43,7 +43,6 @@ export async function POST(
       .select({
         disclosureId: ipDisclosure.disclosureId,
         clientId: ipDisclosure.clientId,
-        applicationId: ipDisclosure.applicationId,
         selectedIpTypes: ipDisclosure.selectedIpTypes,
       })
       .from(ipDisclosure)
@@ -97,8 +96,14 @@ export async function POST(
         : "IP Disclosure Submission";
     };
 
-    // Ensure we have an application_id before proceeding
-    let applicationId = disclosure.applicationId;
+    // Look up the application ID from the form submission registry
+    const registryEntry = await db.query.formSubmissionRegistry.findFirst({
+      where: and(
+        eq(formSubmissionRegistry.sourceType, "ip_disclosure"),
+        eq(formSubmissionRegistry.sourceId, disclosureId)
+      )
+    });
+    let applicationId = registryEntry?.ipApplicationId ?? null;
 
     if (!applicationId) {
       console.log("No application ID found, creating one...");
@@ -148,7 +153,6 @@ export async function POST(
       .update(ipDisclosure)
       .set({
         status: "submitted",
-        applicationId: applicationId, // Ensure applicationId is set
         updatedAt: new Date().toISOString(),
       })
       .where(eq(ipDisclosure.disclosureId, disclosureId));

@@ -40,7 +40,7 @@ export const calendarRouter = router({
       const existingEvent = await db
         .select({ createdBy: calendarEvent.createdBy })
         .from(calendarEvent)
-        .where(eq(calendarEvent.id, input.id))
+        .where(eq(calendarEvent.eventId, input.id))
         .limit(1);
 
       if (existingEvent.length > 0) {
@@ -54,15 +54,14 @@ export const calendarRouter = router({
       }
 
       const formatInsert = {
-        id: input.id,
+        eventId: input.id,
         title: input.title,
         description: input.description,
         startDate: input.startDate.toString(),
         endDate: input.endDate.toString(),
-        isAllDay: input.isAllDay,
         eventType: input.eventType,
         status: input.status,
-        projectId: input.projectId === "undefined" ? null : input.projectId,
+        applicationId: input.projectId === "undefined" ? null : input.projectId,
         otherEventType:
           input.otherEventType === undefined ? null : input.otherEventType,
         createdBy: userId, // On conflict update, we update the original creator or leave it?
@@ -71,22 +70,21 @@ export const calendarRouter = router({
         .insert(calendarEvent)
         .values(formatInsert as typeof calendarEvent.$inferInsert)
         .onConflictDoUpdate({
-          target: calendarEvent.id,
-          set: {
-            title: sql`EXCLUDED.title`,
-            description: sql`EXCLUDED.description`,
-            startDate: sql`EXCLUDED.start_date`,
-            endDate: sql`EXCLUDED.end_date`,
-            isAllDay: sql`EXCLUDED.is_all_day`,
-            eventType: sql`EXCLUDED.event_type`,
+            target: calendarEvent.eventId,
+            set: {
+              title: sql`EXCLUDED.title`,
+              description: sql`EXCLUDED.description`,
+              startDate: sql`EXCLUDED.start_date`,
+              endDate: sql`EXCLUDED.end_date`,
+              eventType: sql`EXCLUDED.event_type`,
             status: sql`EXCLUDED.status`,
             updatedAt: sql`NOW()`,
-            projectId: sql`EXCLUDED.project_id`,
+            applicationId: sql`EXCLUDED.application_id`,
             otherEventType: sql`EXCLUDED.other_event_type`,
             // Omitted createdBy and createdAt from update so they don't get overwritten
           },
         })
-        .returning({ id: calendarEvent.id });
+        .returning({ id: calendarEvent.eventId });
       return res;
     }),
   deleteEvent: protectedProcedure
@@ -101,7 +99,7 @@ export const calendarRouter = router({
         const event = await db
           .select({ createdBy: calendarEvent.createdBy })
           .from(calendarEvent)
-          .where(eq(calendarEvent.id, input))
+          .where(eq(calendarEvent.eventId, input))
           .limit(1);
           
         if (event.length > 0 && event[0].createdBy !== userId) {
@@ -114,8 +112,8 @@ export const calendarRouter = router({
 
       const res = await db
         .delete(calendarEvent)
-        .where(eq(calendarEvent.id, input))
-        .returning({ id: calendarEvent.id });
+        .where(eq(calendarEvent.eventId, input))
+        .returning({ id: calendarEvent.eventId });
       return res;
     }),
 });

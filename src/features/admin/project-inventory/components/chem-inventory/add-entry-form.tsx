@@ -31,12 +31,12 @@ export function AddEntryForm({ onSubmit, defaultValues }: AddEntryFormProps) {
   const form = useForm<InventoryFormData>({
     resolver: zodResolver(inventorySchema),
     defaultValues: defaultValues || {
-      clientId: "",
+      userId: "",
       inventors: [{ name: "", role: "Lead Inventor" }],
-      projectTitle: "",
+      title: "",
       field: "Chemical",
       ipType: "Patent",
-      status: "For Application",
+      status: "draft",
       startDate: new Date().toISOString().split("T")[0],
       fundingSource: "DOST",
       applicationNo: "",
@@ -57,12 +57,12 @@ export function AddEntryForm({ onSubmit, defaultValues }: AddEntryFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="clientId"
+          name="userId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Client ID</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value as string || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -143,12 +143,12 @@ export function AddEntryForm({ onSubmit, defaultValues }: AddEntryFormProps) {
 
         <FormField
           control={form.control}
-          name="projectTitle"
+          name="title"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Project Title</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input {...field} value={field.value as string || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>

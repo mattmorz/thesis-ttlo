@@ -34,7 +34,7 @@ import {
 export function SidebarUser() {
   const { isMobile } = useSidebar();
   const { data: session } = useSession();
-  const user = session?.user || {};
+  const user = session?.user || ({} as any);
 
   const getInitials = (name: string) => {
     if (!name) return "?";

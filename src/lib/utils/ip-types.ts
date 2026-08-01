@@ -45,7 +45,7 @@ export const normalizeIpTypes = (
 
 export const hasSelectedIpTypes = (
   ipTypes?: Partial<NormalizedIpTypes> | null
-) => Boolean(ipTypes) && Object.values(ipTypes).some((value) => value === true);
+) => Boolean(ipTypes) && Object.values(ipTypes || {}).some((value) => value === true);
 
 export const areIpTypesEqual = (
   left?: Partial<NormalizedIpTypes> | null,

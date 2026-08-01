@@ -241,7 +241,7 @@ export function SmartCalendar() {
               <div className="space-y-2">
                 {todayEvents.map((event) => (
                   <div
-                    key={event.id}
+                    key={event.eventId}
                     className="p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <p className="font-medium text-sm">{event.title}</p>
@@ -280,7 +280,7 @@ export function SmartCalendar() {
               <div className="space-y-2">
                 {upcomingEvents.slice(0, 3).map((event) => (
                   <div
-                    key={event.id}
+                    key={event.eventId}
                     className="p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <p className="font-medium text-sm">{event.title}</p>
@@ -321,7 +321,7 @@ export function SmartCalendar() {
               <div className="space-y-2">
                 {selectedDayEvents.map((event) => (
                   <div
-                    key={event.id}
+                    key={event.eventId}
                     className="p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <p className="font-medium text-sm">{event.title}</p>

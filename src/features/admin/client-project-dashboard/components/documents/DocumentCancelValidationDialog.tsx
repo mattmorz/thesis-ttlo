@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui";
 import {
   AlertDialog,
@@ -11,11 +12,34 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { XCircle } from "lucide-react";
+import { trpc } from "@/trpc/client";
+import { toast } from "sonner";
+import { useState } from "react";
 
-// TODO ADD FUNCTIONALITY
-export function DocumentCancelValidationDialog() {
+interface DocumentCancelValidationDialogProps {
+  validationId: string;
+}
+
+export function DocumentCancelValidationDialog({ validationId }: DocumentCancelValidationDialogProps) {
+  const trpcUtil = trpc.useUtils();
+  const [open, setOpen] = useState(false);
+  const mutate = trpc.projects.cancelValidationDocument.useMutation({
+    onSuccess: () => {
+      trpcUtil.projects.getDocuments.invalidate();
+      toast.success("Document verification cancelled successfully.");
+      setOpen(false);
+    },
+    onError: () => {
+      toast.error("Failed to cancel document verification.");
+    }
+  });
+
+  const handleCancel = () => {
+    mutate.mutate(validationId);
+  };
+
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <Button
           variant="ghost"
@@ -34,8 +58,10 @@ export function DocumentCancelValidationDialog() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>No, keep it verified</AlertDialogCancel>
-          <AlertDialogAction>Yes, cancel verification</AlertDialogAction>
+          <AlertDialogCancel disabled={mutate.isPending}>No, keep it verified</AlertDialogCancel>
+          <AlertDialogAction disabled={mutate.isPending} onClick={handleCancel}>
+            {mutate.isPending ? "Cancelling..." : "Yes, cancel verification"}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

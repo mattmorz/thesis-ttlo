@@ -12,6 +12,8 @@ import { eq, and } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { v4 as uuidv4 } from "uuid";
+import { ipApplication } from "@/drizzle/schema";
 
 const dtzApplicationPhaseSchema = createInsertSchema(applicationPhase);
 
@@ -57,6 +59,39 @@ export const projectsRouter = router({
     console.log(res);
     return res;
   }),
+  create: protectedProcedure
+    .input(
+      z.object({
+        title: z.string(),
+        description: z.string(),
+        ipType: z.enum(["copyright", "patent", "trademark", "industrial_design"]),
+        department: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const session = await auth();
+      if (session?.user?.role !== "admin" && session?.user?.role !== "ttlo_staff") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only admins and staff can create projects manually",
+        });
+      }
+
+      const newAppId = uuidv4();
+
+      const res = await db.insert(ipApplication).values({
+        id: newAppId,
+        userId: session.user.id,
+        title: input.title,
+        description: input.description,
+        ipType: input.ipType,
+        department: input.department,
+        status: "draft",
+      });
+
+      return { id: newAppId, ...res };
+    }),
+
   enrollProject: protectedProcedure
     .input(z.string().uuid())
     .mutation(async ({ ctx, input }) => {
@@ -247,6 +282,26 @@ export const projectsRouter = router({
       const res = await db
         .update(documentsValidation)
         .set({ validatedBy: userId, validationStatus: "rejected" })
+        .where(eq(documentsValidation.id, input))
+        .returning({ id: documentsValidation.id });
+      if (res.length === 0) {
+        throw new Error("No rows affected.");
+      }
+    }),
+  cancelValidationDocument: protectedProcedure
+    .input(z.string().uuid())
+    .mutation(async ({ input }) => {
+      const res = await db
+        .update(documentsValidation)
+        .set({
+          validationStatus: "pending",
+          validationRemarks: null,
+          validatedBy: null,
+          validatedAt: null,
+          fileName: null,
+          fileSize: null,
+          fileType: null,
+        })
         .where(eq(documentsValidation.id, input))
         .returning({ id: documentsValidation.id });
       if (res.length === 0) {

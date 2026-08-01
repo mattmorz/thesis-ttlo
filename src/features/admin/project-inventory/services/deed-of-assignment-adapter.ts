@@ -82,9 +82,9 @@ export async function fetchDeedOfAssignment(
     // Apply sorting
     if (sortBy && sortDirection) {
       if (sortDirection === "desc") {
-        query.orderBy(desc(deedOfAssignment[sortBy]));
+        query.orderBy(desc(deedOfAssignment[sortBy as keyof typeof deedOfAssignment] as any));
       } else {
-        query.orderBy(asc(deedOfAssignment[sortBy]));
+        query.orderBy(asc(deedOfAssignment[sortBy as keyof typeof deedOfAssignment] as any));
       }
     }
 

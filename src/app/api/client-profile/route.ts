@@ -41,6 +41,8 @@ const CLIENT_PROFILE_FIELDS = {
   highestDegree: liveClientProfile.highestDegree,
   familiarWithIpRights: liveClientProfile.familiarWithIpRights,
   ipExperience: liveClientProfile.ipExperience,
+  publishedResearch: liveClientProfile.publishedResearch,
+  developedMaterials: liveClientProfile.developedMaterials,
 } as const;
 
 async function getClientProfileById(clientId: string) {
@@ -115,14 +117,16 @@ function normalizeHighestDegree(
 }
 
 function denormalizeHighestDegree(
-  highestDegree: { value?: unknown; otherValue?: unknown } | null | undefined,
+  highestDegree: unknown
 ) {
   if (!highestDegree || typeof highestDegree !== "object") return highestDegree;
-  if (highestDegree.value !== "other") return highestDegree;
+  
+  const hd = highestDegree as Record<string, unknown>;
+  if (hd.value !== "other") return highestDegree;
 
   const otherValue =
-    typeof highestDegree.otherValue === "string"
-      ? highestDegree.otherValue.toLowerCase()
+    typeof hd.otherValue === "string"
+      ? hd.otherValue.toLowerCase()
       : "";
 
   if (HIGHEST_DEGREE_LEGACY_VALUES.has(otherValue)) {
@@ -1189,14 +1193,14 @@ export async function PUT(req: Request) {
 
     // Log the final stored values for debugging
     console.log("📊 STORED AFFILIATION VALUES:", {
-      hasCompany: camelCaseResult.hasCompany,
+      isAffiliated: formattedData.isAffiliated,
       collegeFields: {
-        collegeName: camelCaseResult.collegeName,
-        departmentName: camelCaseResult.departmentName,
+        institutionName: formattedData.institutionName,
+        department: formattedData.department,
       },
       companyFields: {
-        companyName: camelCaseResult.companyName,
-        companyEmail: camelCaseResult.companyEmail,
+        companyName: formattedData.companyName,
+        companyEmail: formattedData.companyEmail,
       },
     });
 

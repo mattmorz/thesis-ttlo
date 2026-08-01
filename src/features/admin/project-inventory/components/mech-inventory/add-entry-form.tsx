@@ -28,9 +28,9 @@ export function AddEntryForm({ onSubmit, defaultValues }: AddEntryFormProps) {
       inventors: [{ name: "" }],
       title: "",
       field: "Mechanical",
-      ipRequestType: "Patent",
-      ipStatus: "For Application",
-      date: new Date().toISOString().split('T')[0],
+      ipType: "Patent",
+      status: "For Application",
+      startDate: new Date().toISOString().split('T')[0],
       fundingSource: "DOST",
     },
   });
@@ -136,11 +136,11 @@ export function AddEntryForm({ onSubmit, defaultValues }: AddEntryFormProps) {
 
         <FormField
           control={form.control}
-          name="ipRequestType"
+          name="ipType"
           render={({ field }) => (
             <FormItem>
               <FormLabel>IP Request Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value as string}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select IP type" />
@@ -160,11 +160,11 @@ export function AddEntryForm({ onSubmit, defaultValues }: AddEntryFormProps) {
 
         <FormField
           control={form.control}
-          name="ipStatus"
+          name="status"
           render={({ field }) => (
             <FormItem>
               <FormLabel>IP Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value as string}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
@@ -209,12 +209,12 @@ export function AddEntryForm({ onSubmit, defaultValues }: AddEntryFormProps) {
 
         <FormField
           control={form.control}
-          name="date"
+          name="startDate"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Date</FormLabel>
               <FormControl>
-                <Input type="date" {...field} />
+                <Input type="date" {...field} value={field.value as string || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -8,16 +8,15 @@ import { trpc } from "@/trpc/client";
 export default function Page() {
   const { data, isPending } = trpc.calendar.getEvents.useQuery();
 
-  const transformedEvents: Event[] = (data || []).map((event) => ({
+  const transformedEvents: Event[] = (data || []).map((event: any) => ({
     ...event,
     description: event.description ?? undefined,
     createdAt: event.createdAt ?? undefined,
     updatedAt: event.updatedAt ?? undefined,
-    projectId: event.projectId ?? undefined,
+    projectId: event.applicationId ?? undefined,
     eventType: event.eventType as Event["eventType"],
     createdBy: event.createdBy ?? undefined,
     otherEventType: event.otherEventType ?? undefined,
-    isAllDay: event.isAllDay ?? undefined,
     status: event.status as Event["status"],
   }));
 

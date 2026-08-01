@@ -194,7 +194,7 @@ export function FormProgressTracker({
 
       if (formType in formStatus) {
         setFormStatus((prevStatus) => {
-          if (prevStatus[formType] !== completed) {
+          if ((prevStatus as Record<string, boolean>)[formType] !== completed) {
             console.log(`Real-time update for ${formType}: ${completed}`);
             return { ...prevStatus, [formType]: completed };
           }

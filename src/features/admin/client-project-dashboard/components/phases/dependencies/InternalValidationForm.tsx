@@ -32,20 +32,11 @@ import { useSession } from "next-auth/react";
 
 const formItemSchema = z.object({
   id: z.string().uuid(),
-  title: z.string().min(1, { message: "Title is required" }),
   validatorRole: z.string().min(1, { message: "Validator role is required" }),
   status: z.string().min(1, { message: "Status is required" }),
   dueDate: z.coerce.date(),
   assignedToMe: z.boolean().optional(),
   remarks: z.string().optional(),
-  fileName: z
-    .string()
-    .nullable()
-    .refine((val) => val !== null, {
-      message: "File attachment is required",
-    }),
-  fileSize: z.number().nullable(),
-  fileType: z.string().nullable(),
 });
 
 const formSchema = z.object({
@@ -97,17 +88,11 @@ export function InternalValidationForm({
     defaultValues: {
       items: initialData.map((item) => ({
         id: item.validationId,
-        title: item.title || "",
         validatorRole: item.validatorRole || "",
         status: item.status || "",
         dueDate: new Date(item.dueDate),
-        assignedToMe: item.internalValidationAssignees.some(
-          (assignee) => assignee.userId === session?.user?.id
-        ),
+        assignedToMe: item.assignedTo === session?.user?.id,
         remarks: item.remarks || "",
-        fileName: item.fileName,
-        fileSize: item.fileSize,
-        fileType: item.fileType,
       })),
     },
   });
@@ -135,15 +120,11 @@ export function InternalValidationForm({
     setNewItemIds((prev) => new Set(prev).add(id));
     append({
       id,
-      title: "",
       validatorRole: "",
       status: "",
       dueDate: new Date(),
       assignedToMe: false,
       remarks: "",
-      fileName: null,
-      fileSize: null,
-      fileType: null,
     });
   };
 
@@ -187,16 +168,12 @@ export function InternalValidationForm({
     const itemsById = formData.items.reduce(
       (acc, item) => {
         acc[item.id] = {
-          status: item.status || "pending", // Ensure status is never null
-          title: item.title,
+          status: item.status || "pending",
           validatorRole: item.validatorRole,
           dueDate: item.dueDate.toISOString(),
           remarks: item.remarks || "",
-          fileName: item.fileName || "",
-          fileSize: item.fileSize || 0,
-          fileType: item.fileType || "",
           validationId: item.id,
-          assignedToMe: item.assignedToMe || false, // Ensure assignedToMe is never undefined
+          assignedToMe: item.assignedToMe || false,
         };
         return acc;
       },
@@ -204,13 +181,9 @@ export function InternalValidationForm({
         string,
         {
           status: string;
-          title: string;
           validatorRole: string;
           dueDate: string;
           remarks: string;
-          fileName: string;
-          fileSize: number;
-          fileType: string;
           validationId: string;
           assignedToMe: boolean;
         }
@@ -276,41 +249,7 @@ export function InternalValidationForm({
     }
   };
 
-  const handleFileUpload = async (index: number, files: FileList) => {
-    try {
-      const file = files[0]; // Only take the first file
-      if (!file) return;
 
-      // Create form data for upload
-      const formData = new FormData();
-      formData.append("files", file);
-      formData.append("projectId", applicationId);
-      formData.append("formName", "Internal Validation");
-
-      // Upload to your API endpoint
-      const response = await fetch("/api/files/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const result = await response.json();
-
-      // Update form with uploaded file info
-      form.setValue(`items.${index}.fileName`, file.name);
-      form.setValue(`items.${index}.fileSize`, file.size);
-      form.setValue(`items.${index}.fileType`, file.type);
-
-      markAsModified(form.getValues().items[index].id);
-      toast.success("File uploaded successfully");
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error("Failed to upload file");
-    }
-  };
 
   return (
     <Form {...form}>
@@ -345,96 +284,7 @@ export function InternalValidationForm({
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.fileName`}
-                        render={({ field }) => (
-                          <FormItem className="col-span-full">
-                            <FormLabel>Attachment</FormLabel>
-                            <FormControl>
-                              <div className="space-y-4">
-                                {field.value ? (
-                                  <div className="flex items-center justify-between p-2 border rounded">
-                                    <div className="flex items-center space-x-2">
-                                      <span className="text-sm truncate">
-                                        {field.value}
-                                      </span>
-                                      <span className="text-xs text-muted-foreground">
-                                        (
-                                        {(
-                                          form.getValues().items[index]
-                                            .fileSize! / 1024
-                                        ).toFixed(2)}{" "}
-                                        KB)
-                                      </span>
-                                    </div>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        form.setValue(
-                                          `items.${index}.fileName`,
-                                          null
-                                        );
-                                        form.setValue(
-                                          `items.${index}.fileSize`,
-                                          null
-                                        );
-                                        form.setValue(
-                                          `items.${index}.fileType`,
-                                          null
-                                        );
-                                        markAsModified(
-                                          form.getValues().items[index].id
-                                        );
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <Input
-                                    type="file"
-                                    onChange={(e) => {
-                                      if (e.target.files) {
-                                        handleFileUpload(index, e.target.files);
-                                      }
-                                    }}
-                                    className="cursor-pointer"
-                                    accept="application/pdf"
-                                  />
-                                )}
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.title`}
-                        render={({ field }) => (
-                          <FormItem className="col-span-full">
-                            <FormLabel>Title</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter title"
-                                value={field.value}
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  markAsModified(
-                                    form.getValues().items[index].id
-                                  );
-                                }}
-                              />
-                            </FormControl>
-
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
                       <FormField
                         control={form.control}

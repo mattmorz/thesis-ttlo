@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm"
 
 export const activityType = pgEnum("activity_type", ['update', 'comment', 'status_change'])
 export const applicationStatus = pgEnum("application_status", ['draft', 'pending', 'in_progress', 'approved', 'rejected', 'completed', 'archived'])
-export const applicationType = pgEnum("application_type", ['patent', 'copyright', 'trademark', 'utility_model'])
+export const applicationType = pgEnum("application_type", ['patent', 'copyright', 'trademark', 'utility_model', 'industrial_design', 'trade_secret', 'other', 'not_sure'])
 export const formSourceType = pgEnum("form_source_type", ['client_profile', 'ip_disclosure', 'substantial_use', 'deed_of_assignment', 'other_document'])
 export const formSubmissionStatus = pgEnum("form_submission_status", ['draft', 'submitted', 'processed', 'pending_review', 'failed'])
 export const ipDisclosureStatus = pgEnum("ip_disclosure_status", ['draft', 'submitted', 'under_review', 'approved', 'rejected', 'needs_revision'])

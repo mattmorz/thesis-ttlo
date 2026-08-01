@@ -45,6 +45,7 @@ import {
   phaseReminder,
   ipDisclosureInventor,
   eventParticipant,
+  ipApplicationEnrollment,
 } from "./schema";
 
 export const activityLogRelations = relations(activityLog, ({ one }) => ({
@@ -82,6 +83,7 @@ export const ipApplicationRelations = relations(
     ipApplicationNotifications: many(ipApplicationNotification),
     substantialUses: many(substantialUse),
     otherDocuments: many(otherDocuments),
+    ipApplicationEnrollments: many(ipApplicationEnrollment),
   })
 );
 
@@ -532,6 +534,7 @@ export const phaseTaskRelations = relations(phaseTask, ({ one, many }) => ({
     references: [applicationPhase.phaseId],
   }),
   taskAssignments: many(taskAssignment),
+  ipApplicationEnrollments: many(ipApplicationEnrollment),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -609,6 +612,20 @@ export const eventParticipantRelations = relations(
     }),
     userAccount: one(userAccount, {
       fields: [eventParticipant.userId],
+      references: [userAccount.id],
+    }),
+  })
+);
+
+export const ipApplicationEnrollmentRelations = relations(
+  ipApplicationEnrollment,
+  ({ one }) => ({
+    application: one(ipApplication, {
+      fields: [ipApplicationEnrollment.applicationId],
+      references: [ipApplication.id],
+    }),
+    userAccount: one(userAccount, {
+      fields: [ipApplicationEnrollment.userId],
       references: [userAccount.id],
     }),
   })

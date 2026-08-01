@@ -98,7 +98,7 @@ export default function ProjectCards({ project, myProject }: ProjectCardProps) {
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             Assigned:
             <div className="flex -space-x-1.5">
-              {team.slice(0, 4).map((member, index) => {
+              {team.slice(0, 4).map((member: any, index: number) => {
                 const userDetails = member.userAccount;
                 return (
                   <Avatar

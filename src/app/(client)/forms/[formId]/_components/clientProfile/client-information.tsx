@@ -38,7 +38,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import { Field, FieldLabel } from "@/components/ui/field";
+
 import {
   Popover,
   PopoverContent,
@@ -82,6 +82,7 @@ const formSchema = z
       otherValue: z.string().optional().nullable(),
     }),
     mailingAddress: z.string().min(1, "Mailing address is required"),
+    contactNumber: z.string().optional(),
     email: z.string().email("Invalid email address"),
     hasCompany: z.boolean().default(true),
     companyName: z.string().optional(),
@@ -98,6 +99,7 @@ const formSchema = z
     affiliationType: z.enum(["company", "academic", "none"], {
       required_error: "Affiliation type is required",
     }),
+    occupationOther: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.affiliationType === "company") {
@@ -195,6 +197,7 @@ const calculateAgeFromBirthDate = (
 interface ClientInformationProps {
   initialData?: any;
   isDisabled?: boolean;
+  formStatus?: string;
   disableLocalStorage?: boolean;
   onDraftChange?: (key: string, value: string | null) => void;
 }
@@ -296,7 +299,7 @@ export function ClientInformation({
       lastName: "",
       middleName: "",
       gender: { value: "" },
-      age: undefined,
+      age: undefined as unknown as number,
       citizenship: { value: "filipino", otherValue: null },
       mailingAddress: "",
       contactNumber: "",

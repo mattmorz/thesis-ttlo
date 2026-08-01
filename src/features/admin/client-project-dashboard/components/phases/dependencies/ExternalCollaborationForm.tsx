@@ -42,23 +42,6 @@ const formItemSchema = z.object({
   dueDate: z.coerce.date(),
   responseRequired: z.boolean().optional(),
   remarks: z.string().optional(),
-  reminderType: z.string().optional(),
-  reminderDay: z.string().optional(),
-  reminderTime: z
-    .string()
-    .regex(
-      /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/,
-      "Please enter a valid time in HH:mm format"
-    )
-    .optional(),
-  fileName: z
-    .string()
-    .nullable()
-    .refine((val) => val !== null, {
-      message: "File attachment is required",
-    }),
-  fileSize: z.number().nullable(),
-  fileType: z.string().nullable(),
 });
 
 const formSchema = z.object({
@@ -109,21 +92,13 @@ export function ExternalCollaborationForm({
     defaultValues: {
       items: initialData.map((item) => ({
         id: item.collaborationId,
-        officeName: item.officeName || "",
+        officeName: item.office || "",
         task: item.task || "",
         contactPerson: item.contactPerson || "",
         status: item.status || "",
         dueDate: new Date(item.dueDate),
         responseRequired: item.responseRequired || false,
         remarks: item.remarks || "",
-        reminderType: item.reminderType || "none",
-        reminderDay: item.reminderDay || "",
-        reminderTime: item.reminderTime
-          ? item.reminderTime.substring(0, 5)
-          : "12:00",
-        fileName: item.fileName || undefined,
-        fileSize: item.fileSize || undefined,
-        fileType: item.fileType || undefined,
       })),
     },
   });
@@ -155,16 +130,9 @@ export function ExternalCollaborationForm({
       task: "",
       contactPerson: "",
       status: "",
-      description: "",
       dueDate: new Date(),
       responseRequired: false,
       remarks: "",
-      reminderType: "none",
-      reminderDay: "mon",
-      reminderTime: "12:00",
-      fileName: "",
-      fileSize: 0,
-      fileType: "",
     });
   };
 
@@ -213,16 +181,9 @@ export function ExternalCollaborationForm({
           officeName: item.officeName,
           contactPerson: item.contactPerson,
           dueDate: item.dueDate.toISOString(),
-          description: item.description || "",
           remarks: item.remarks || "",
-          fileName: item.fileName || "",
-          fileSize: item.fileSize || 0,
-          fileType: item.fileType || "",
           collaborationId: item.id,
           responseRequired: item.responseRequired || false,
-          reminderType: item.reminderType || "none",
-          reminderDay: item.reminderDay || "mon",
-          reminderTime: item.reminderTime || "12:00",
         };
         return acc;
       },
@@ -234,16 +195,9 @@ export function ExternalCollaborationForm({
           officeName: string;
           contactPerson: string;
           dueDate: string;
-          description: string;
           remarks: string;
-          fileName: string;
-          fileSize: number;
-          fileType: string;
           collaborationId: string;
           responseRequired: boolean;
-          reminderType: string;
-          reminderDay: string;
-          reminderTime: string;
         }
       >
     );
@@ -307,41 +261,7 @@ export function ExternalCollaborationForm({
     }
   };
 
-  const handleFileUpload = async (index: number, files: FileList) => {
-    try {
-      const file = files[0]; // Only take the first file
-      if (!file) return;
 
-      // Create form data for upload
-      const formData = new FormData();
-      formData.append("files", file);
-      formData.append("projectId", applicationId);
-      formData.append("formName", "External Collaboration");
-
-      // Upload to your API endpoint
-      const response = await fetch("/api/files/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const result = await response.json();
-
-      // Update form with uploaded file info
-      form.setValue(`items.${index}.fileName`, file.name);
-      form.setValue(`items.${index}.fileSize`, file.size);
-      form.setValue(`items.${index}.fileType`, file.type);
-
-      markAsModified(form.getValues().items[index].id);
-      toast.success("File uploaded successfully");
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error("Failed to upload file");
-    }
-  };
 
   return (
     <Form {...form}>
@@ -386,72 +306,6 @@ export function ExternalCollaborationForm({
                       </Button>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.fileName`}
-                        render={({ field }) => (
-                          <FormItem className="col-span-full">
-                            <FormLabel>Attachment</FormLabel>
-                            <FormControl>
-                              <div className="space-y-4">
-                                {field.value ? (
-                                  <div className="flex items-center justify-between p-2 border rounded">
-                                    <div className="flex items-center space-x-2">
-                                      <span className="text-sm truncate">
-                                        {field.value}
-                                      </span>
-                                      <span className="text-xs text-muted-foreground">
-                                        (
-                                        {(
-                                          form.getValues().items[index]
-                                            .fileSize! / 1024
-                                        ).toFixed(2)}{" "}
-                                        KB)
-                                      </span>
-                                    </div>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        form.setValue(
-                                          `items.${index}.fileName`,
-                                          ""
-                                        );
-                                        form.setValue(
-                                          `items.${index}.fileSize`,
-                                          0
-                                        );
-                                        form.setValue(
-                                          `items.${index}.fileType`,
-                                          ""
-                                        );
-                                        markAsModified(
-                                          form.getValues().items[index].id
-                                        );
-                                      }}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <Input
-                                    type="file"
-                                    onChange={(e) => {
-                                      if (e.target.files) {
-                                        handleFileUpload(index, e.target.files);
-                                      }
-                                    }}
-                                    className="cursor-pointer"
-                                    accept="application/pdf"
-                                  />
-                                )}
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
                       <FormField
                         control={form.control}
@@ -654,150 +508,7 @@ export function ExternalCollaborationForm({
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name={`items.${index}.reminderType`}
-                        render={({ field }) => (
-                          <FormItem className="col-span-full">
-                            <FormLabel>Reminder</FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                className="gap-0 -space-y-px rounded-md shadow-xs"
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  markAsModified(
-                                    form.getValues().items[index].id
-                                  );
-                                }}
-                                defaultValue={field.value}
-                              >
-                                {[
-                                  ["none", "No Reminder", "Do not remind"],
-                                  [
-                                    "daily",
-                                    "Daily Reminder",
-                                    "Get reminded every day at a specific time",
-                                  ],
-                                  [
-                                    "weekly",
-                                    "Weekly Reminder",
-                                    "Get reminded once a week",
-                                  ],
-                                ].map((item, index) => {
-                                  const generateId = `${item[0]}-${index}`;
-                                  return (
-                                    <div
-                                      key={generateId}
-                                      className="border-input has-data-[state=checked]:border-primary/50 has-data-[state=checked]:bg-accent relative flex flex-col gap-4 border p-4 outline-none first:rounded-t-md last:rounded-b-md has-data-[state=checked]:z-10"
-                                    >
-                                      <div className="flex items-center gap-4">
-                                        <RadioGroupItem
-                                          id={generateId}
-                                          value={item[0]}
-                                          className="after:absolute after:inset-0"
-                                          aria-describedby={generateId}
-                                        />
-                                        <div className="flex flex-col gap-2">
-                                          <Label
-                                            className="inline-flex items-start"
-                                            htmlFor={generateId}
-                                          >
-                                            {item[1]}
-                                          </Label>
-                                          <div
-                                            id={generateId}
-                                            className="text-muted-foreground text-xs leading-[inherit]"
-                                          >
-                                            {item[2]}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
-                      {form.watch(`items.${index}.reminderType`) ===
-                        "weekly" && (
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.reminderDay`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Which day of the week?</FormLabel>
-                              <Select
-                                onValueChange={(value) => {
-                                  field.onChange(value);
-                                  markAsModified(
-                                    form.getValues().items[index].id
-                                  );
-                                }}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a day" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="mon">Monday</SelectItem>
-                                  <SelectItem value="tue">Tuesday</SelectItem>
-                                  <SelectItem value="wed">Wednesday</SelectItem>
-                                  <SelectItem value="thu">Thursday</SelectItem>
-                                  <SelectItem value="fri">Friday</SelectItem>
-                                  <SelectItem value="sat">Saturday</SelectItem>
-                                  <SelectItem value="sun">Sunday</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormDescription>
-                                Choose which day you would like to be reminded
-                                weekly
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-
-                      {(form.watch(`items.${index}.reminderType`) === "daily" ||
-                        form.watch(`items.${index}.reminderType`) ===
-                          "weekly") && (
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.reminderTime`}
-                          render={({ field }) => (
-                            <FormItem
-                              className={cn(
-                                form.watch(`items.${index}.reminderType`) ===
-                                  "daily" && "col-span-full"
-                              )}
-                            >
-                              <FormLabel>Time of day?</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="time"
-                                  value={field.value}
-                                  onChange={(e) => {
-                                    field.onChange(e);
-                                    markAsModified(
-                                      form.getValues().items[index].id
-                                    );
-                                  }}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Choose a time works best for your schedule
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
                     </div>
                   </CardContent>
                 </Card>

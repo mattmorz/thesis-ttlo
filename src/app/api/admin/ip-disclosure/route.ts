@@ -62,44 +62,28 @@ export async function GET(req: Request) {
 
     console.log(`🔍 Fetching IP disclosure for application: ${applicationId}`);
 
-    // Find the IP disclosure record
-    let disclosure = await db.query.ipDisclosure.findFirst({
-      where: eq(ipDisclosure.applicationId, applicationId),
-      with: {
-        // Include related data needed for the PDF
-        ipDisclosureApplicants: true,
-        ipDisclosureInventors: true,
-        disclosureConfirmations: true,
-      },
+    let disclosure = null;
+
+    // Find the IP disclosure record via registry (ipDisclosure doesn't have applicationId directly)
+    const formRegistry = await db.query.formSubmissionRegistry.findFirst({
+      where: and(
+        eq(formSubmissionRegistry.ipApplicationId, applicationId),
+        eq(formSubmissionRegistry.sourceType, "ip_disclosure")
+      ),
     });
 
-    // If not found directly, check via registry
-    if (!disclosure) {
+    if (formRegistry?.sourceId) {
       console.log(
-        `📋 No direct IP disclosure match for application ${applicationId}, checking via registry`
+        `📄 Found registry entry with sourceId: ${formRegistry.sourceId}`
       );
-
-      // Find the form registry entry for this application and IP disclosure
-      const formRegistry = await db.query.formSubmissionRegistry.findFirst({
-        where: and(
-          eq(formSubmissionRegistry.ipApplicationId, applicationId),
-          eq(formSubmissionRegistry.sourceType, "ip_disclosure")
-        ),
+      disclosure = await db.query.ipDisclosure.findFirst({
+        where: eq(ipDisclosure.disclosureId, formRegistry.sourceId),
+        with: {
+          ipDisclosureApplicants: true,
+          ipDisclosureInventors: true,
+          disclosureConfirmations: true,
+        },
       });
-
-      if (formRegistry?.sourceId) {
-        console.log(
-          `📄 Found registry entry with sourceId: ${formRegistry.sourceId}`
-        );
-        disclosure = await db.query.ipDisclosure.findFirst({
-          where: eq(ipDisclosure.disclosureId, formRegistry.sourceId),
-          with: {
-            ipDisclosureApplicants: true,
-            ipDisclosureInventors: true,
-            disclosureConfirmations: true,
-          },
-        });
-      }
     }
 
     if (!disclosure) {
@@ -210,7 +194,7 @@ export async function GET(req: Request) {
     // Format the data for PDF consumption
     const formattedData = {
       disclosureId: disclosure.disclosureId,
-      applicationId: disclosure.applicationId,
+      applicationId: applicationId,
       clientId: disclosure.clientId,
       email: disclosure.email,
       authorizedRepresentative: disclosure.authorizedRepresentative,
@@ -294,8 +278,8 @@ export async function GET(req: Request) {
             novelty: patentUtilityModelApplicationData.novelty || "",
             variations: patentUtilityModelApplicationData.variations || "",
             usage: patentUtilityModelApplicationData.usage || "",
-            literatureReferences:
-              patentUtilityModelApplicationData.literatureReferences || "",
+            literature_references:
+              patentUtilityModelApplicationData.literature_references || "",
             ownPublications:
               patentUtilityModelApplicationData.ownPublications || "",
           }

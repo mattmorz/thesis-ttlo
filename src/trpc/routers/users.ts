@@ -115,7 +115,7 @@ export const usersRouter = router({
         await db
           .update(userAccount)
           .set({ name: input.name })
-          .where(eq(userAccount.id, ctx.session.user.id));
+          .where(eq(userAccount.id, ctx.session.user.id!));
 
         return { success: true, name: input.name };
       } catch (error) {

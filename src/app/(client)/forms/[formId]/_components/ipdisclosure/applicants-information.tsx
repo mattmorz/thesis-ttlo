@@ -153,7 +153,7 @@ const hasMeaningfulApplicantsData = (
     data.isRightfulOwner === true ||
     hasPeople(data.applicants) ||
     hasPeople(data.inventors) ||
-    (Boolean(data.ipTypes) &&
+    (data.ipTypes &&
       Object.values(data.ipTypes).some((value) => value === true))
   );
 };
@@ -645,6 +645,9 @@ export function ApplicantsInformation() {
         "Back on applicants tab, refreshing display with store data:",
         applicantsInfo,
       );
+
+      // TypeScript null guard (already checked via hasMeaningfulApplicantsData above)
+      if (!applicantsInfo) return;
 
       // Format the ipTypes as booleans
       const formattedIpTypes = {

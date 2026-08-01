@@ -99,8 +99,8 @@ export function EditPhaseTaskDialog({ phaseId, initialData }: Props) {
         priority: item.priority || "",
         status: item.status || "",
         dueDate: new Date(item.dueDate ?? ""),
-        assignedToMe: item.phaseTaskAssignees.some(
-          (assignee) => assignee.userId === session?.user?.id
+        assignedToMe: item.taskAssignments.some(
+          (assignee: any) => assignee.userId === session?.user?.id
         ),
       })),
     },

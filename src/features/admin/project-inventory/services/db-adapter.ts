@@ -7,7 +7,7 @@ import {
   ipContributors,
   clientProfile,
 } from "@/drizzle/migrations/schema";
-import { ipApplicationEnrollment } from "@/drizzle/schema";
+import { ipApplicationEnrollment, formSubmissionRegistry } from "@/drizzle/schema";
 import {
   eq,
   and,
@@ -306,15 +306,20 @@ export class ProjectInventoryAdapter {
           }
 
           // First try to get from IP disclosure inventors
-          const disclosures = await db
+          const registries = await db
             .select({
-              disclosureId: ipDisclosure.disclosureId,
+              sourceId: formSubmissionRegistry.sourceId,
             })
-            .from(ipDisclosure)
-            .where(eq(ipDisclosure.applicationId, item.id));
+            .from(formSubmissionRegistry)
+            .where(
+              and(
+                eq(formSubmissionRegistry.ipApplicationId, item.id),
+                eq(formSubmissionRegistry.sourceType, "ip_disclosure")
+              )
+            );
 
-          if (disclosures.length > 0) {
-            const disclosureId = disclosures[0].disclosureId;
+          if (registries.length > 0) {
+            const disclosureId = registries[0].sourceId;
             const inventors = await db
               .select()
               .from(ipDisclosureInventor)
@@ -665,7 +670,7 @@ export class ProjectInventoryAdapter {
       name: string;
       role: string;
       assignmentRole: string;
-      assignedAt: string;
+      assignedAt: string | Date;
     }>
   > {
     try {

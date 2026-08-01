@@ -62,7 +62,10 @@ export function StaffAssignments({
       // This is a placeholder for the actual API call
       // Replace with your real implementation
       const staff = await getAssignedStaff(projectId);
-      setAssignedStaff(staff);
+      setAssignedStaff(staff.map(s => ({
+        ...s,
+        assignedAt: typeof s.assignedAt === 'string' ? s.assignedAt : (s.assignedAt as Date).toISOString()
+      })));
     } catch (error) {
       console.error("Failed to load assigned staff", error);
       setError("Failed to load assigned staff. Please try again.");

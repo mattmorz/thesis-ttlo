@@ -75,6 +75,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TradeSecretInventory } from "./trade-secret/trade-secret-inventory";
+import { fetchMainDisclosureInventory } from "../../services/main-disclosure-actions";
 
 interface DisclosureData {
   disclosure_id: string;
@@ -212,115 +213,22 @@ export function MainIpDisclosureInventory() {
     try {
       setIsLoading(true);
 
-      // In a real implementation, we would use an API call here
-      // For now, we'll process the sample data
-
-      // Merge applicants, inventors, and confirmations with the disclosure data
-      const enrichedData = sampleData.map((disclosure) => {
-        const applicants = applicantData.filter(
-          (applicant) => applicant.disclosure_id === disclosure.disclosure_id
-        );
-
-        const inventors = inventorData.filter(
-          (inventor) => inventor.disclosure_id === disclosure.disclosure_id
-        );
-
-        const confirmation = confirmationData.find(
-          (confirm) => confirm.disclosure_id === disclosure.disclosure_id
-        );
-
-        return {
-          ...disclosure,
-          applicants,
-          inventors,
-          confirmation,
-        };
+      const response = await fetchMainDisclosureInventory({
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy: sortConfig.field,
+        sortDirection: sortConfig.direction,
+        status: filters.status,
+        search: filters.search,
+        ipType: filters.ipType,
       });
 
-      // Apply search filter if present
-      let filteredData = enrichedData;
-      if (filters.search) {
-        const query = filters.search.toLowerCase();
-        filteredData = enrichedData.filter(
-          (item) =>
-            item.email.toLowerCase().includes(query) ||
-            item.disclosure_id.toLowerCase().includes(query) ||
-            (item.applicants &&
-              item.applicants.some(
-                (app) =>
-                  app.first_name.toLowerCase().includes(query) ||
-                  app.last_name.toLowerCase().includes(query)
-              )) ||
-            (item.inventors &&
-              item.inventors.some(
-                (inv) =>
-                  inv.first_name.toLowerCase().includes(query) ||
-                  inv.last_name.toLowerCase().includes(query)
-              )) ||
-            (item.confirmation?.future_work &&
-              item.confirmation.future_work.toLowerCase().includes(query))
-        );
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      // Apply status filter
-      if (filters.status !== "all") {
-        filteredData = filteredData.filter(
-          (item) => item.status === filters.status
-        );
-      }
-
-      // Apply IP type filter
-      if (filters.ipType !== "all") {
-        filteredData = filteredData.filter(
-          (item) =>
-            item.selected_ip_types[
-              filters.ipType as keyof typeof item.selected_ip_types
-            ]
-        );
-      }
-
-      // Apply sorting
-      const sortedData = [...filteredData].sort((a, b) => {
-        let aValue: any = null;
-        let bValue: any = null;
-
-        // Handle special fields for sorting
-        switch (sortConfig.field) {
-          case "disclosure_id":
-          case "email":
-          case "status":
-          case "created_at":
-          case "updated_at":
-            aValue = a[sortConfig.field as keyof DisclosureData];
-            bValue = b[sortConfig.field as keyof DisclosureData];
-            break;
-          case "future_work":
-            aValue = a.confirmation?.future_work || "";
-            bValue = b.confirmation?.future_work || "";
-            break;
-          case "confirmation_declaration":
-            aValue = a.confirmation?.confirmation_declaration || false;
-            bValue = b.confirmation?.confirmation_declaration || false;
-            break;
-          default:
-            aValue = a[sortConfig.field as keyof DisclosureData] as string;
-            bValue = b[sortConfig.field as keyof DisclosureData] as string;
-        }
-
-        // Perform the sort
-        if (sortConfig.direction === "asc") {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
-
-      // Apply pagination
-      const start = (currentPage - 1) * itemsPerPage;
-      const paginatedData = sortedData.slice(start, start + itemsPerPage);
-
-      setDisclosureData(paginatedData);
-      setTotalItems(filteredData.length);
+      setDisclosureData(response.data as any);
+      setTotalItems(response.total);
     } catch (error) {
       console.error("Error fetching IP disclosure data:", error);
       toast.error("Failed to load IP disclosure data");

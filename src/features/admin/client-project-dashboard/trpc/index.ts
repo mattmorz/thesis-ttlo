@@ -54,7 +54,7 @@ export const clientProjectDashboardRouter = router({
             with: {
               phaseTasks: {
                 with: {
-                  phaseTaskAssignees: true,
+                  taskAssignments: true,
                 },
               },
               phaseReminders: true,
@@ -178,8 +178,8 @@ export const clientProjectDashboardRouter = router({
         });
       const formatInsertPhaseReminder = {
         phaseId: input.phaseId,
-        reminderType: input.reminderType,
-        reminderDay: input.reminderDay,
+        frequency: input.reminderType,
+        customDays: input.reminderDay ? parseInt(input.reminderDay) : null,
         reminderTime: input.reminderTime,
       };
       const phaseReminderRes = await db
@@ -188,8 +188,8 @@ export const clientProjectDashboardRouter = router({
         .onConflictDoUpdate({
           target: phaseReminder.phaseId,
           set: {
-            reminderType: sql`EXCLUDED.reminder_type`,
-            reminderDay: sql`EXCLUDED.reminder_day`,
+            frequency: sql`EXCLUDED.frequency`,
+            customDays: sql`EXCLUDED.custom_days`,
             reminderTime: sql`EXCLUDED.reminder_time`,
           },
         })
@@ -339,20 +339,10 @@ export const clientProjectDashboardRouter = router({
         columns: {
           validationId: true,
           validatorRole: true,
-          title: true,
           status: true,
           dueDate: true,
           remarks: true,
-          fileName: true,
-          fileType: true,
-          fileSize: true,
-        },
-        with: {
-          internalValidationAssignees: {
-            columns: {
-              userId: true,
-            },
-          },
+          assignedTo: true,
         },
       });
       return res;
@@ -367,13 +357,9 @@ export const clientProjectDashboardRouter = router({
               validationId: z.string().uuid(),
               validatorRole: z.string(),
               status: z.string(),
-              title: z.string(),
               assignedToMe: z.boolean(),
               dueDate: z.string().optional(),
               remarks: z.string().optional(),
-              fileName: z.string().optional(),
-              fileType: z.string().optional(),
-              fileSize: z.number().optional(),
             })
           ),
           z.tuple([]),
@@ -383,14 +369,11 @@ export const clientProjectDashboardRouter = router({
             z.object({
               validationId: z.string().uuid(),
               status: z.string(),
-              title: z.string(),
+              title: z.string().optional(), // Left for backward compatibility if any old UI sends it, but ignored
               validatorRole: z.string(),
               assignedToMe: z.boolean(),
               dueDate: z.string().optional(),
               remarks: z.string().optional(),
-              fileName: z.string().optional(),
-              fileType: z.string().optional(),
-              fileSize: z.number().optional(),
             })
           ),
           z.tuple([]),
@@ -419,14 +402,10 @@ export const clientProjectDashboardRouter = router({
               .insert(internalValidation)
               .values({
                 phaseId: input.phaseId,
-                title: item.title,
                 status: item.status,
                 validatorRole: item.validatorRole,
                 dueDate: item.dueDate,
                 remarks: item.remarks,
-                fileName: item.fileName,
-                fileType: item.fileType,
-                fileSize: item.fileSize,
               } as typeof internalValidation.$inferInsert)
               .returning();
 
@@ -448,14 +427,10 @@ export const clientProjectDashboardRouter = router({
               .update(internalValidation)
               .set({
                 phaseId: input.phaseId,
-                title: item.title,
                 status: item.status,
                 validatorRole: item.validatorRole,
                 dueDate: item.dueDate,
                 remarks: item.remarks,
-                fileName: item.fileName,
-                fileType: item.fileType,
-                fileSize: item.fileSize,
               })
               .where(eq(internalValidation.validationId, item.validationId))
               .returning();
@@ -567,8 +542,9 @@ export const clientProjectDashboardRouter = router({
         // Handle added items
         if (input.added.length > 0) {
           await tx.insert(externalCollaboration).values(
-            input.added.map((item) => ({
+            input.added.map(({ officeName, description, fileName, fileType, fileSize, reminderDay, reminderTime, reminderType, ...item }) => ({
               ...item,
+              office: officeName,
               phaseId: input.phaseId,
             }))
           );
@@ -580,7 +556,13 @@ export const clientProjectDashboardRouter = router({
             await tx
               .update(externalCollaboration)
               .set({
-                ...item,
+                status: item.status,
+                contactPerson: item.contactPerson,
+                task: item.task,
+                dueDate: item.dueDate,
+                office: item.officeName,
+                remarks: item.remarks,
+                responseRequired: item.responseRequired,
                 phaseId: input.phaseId,
               })
               .where(

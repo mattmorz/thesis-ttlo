@@ -37,6 +37,10 @@ export const applicationType = pgEnum("application_type", [
   "copyright",
   "trademark",
   "utility_model",
+  "industrial_design",
+  "trade_secret",
+  "other",
+  "not_sure",
 ]);
 export const formSourceType = pgEnum("form_source_type", [
   "client_profile",

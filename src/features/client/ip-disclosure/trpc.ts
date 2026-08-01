@@ -115,7 +115,7 @@ export const ipDisclosureRouter = router({
   // Create a new IP disclosure
   createIpDisclosure: protectedProcedure
     .input(ipDisclosureSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       console.log("Creating IP disclosure with client ID:", input.clientId);
       console.log(
         "Input data:",
@@ -143,6 +143,11 @@ export const ipDisclosureRouter = router({
             input.clientId
           );
           throw new Error("Client ID not found");
+        }
+        
+        // SECURITY: Verify the user owns this client ID or is an admin
+        if (ctx.session?.user?.id !== input.clientId && ctx.session?.user?.role !== "admin") {
+          throw new Error("Unauthorized to create disclosure for another user");
         }
 
         console.log("Client ID found in user_account table");
@@ -348,18 +353,26 @@ export const ipDisclosureRouter = router({
         data: ipDisclosureSchema.partial(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       console.log("Updating IP disclosure:", input);
 
       try {
         // First, check if the disclosure exists
         const disclosureExists = await db.execute(
-          sql`SELECT disclosure_id, selected_ip_types FROM ip_disclosure WHERE disclosure_id = ${input.disclosureId}`
+          sql`SELECT disclosure_id, client_id, selected_ip_types FROM ip_disclosure WHERE disclosure_id = ${input.disclosureId}`
         );
 
         if (!disclosureExists || disclosureExists.length === 0) {
           console.error("IP disclosure not found:", input.disclosureId);
           throw new Error("IP disclosure not found");
+        }
+
+        // SECURITY: Verify ownership or admin role
+        if (
+          disclosureExists[0].client_id !== ctx.session?.user?.id &&
+          ctx.session?.user?.role !== "admin"
+        ) {
+          throw new Error("Unauthorized to update this disclosure");
         }
 
         // Log the current IP types in the database
@@ -723,7 +736,7 @@ export const ipDisclosureRouter = router({
   // Get an IP disclosure by ID
   getIpDisclosure: protectedProcedure
     .input(z.object({ disclosureId: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       console.log("Getting IP disclosure:", input);
 
       try {
@@ -737,6 +750,15 @@ export const ipDisclosureRouter = router({
         }
 
         const disclosure = disclosureResult[0];
+
+        // SECURITY: Verify ownership or admin role
+        if (
+          disclosure.client_id !== ctx.session?.user?.id &&
+          ctx.session?.user?.role !== "admin" &&
+          ctx.session?.user?.role !== "ttlo_staff"
+        ) {
+          throw new Error("Unauthorized to view this disclosure");
+        }
 
         // Log the raw selected_ip_types to debug
         console.log("Raw selected_ip_types from database:", {
@@ -1546,10 +1568,25 @@ export const ipDisclosureRouter = router({
   // Submit the entire IP disclosure form
   submitIpDisclosure: protectedProcedure
     .input(z.object({ disclosureId: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       console.log("Submitting IP disclosure:", input);
 
       try {
+        const disclosureExists = await db.execute(
+          sql`SELECT disclosure_id, client_id FROM ip_disclosure WHERE disclosure_id = ${input.disclosureId}`
+        );
+
+        if (!disclosureExists || disclosureExists.length === 0) {
+          throw new Error("IP disclosure not found");
+        }
+
+        if (
+          disclosureExists[0].client_id !== ctx.session?.user?.id &&
+          ctx.session?.user?.role !== "admin"
+        ) {
+          throw new Error("Unauthorized to submit this disclosure");
+        }
+
         // Update the status of the IP disclosure to submitted using raw SQL
         // No submission_date column exists, so we only update status and updated_at
         await db.execute(

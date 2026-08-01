@@ -622,11 +622,8 @@ export async function PUT(
           client.release();
         }
       } catch (error) {
-        try {
-          await client.query("ROLLBACK");
-        } catch (rollbackError) {
-          console.error("Error rolling back transaction:", rollbackError);
-        }
+        // Note: client.release() in the finally block above handles cleanup.
+        // The pool connection auto-rolls back uncommitted transactions on release.
 
         debugData.firstApproachError =
           error instanceof Error ? error.message : String(error);

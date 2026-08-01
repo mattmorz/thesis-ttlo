@@ -7,7 +7,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useActiveApplication } from "@/features/client/form-integration/hooks/useActiveApplication";
 import { useFormSubmission } from "@/features/client/form-integration/hooks/useFormSubmission";
-import { DriveUploadButton } from "@/components/global/drive-upload";
+import { DriveUploadButton, useDriveUpload } from "@/components/global/drive-upload";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -129,6 +129,12 @@ export function SignatorySection({
   // Get store functions
   const { updateSignatoryData, deed: storeDeedData } = useDeedAssignmentStore();
 
+  // Resolve the form ID for uploads
+  const resolvedFormId = formId || activeApplicationId || "";
+
+  // State for notarized files
+  const [notarizedFiles, setNotarizedFiles] = useState<File[]>([]);
+
   const notarizedUploader = useDriveUpload(
     {
       formId: resolvedFormId,
@@ -146,7 +152,7 @@ export function SignatorySection({
           toast.error("Upload succeeded but no file path returned");
           return;
         }
-        handleDocumentUpload(filePath, { showToast: false });
+        handleDocumentUpload(filePath);
         
       },
     }

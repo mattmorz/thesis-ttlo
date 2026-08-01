@@ -420,7 +420,7 @@ export class ClientProfileAdapter {
           citizenship: data.citizenship as any,
           highestDegree: data.highestDegree as any,
           familiarWithIpRights: data.familiarWithIpRights as any,
-          ipApplicationId: data.ipApplicationId,
+          // ipApplicationId was removed from schema
           createdAt: now,
           updatedAt: now,
         })

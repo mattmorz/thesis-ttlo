@@ -4,6 +4,8 @@ import { db } from "@/drizzle/db";
 import { otherDocuments } from "@/drizzle/schema";
 import { v4 as uuidv4 } from "uuid";
 import { validate as validateUuid } from "uuid";
+import path from "path";
+import fs from "fs";
 import { ipApplication } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import {
@@ -188,22 +190,8 @@ export async function POST(req: NextRequest) {
       ipApplicationId
     );
 
-    const applicationFolderId = ipApplicationId;
-    const formName =
-      (formData.get("formName") as string | null) ||
-      (formId ? `Form ${formId}` : "Other Documents");
-    // Use the configured Drive root folder directly; do not add an extra TTLO parent.
-    const folderPath = [applicationFolderId, formName];
-    console.log("[API/documents/other/upload] Drive folder path:", {
-      folderPath,
-      rootFolderHint: process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID?.trim() || null,
-    });
-    const { folderId } = await ensureDriveFolderPath({
-      pathSegments: folderPath,
-    });
-    console.log("[API/documents/other/upload] Drive folder resolved:", {
-      folderId,
-    });
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', ipApplicationId);
+    await fs.promises.mkdir(uploadDir, { recursive: true });
 
     // Process each file
     const uploadedFiles = [];
@@ -212,38 +200,12 @@ export async function POST(req: NextRequest) {
     for (let index = 0; index < validFiles.length; index++) {
       const file = validFiles[index];
 
-      // Debug the file object
-      console.log(
-        `[API/documents/other/upload] File object keys:`,
-        Object.keys(file)
-      );
-      console.log(
-        `[API/documents/other/upload] File object properties:`,
-        JSON.stringify(
-          {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            lastModified: file.lastModified,
-          },
-          null,
-          2
-        )
-      );
-
       // Get file details, handling potential missing properties
       const fileName = file.name ? file.name.toString() : `file-${index}`;
       const fileSize = file.size ? Number(file.size) : 0;
       const fileType = file.type
         ? file.type.toString()
         : "application/octet-stream";
-
-      console.log(
-        `[API/documents/other/upload] Processing file: ${fileName}, size: ${fileSize} bytes, type: ${fileType}`
-      );
-
-      // In a real implementation, you would upload the file to storage
-      // and get back a URL
 
       if (fileSize > MAX_UPLOAD_SIZE_BYTES) {
         return NextResponse.json(
@@ -252,21 +214,16 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const driveFile = await uploadFileToDrive({
-        file,
-        fileName: `${ipApplicationId}-${fileName}`,
-        mimeType: fileType,
-        parentId: folderId,
-      });
-      console.log("[API/documents/other/upload] Drive file uploaded:", {
-        fileName,
-        driveFileId: driveFile.fileId,
-        hasWebViewLink: Boolean(driveFile.webViewLink),
-        hasWebContentLink: Boolean(driveFile.webContentLink),
-      });
+      const fileExtension = path.extname(fileName);
+      const uniqueFilename = `${uuidv4()}${fileExtension}`;
+      const filePath = path.join(uploadDir, uniqueFilename);
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      await fs.promises.writeFile(filePath, buffer);
 
-      const fileUrl =
-        driveFile.webViewLink || driveFile.webContentLink || "";
+      const fileUrl = `/uploads/${ipApplicationId}/${uniqueFilename}`;
 
       // Create a document record with a generated UUID
       const documentId = uuidv4();
@@ -286,7 +243,7 @@ export async function POST(req: NextRequest) {
 
       const newDocument = {
         documentId,
-        formId: formId || null,
+        formId: formId || ipApplicationId, // formId is required (notNull), fallback to ipApplicationId
         userId: userId,
         ipApplicationId,
         fileName: fileName.replace(/[^a-zA-Z0-9.-]/g, "_"),
@@ -300,9 +257,7 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date().toISOString(),
         status: "active",
         metadata: {
-          driveFileId: driveFile.fileId,
-          webViewLink: driveFile.webViewLink,
-          webContentLink: driveFile.webContentLink,
+          localUpload: true,
         },
       };
 
@@ -313,7 +268,6 @@ export async function POST(req: NextRequest) {
         ipApplicationId: newDocument.ipApplicationId,
         fileName: newDocument.fileName,
         // Log more fields for debugging
-        title: newDocument.title,
         description: newDocument.description,
         metadata: newDocument.metadata,
       });
@@ -374,7 +328,7 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        const result = await db.insert(otherDocuments).values(newDocument);
+        const result = await db.insert(otherDocuments).values(newDocument as typeof otherDocuments.$inferInsert);
         console.log(
           "[API/documents/other/upload] Document inserted successfully:",
           result

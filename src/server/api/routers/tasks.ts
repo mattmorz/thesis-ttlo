@@ -19,9 +19,9 @@ export const tasksRouter = createTRPCRouter({
         const tasks = await db.query.phaseTask.findMany({
           where: eq(phaseTask.assigneeId, input.userId),
           with: {
-            phase: {
+            applicationPhase: {
               with: {
-                application: true,
+                ipApplication: true,
               },
             },
           },
@@ -37,12 +37,12 @@ export const tasksRouter = createTRPCRouter({
           dueDate: task.dueDate,
           status: task.status,
           phase: {
-            phaseId: task.phase.phaseId,
-            title: task.phase.title,
-            applicationId: task.phase.applicationId,
+            phaseId: task.applicationPhase.phaseId,
+            title: task.applicationPhase.title,
+            applicationId: task.applicationPhase.applicationId,
             application: {
-              title: task.phase.application.title,
-              ipType: task.phase.application.ipType,
+              title: task.applicationPhase.ipApplication.title,
+              ipType: task.applicationPhase.ipApplication.ipType,
             },
           },
         }));
@@ -89,9 +89,9 @@ export const tasksRouter = createTRPCRouter({
         const tasks = await db.query.phaseTask.findMany({
           where: inArray(phaseTask.phaseId, phaseIds),
           with: {
-            phase: {
+            applicationPhase: {
               with: {
-                application: true,
+                ipApplication: true,
               },
             },
           },
@@ -107,12 +107,12 @@ export const tasksRouter = createTRPCRouter({
           dueDate: task.dueDate,
           status: task.status,
           phase: {
-            phaseId: task.phase.phaseId,
-            title: task.phase.title,
-            applicationId: task.phase.applicationId,
+            phaseId: task.applicationPhase.phaseId,
+            title: task.applicationPhase.title,
+            applicationId: task.applicationPhase.applicationId,
             application: {
-              title: task.phase.application.title,
-              ipType: task.phase.application.ipType,
+              title: task.applicationPhase.ipApplication.title,
+              ipType: task.applicationPhase.ipApplication.ipType,
             },
           },
         }));

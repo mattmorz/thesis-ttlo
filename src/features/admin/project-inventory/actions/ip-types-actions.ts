@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/drizzle";
-import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { and, eq, ilike, or, sql, SQL } from "drizzle-orm";
 import { asc, desc } from "drizzle-orm";
 import { ipDisclosure, disclosureConfirmation } from "@/drizzle/schema";
 import {
@@ -357,7 +357,7 @@ export async function fetchOtherIpTypesInventory(
     const baseConditions = buildBaseConditions(
       "other",
       filters,
-      additionalConditions
+      additionalConditions as SQL<unknown>[]
     );
     const whereClause =
       baseConditions.length > 0 ? and(...baseConditions) : undefined;
@@ -597,7 +597,7 @@ export async function fetchNoneIpTypesInventory(
         or(
           ilike(ipDisclosure.email, `%${filters.search}%`),
           ilike(ipDisclosure.disclosureId, `%${filters.search}%`)
-        )
+        )!
       );
     }
 

@@ -9,11 +9,16 @@ interface UsePhasesReturn {
   selectedPhase: string | null;
   selectedPhaseData: ProjectPhase | null;
   setSelectedPhase: (id: string | null) => void;
-  handleSubtaskComplete: (phaseId: string, subtaskId: string) => void;
+  handleSubtaskComplete: (
+    phaseId: string,
+    taskId: string,
+    completed: boolean
+  ) => void;
   isLoading: boolean;
   error: Error | null;
   setPhases: (phases: ProjectPhase[]) => void;
   setSelectedPhaseData: (phase: ProjectPhase) => void;
+  calculateProgress: (subtasks: SubTask[]) => number;
 }
 
 export function usePhases(initialPhases: ProjectPhase[]): UsePhasesReturn {

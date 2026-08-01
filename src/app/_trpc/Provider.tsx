@@ -13,12 +13,12 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         httpBatchLink({
           url: "/api/trpc",
           // You can pass any HTTP headers you wish here
-          headers() {
+          async headers() {
             return {
               authorization: localStorage.getItem("token") || "",
             };
           },
-        }),
+        } as any),
       ],
     })
   );

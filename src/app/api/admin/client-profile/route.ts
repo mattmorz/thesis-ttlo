@@ -39,33 +39,21 @@ export async function GET(req: Request) {
 
     let profile = null;
 
-    // FIRST METHOD: Try to find the profile directly by ipApplicationId
-    profile = await db.query.clientProfile.findFirst({
-      where: eq(clientProfile.ipApplicationId, applicationId),
+    // Find profile via form submission registry (clientProfile doesn't have ipApplicationId directly)
+    const formRegistry = await db.query.formSubmissionRegistry.findFirst({
+      where: and(
+        eq(formSubmissionRegistry.ipApplicationId, applicationId),
+        eq(formSubmissionRegistry.sourceType, "client_profile")
+      ),
     });
 
-    // If not found directly, check via registry
-    if (!profile) {
+    if (formRegistry?.sourceId) {
       console.log(
-        `📋 No direct profile match for application ${applicationId}, checking via registry`
+        `📄 Found registry entry with sourceId: ${formRegistry.sourceId}`
       );
-
-      // Find the form registry entry for this application and client profile
-      const formRegistry = await db.query.formSubmissionRegistry.findFirst({
-        where: and(
-          eq(formSubmissionRegistry.ipApplicationId, applicationId),
-          eq(formSubmissionRegistry.sourceType, "client_profile")
-        ),
+      profile = await db.query.clientProfile.findFirst({
+        where: eq(clientProfile.clientId, formRegistry.sourceId),
       });
-
-      if (formRegistry?.sourceId) {
-        console.log(
-          `📄 Found registry entry with sourceId: ${formRegistry.sourceId}`
-        );
-        profile = await db.query.clientProfile.findFirst({
-          where: eq(clientProfile.clientId, formRegistry.sourceId),
-        });
-      }
     }
 
     if (!profile) {

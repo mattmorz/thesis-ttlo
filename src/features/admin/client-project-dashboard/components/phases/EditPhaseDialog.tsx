@@ -89,8 +89,8 @@ export function EditPhaseDialog({ phaseDetailsData }: Props) {
       | "blocked",
     startDate: new Date(phaseDetailsData?.startDate),
     endDate: new Date(phaseDetailsData?.endDate),
-    reminderType: phaseDetailsData.phaseReminders[0]?.reminderType || "none",
-    reminderDay: phaseDetailsData.phaseReminders[0]?.reminderDay || "mon",
+    reminderType: phaseDetailsData.phaseReminders[0]?.frequency || "none",
+    reminderDay: phaseDetailsData.phaseReminders[0]?.customDays?.toString() || "mon",
     reminderTime: phaseDetailsData.phaseReminders[0]?.reminderTime
       ? phaseDetailsData.phaseReminders[0]?.reminderTime.substring(0, 5)
       : "12:00",

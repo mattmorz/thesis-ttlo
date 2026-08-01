@@ -1319,13 +1319,8 @@ fetchData();
   const customCheckboxStyles =
     "text-black border-black focus:ring-black data-[state=checked]:bg-black data-[state=checked]:border-black rounded-sm";
 
-  // Check if form is disabled (already submitted)
-  // TODO: Implement role-based permissions
-  // For production:
-  // - Only allow editing if user has admin role or is the form owner
-  // - Check submission status and user permissions
-  // - Add role check: isAdmin || (isOwner && !isSubmitted)
- const isFormDisabled = isCSU === false; // Temporarily disabled for testing
+  // Check if form is disabled (already submitted or no permissions)
+  const isFormDisabled = !canEdit || isCSU === false;
 
   const researchTitle = form.watch("researchTitle");
   const remarks = form.watch("remarks");

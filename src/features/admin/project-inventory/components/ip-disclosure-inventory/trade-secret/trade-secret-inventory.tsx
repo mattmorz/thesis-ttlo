@@ -773,7 +773,7 @@ export function TradeSecretInventory() {
               record={currentRecord} 
               onSave={handleUpdateRecord} 
               onCancel={() => setEditRecordDialogOpen(false)} 
-              isSubmitting={isLoading} 
+              isSaving={isLoading} 
             />
           )}</DialogContent>
       </Dialog>

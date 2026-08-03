@@ -1,24 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { db } from "@/drizzle/db";
+import { db, queryClient } from "@/drizzle/db";
 import { appRouter } from "@/trpc/router";
-import pkg from "pg";
+import { ipDisclosure as ipDisclosureTable } from "@/drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
-const { Pool } = pkg;
-
-const isLocalDatabaseUrl = (connectionString?: string) => {
-  if (!connectionString) return true;
-  return /(?:^|\/\/)(localhost|127\.0\.0\.1)(?::|\/)/i.test(connectionString);
-};
-
-// Create a connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: isLocalDatabaseUrl(process.env.DATABASE_URL)
-    ? false
-    : { rejectUnauthorized: false },
-});
 
 // Add this helper function after imports
 function addRateLimitHeaders(
@@ -65,44 +52,23 @@ function normalizePersonRows(people: unknown) {
 }
 
 async function syncDisclosurePeople(
-  client: any,
   disclosureId: string,
   applicants: unknown,
   inventors: unknown,
 ) {
-  await client.query(
-    `DELETE FROM ip_disclosure_applicant WHERE disclosure_id = $1`,
-    [disclosureId],
-  );
-  await client.query(
-    `DELETE FROM ip_disclosure_inventor WHERE disclosure_id = $1`,
-    [disclosureId],
-  );
+  if (!queryClient) throw new Error("queryClient not available");
+
+  await queryClient`DELETE FROM ip_disclosure_applicant WHERE disclosure_id = ${disclosureId}`;
+  await queryClient`DELETE FROM ip_disclosure_inventor WHERE disclosure_id = ${disclosureId}`;
 
   const normalizedApplicants = normalizePersonRows(applicants);
   for (const applicant of normalizedApplicants) {
-    await client.query(
-      `INSERT INTO ip_disclosure_applicant (disclosure_id, first_name, middle_initial, last_name) VALUES ($1, $2, $3, $4)`,
-      [
-        disclosureId,
-        applicant.firstName,
-        applicant.middleInitial || null,
-        applicant.lastName,
-      ],
-    );
+    await queryClient`INSERT INTO ip_disclosure_applicant (disclosure_id, first_name, middle_initial, last_name) VALUES (${disclosureId}, ${applicant.firstName}, ${applicant.middleInitial || null}, ${applicant.lastName})`;
   }
 
   const normalizedInventors = normalizePersonRows(inventors);
   for (const inventor of normalizedInventors) {
-    await client.query(
-      `INSERT INTO ip_disclosure_inventor (disclosure_id, first_name, middle_initial, last_name) VALUES ($1, $2, $3, $4)`,
-      [
-        disclosureId,
-        inventor.firstName,
-        inventor.middleInitial || null,
-        inventor.lastName,
-      ],
-    );
+    await queryClient`INSERT INTO ip_disclosure_inventor (disclosure_id, first_name, middle_initial, last_name) VALUES (${disclosureId}, ${inventor.firstName}, ${inventor.middleInitial || null}, ${inventor.lastName})`;
   }
 }
 
@@ -394,308 +360,136 @@ export async function PUT(
       // Extract applicants info from the request body
       const applicantsInfo = body.applicantsInfo || {};
 
-      // Update the IP disclosure record directly using the schema fields
+      // Update the IP disclosure record using Drizzle (shares the same SSL-aware connection)
       try {
-        const client = await pool.connect();
-        try {
-          await client.query("BEGIN");
-
-          // Format data for database update
-          const updateData = {
-            selectedIpTypes: body.selected_ip_types, // Already JSON stringified
-            email: applicantsInfo.email,
+        const updatedRows = await db
+          .update(ipDisclosureTable)
+          .set({
+            selectedIpTypes: body.selected_ip_types
+              ? JSON.parse(
+                  typeof body.selected_ip_types === "string"
+                    ? body.selected_ip_types
+                    : JSON.stringify(body.selected_ip_types),
+                )
+              : undefined,
+            email: applicantsInfo.email || undefined,
             isRightfulOwner: applicantsInfo.isRightfulOwner === true,
             authorizedRepresentative:
-              applicantsInfo.authorizedRepresentative || "",
-            otherIpType: applicantsInfo.otherIpType || "",
-            updatedAt: new Date(),
-          };
+              applicantsInfo.authorizedRepresentative ?? "",
+            otherIpType: applicantsInfo.otherIpType ?? "",
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(ipDisclosureTable.disclosureId, disclosureId))
+          .returning();
 
-          // Build query dynamically based on available fields
-          const updateColumns = [];
-          const updateValues = [];
-          let paramIndex = 1;
-
-          if (updateData.selectedIpTypes) {
-            updateColumns.push(`selected_ip_types = $${paramIndex}`);
-            updateValues.push(updateData.selectedIpTypes);
-            paramIndex++;
-          }
-
-          if (updateData.email) {
-            updateColumns.push(`email = $${paramIndex}`);
-            updateValues.push(updateData.email);
-            paramIndex++;
-          }
-
-          if (updateData.isRightfulOwner !== undefined) {
-            updateColumns.push(`is_rightful_owner = $${paramIndex}`);
-            updateValues.push(updateData.isRightfulOwner);
-            paramIndex++;
-          }
-
-          if (updateData.authorizedRepresentative !== undefined) {
-            updateColumns.push(`authorized_representative = $${paramIndex}`);
-            updateValues.push(updateData.authorizedRepresentative);
-            paramIndex++;
-          }
-
-          if (updateData.otherIpType !== undefined) {
-            updateColumns.push(`other_ip_type = $${paramIndex}`);
-            updateValues.push(updateData.otherIpType);
-            paramIndex++;
-          }
-
-          // Always update the timestamp
-          updateColumns.push(`updated_at = NOW()`);
-
-          // Add disclosure ID as the last parameter
-          updateValues.push(disclosureId);
-
-          const updateQuery = `
-            UPDATE ip_disclosure
-            SET ${updateColumns.join(", ")}
-            WHERE disclosure_id = $${paramIndex}
-            RETURNING *
-          `;
-
-          debugData.updateQuery = updateQuery;
-          debugData.updateValues = updateValues;
-
-          const result = await client.query(updateQuery, updateValues);
-
-          if (result.rows.length === 0) {
-            debugData.error = "No record found or updated";
-            return generateErrorResponse(
-              404,
-              "IP disclosure not found",
-              debugData,
-            );
-          }
-
-          debugData.result = result.rows[0];
-
-          await syncDisclosurePeople(
-            client,
-            disclosureId,
-            applicantsInfo.applicants,
-            applicantsInfo.inventors,
-          );
-
-          await client.query("COMMIT");
-
-          // Verify the update
-          const verificationResult = await client.query(
-            `SELECT disclosure_id, selected_ip_types FROM ip_disclosure WHERE disclosure_id = $1`,
-            [disclosureId],
-          );
-          debugData.ipTypesVerification = verificationResult.rows[0];
-
-          console.log("Updated IP disclosure", {
-            disclosureId,
-            result: result.rows[0],
-            ipTypes: result.rows[0]?.selected_ip_types,
-          });
-
-          // Check if we should register this form in form_submission_registry
-          const registerForm = body.registerForm === true;
-          if (registerForm) {
-            console.log("Registering IP disclosure form in registry", {
-              disclosureId,
-            });
-
-            try {
-              const { formSubmissionRegistry } =
-                await import("@/drizzle/migrations/schema");
-              const { and, eq } = await import("drizzle-orm");
-
-              // Get application ID from the result or database
-              const applicationId = result.rows[0]?.application_id;
-
-              // First check if an entry already exists
-              const existingRegistry = await db
-                .select({ registryId: formSubmissionRegistry.registryId })
-                .from(formSubmissionRegistry)
-                .where(
-                  and(
-                    eq(formSubmissionRegistry.sourceType, "ip_disclosure"),
-                    eq(formSubmissionRegistry.sourceId, disclosureId),
-                  ),
-                );
-
-              // Get user ID from auth session
-              const session = await auth();
-              if (!session?.user?.id) {
-                console.error("No user ID available for registry");
-              } else {
-                // Extract IP types for the title
-                let ipTypes: Record<string, any> = {};
-                try {
-                  ipTypes =
-                    typeof body.selected_ip_types === "string"
-                      ? JSON.parse(body.selected_ip_types)
-                      : body.selected_ip_types || {};
-                } catch (e) {
-                  console.error(
-                    "Error parsing IP types for registry title:",
-                    e,
-                  );
-                  ipTypes = {};
-                }
-
-                // Create a title based on the IP types
-                const getTitle = () => {
-                  const types = [];
-                  if (ipTypes?.copyright) types.push("Copyright");
-                  if (ipTypes?.patent) types.push("Patent");
-                  if (ipTypes?.utilityModel) types.push("Utility Model");
-                  if (ipTypes?.trademark) types.push("Trademark");
-                  if (ipTypes?.tradeSecret) types.push("Trade Secret");
-
-                  return types.length > 0
-                    ? `IP Disclosure - ${types.join(", ")}`
-                    : "IP Disclosure Submission";
-                };
-
-                if (existingRegistry && existingRegistry.length > 0) {
-                  console.log(
-                    "Updating existing registry entry",
-                    existingRegistry[0],
-                  );
-
-                  // Update existing registry entry with the latest application ID if available
-                  await db
-                    .update(formSubmissionRegistry)
-                    .set({
-                      status: "draft",
-                      title: getTitle(),
-                      updatedAt: new Date().toISOString(),
-                      // Only update the application ID if we have a valid one
-                      ...(applicationId
-                        ? { ipApplicationId: applicationId }
-                        : {}),
-                    })
-                    .where(
-                      eq(
-                        formSubmissionRegistry.registryId,
-                        existingRegistry[0].registryId,
-                      ),
-                    );
-
-                  console.log("Updated existing registry entry");
-                } else {
-                  console.log("Creating new registry entry");
-
-                  // Create new registry entry
-                  const registryResult = await db
-                    .insert(formSubmissionRegistry)
-                    .values({
-                      userId: session.user.id,
-                      sourceType: "ip_disclosure",
-                      sourceId: disclosureId,
-                      ipApplicationId: applicationId,
-                      status: "draft",
-                      title: getTitle(),
-                      description: "IP Disclosure Form",
-                      updatedAt: new Date().toISOString(),
-                      createdAt: new Date().toISOString(),
-                    })
-                    .returning();
-
-                  console.log("Created new registry entry", registryResult[0]);
-                }
-              }
-            } catch (registryError) {
-              console.error("Error handling form registry:", registryError);
-              // Don't fail the entire operation if registry creation fails
-            }
-          } else {
-            console.log("Skipping form registry as registerForm != true");
-          }
-
-          return generateResponse(200, "IP disclosure updated successfully", {
-            id: disclosureId,
-            result: result.rows[0],
-            ipTypesVerification: verificationResult.rows[0],
-          });
-        } finally {
-          client.release();
+        if (updatedRows.length === 0) {
+          debugData.error = "No record found or updated";
+          return generateErrorResponse(404, "IP disclosure not found", debugData);
         }
-      } catch (error) {
-        // Note: client.release() in the finally block above handles cleanup.
-        // The pool connection auto-rolls back uncommitted transactions on release.
 
-        debugData.firstApproachError =
-          error instanceof Error ? error.message : String(error);
-        console.error(
-          "Error updating IP disclosure:",
-          debugData.firstApproachError,
+        debugData.result = updatedRows[0];
+
+        // Sync applicants/inventors using the shared postgres.js queryClient
+        await syncDisclosurePeople(
+          disclosureId,
+          applicantsInfo.applicants,
+          applicantsInfo.inventors,
         );
 
-        // Fall back to just updating the IP types
-        if (body.selected_ip_types) {
+        console.log("Updated IP disclosure", { disclosureId });
+
+        // Check if we should register this form in form_submission_registry
+        const registerForm = body.registerForm === true;
+        if (registerForm) {
           try {
-            const client = await pool.connect();
-            try {
-              const ipUpdateResult = await client.query(
-                `UPDATE ip_disclosure
-                SET selected_ip_types = $1::jsonb,
-                    updated_at = NOW()
-                WHERE disclosure_id = $2
-                RETURNING disclosure_id, selected_ip_types`,
-                [body.selected_ip_types, disclosureId],
+            const { formSubmissionRegistry } =
+              await import("@/drizzle/migrations/schema");
+            const { and, eq: eqOp } = await import("drizzle-orm");
+
+            const applicationId = undefined; // ipDisclosure table has no applicationId column
+
+            const existingRegistry = await db
+              .select({ registryId: formSubmissionRegistry.registryId })
+              .from(formSubmissionRegistry)
+              .where(
+                and(
+                  eqOp(formSubmissionRegistry.sourceType, "ip_disclosure"),
+                  eqOp(formSubmissionRegistry.sourceId, disclosureId),
+                ),
               );
 
-              if (ipUpdateResult.rows.length === 0) {
-                debugData.error = "No record found with fallback approach";
-                return generateErrorResponse(
-                  404,
-                  "IP disclosure not found (fallback)",
-                  debugData,
-                );
+            const sessionForRegistry = await auth();
+            if (sessionForRegistry?.user?.id) {
+              let ipTypes: Record<string, any> = {};
+              try {
+                ipTypes =
+                  typeof body.selected_ip_types === "string"
+                    ? JSON.parse(body.selected_ip_types)
+                    : body.selected_ip_types || {};
+              } catch {
+                ipTypes = {};
               }
 
-              debugData.fallbackResult = ipUpdateResult.rows[0];
+              const getTitle = () => {
+                const types = [];
+                if (ipTypes?.copyright) types.push("Copyright");
+                if (ipTypes?.patent) types.push("Patent");
+                if (ipTypes?.utilityModel) types.push("Utility Model");
+                if (ipTypes?.trademark) types.push("Trademark");
+                if (ipTypes?.tradeSecret) types.push("Trade Secret");
+                return types.length > 0
+                  ? `IP Disclosure - ${types.join(", ")}`
+                  : "IP Disclosure Submission";
+              };
 
-              console.log("Updated IP types directly (fallback):", {
-                disclosureId,
-                result: ipUpdateResult.rows[0],
-              });
-
-              return generateResponse(
-                200,
-                "IP types updated successfully (direct update)",
-                {
-                  id: disclosureId,
-                  result: ipUpdateResult.rows[0],
-                },
-              );
-            } finally {
-              client.release();
+              if (existingRegistry && existingRegistry.length > 0) {
+                await db
+                  .update(formSubmissionRegistry)
+                  .set({
+                    status: "draft",
+                    title: getTitle(),
+                    updatedAt: new Date().toISOString(),
+                    ...(applicationId ? { ipApplicationId: applicationId } : {}),
+                  })
+                  .where(
+                    eqOp(
+                      formSubmissionRegistry.registryId,
+                      existingRegistry[0].registryId,
+                    ),
+                  );
+              } else {
+                await db
+                  .insert(formSubmissionRegistry)
+                  .values({
+                    userId: sessionForRegistry.user.id,
+                    sourceType: "ip_disclosure",
+                    sourceId: disclosureId,
+                    ipApplicationId: applicationId,
+                    status: "draft",
+                    title: getTitle(),
+                    description: "IP Disclosure Form",
+                    updatedAt: new Date().toISOString(),
+                    createdAt: new Date().toISOString(),
+                  })
+                  .returning();
+              }
             }
-          } catch (fallbackError) {
-            debugData.fallbackError =
-              fallbackError instanceof Error
-                ? fallbackError.message
-                : String(fallbackError);
-            console.error(
-              "Error updating IP types (fallback):",
-              debugData.fallbackError,
-            );
-
-            return generateErrorResponse(
-              500,
-              "Failed to update IP disclosure",
-              debugData,
-            );
+          } catch (registryError) {
+            console.error("Error handling form registry:", registryError);
+            // Don't fail the entire operation if registry creation fails
           }
-        } else {
-          return generateErrorResponse(
-            500,
-            "Failed to update IP disclosure and no IP types available for fallback",
-            debugData,
-          );
         }
+
+        return generateResponse(200, "IP disclosure updated successfully", {
+          id: disclosureId,
+          result: updatedRows[0],
+        });
+      } catch (error) {
+        debugData.firstApproachError =
+          error instanceof Error ? error.message : String(error);
+        debugData.fallbackError = debugData.firstApproachError;
+        console.error("Error updating IP disclosure:", debugData.firstApproachError);
+        return generateErrorResponse(500, "Failed to update IP disclosure", debugData);
       }
     } catch (topLevelError) {
       debugData.error =

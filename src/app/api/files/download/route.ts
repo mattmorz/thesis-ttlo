@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/auth/unauthorized", request.url));
     }
 
-    // TODO must add signed url
+
     if (!projectId || !fileName) {
       return NextResponse.json(
         { error: "projectId and fileName parameters are required" },

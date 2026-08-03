@@ -72,6 +72,8 @@ import {
   TradeSecretInventoryType,
   TradeSecretFilterType,
 } from "@/features/admin/project-inventory/schemas/trade-secret";
+import { TradeSecretView } from "./trade-secret-view";
+import { TradeSecretEditForm } from "./trade-secret-edit-form";
 
 export function TradeSecretInventory() {
   // State management
@@ -741,27 +743,7 @@ export function TradeSecretInventory() {
             <DialogTitle>Trade Secret Details</DialogTitle>
           </DialogHeader>
           {currentRecord && (
-            <div className="space-y-4">
-              {/* Temporarily add placeholder content - in a real implementation, would use the TradeSecretView component */}
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Description</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {currentRecord.tradeSecret.description}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">
-                  Confidentiality Measures
-                </h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {currentRecord.tradeSecret.confidentialityMeasures}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium">Status</h3>
-                <div>{renderStatusBadge(currentRecord.disclosure.status)}</div>
-              </div>
-            </div>
+            <TradeSecretView record={currentRecord} />
           )}
           <DialogFooter>
             <Button
@@ -787,93 +769,13 @@ export function TradeSecretInventory() {
             </DialogDescription>
           </DialogHeader>
           {currentRecord && (
-            <div className="space-y-4">
-              {/* Temporarily add simplified form - in real implementation would use TradeSecretEditForm */}
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Description</label>
-                  <textarea
-                    className="w-full p-2 border rounded-md"
-                    rows={5}
-                    value={currentRecord.tradeSecret.description}
-                    onChange={(e) =>
-                      setCurrentRecord({
-                        ...currentRecord,
-                        tradeSecret: {
-                          ...currentRecord.tradeSecret,
-                          description: e.target.value,
-                        },
-                      })
-                    }
-                  ></textarea>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Confidentiality Measures
-                  </label>
-                  <textarea
-                    className="w-full p-2 border rounded-md"
-                    rows={5}
-                    value={currentRecord.tradeSecret.confidentialityMeasures}
-                    onChange={(e) =>
-                      setCurrentRecord({
-                        ...currentRecord,
-                        tradeSecret: {
-                          ...currentRecord.tradeSecret,
-                          confidentialityMeasures: e.target.value,
-                        },
-                      })
-                    }
-                  ></textarea>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Status</label>
-                  <select
-                    className="w-full p-2 border rounded-md"
-                    value={currentRecord.disclosure.status}
-                    onChange={(e) =>
-                      setCurrentRecord({
-                        ...currentRecord,
-                        disclosure: {
-                          ...currentRecord.disclosure,
-                          status: e.target.value,
-                        },
-                      })
-                    }
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="submitted">Submitted</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="pending_revision">Pending Revision</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setEditRecordDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (currentRecord) {
-                  handleUpdateRecord({
-                    description: currentRecord.tradeSecret.description,
-                    confidentialityMeasures:
-                      currentRecord.tradeSecret.confidentialityMeasures,
-                    status: currentRecord.disclosure.status,
-                  });
-                }
-              }}
-            >
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+            <TradeSecretEditForm 
+              record={currentRecord} 
+              onSave={handleUpdateRecord} 
+              onCancel={() => setEditRecordDialogOpen(false)} 
+              isSubmitting={isLoading} 
+            />
+          )}</DialogContent>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}

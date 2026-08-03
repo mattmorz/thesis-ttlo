@@ -231,7 +231,7 @@ export function ApplicantsInformation() {
   // Track whether initial data load has happened
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
-  // Create local state for form values
+  // Initialize local state for form values
   const [formData, setFormData] = useState<ApplicantsInfoFormType>({
     email: "",
     applicants: [{ firstName: "", middleInitial: "", lastName: "" }],
@@ -250,6 +250,14 @@ export function ApplicantsInformation() {
     isRightfulOwner: false,
     authorizedRepresentative: "",
   });
+
+  // Sync the formId from the URL (which represents the applicationId) to the store
+  useEffect(() => {
+    if (formId && formId !== applicationId) {
+      console.log("Syncing applicationId from URL to store:", formId);
+      useIpDisclosureStore.getState().setApplicationId(formId);
+    }
+  }, [formId, applicationId]);
 
   // Initialize form with the local state
   const form = useForm<ApplicantsInfoFormType>({
